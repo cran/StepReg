@@ -1,0 +1,16 @@
+Package: StepReg
+Type: Package
+Title: Stepwise Regression Analysis
+Version: 1.0.0
+Date: 2017-10-30
+Author: Junhui Li,Kun Cheng,Wenxin Liu
+Maintainer: Junhui Li <junhuili@cau.edu.cn>
+Description: Stepwise regression analysis for variable selection can be used to get the best candidate final regression model in univariate or multivariate regression analysis with the 'forward' and 'stepwise' steps. Procedure uses Akaike information criterion, the small-sample-size corrected version of Akaike information criterion, Bayesian information criterion, Hannan and Quinn information criterion, the corrected form of Hannan and Quinn information criterion, Schwarz criterion and significance levels as selection criteria, where the significance levels for entry and for stay are set to 0.15 as default. Multicollinearity detection in regression model are performed by checking tolerance value, which is set to 1e-7 as default. Continuous variables nested within class effect are also considered in this package.
+License: GPL (>= 2)
+Imports: Rcpp (>= 0.12.13)
+LinkingTo: Rcpp,RcppEigen
+Depends: R (>= 2.10)
+NeedsCompilation: yes
+Packaged: 2017-11-03 03:36:02 UTC; lenovo
+Repository: CRAN
+Date/Publication: 2017-11-03 10:17:07 UTC
