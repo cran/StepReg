@@ -109,7 +109,7 @@ stepwise <-  function(data,y,notX=NULL,include=NULL,Class=NULL,selection="stepwi
   nk <- length(includename)
   ##
   if(length(notXname)*length(includename) != 0){
-    if(notXname %in% includename){
+    if(any(notXname %in% includename)){
       stop("elements in notX should not be included in include")
     }
   }

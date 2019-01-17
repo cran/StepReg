@@ -1,10 +1,10 @@
 \name{stepwise}
 \alias{stepwise}
 \title{
-	Stepwise Regression Analysis
+	Stepwise Regression
 }
 \description{
-	Stepwise regression analysis for variable selection can be used to get the best candidate final regression model in univariate or multivariate regression analysis with the 'forward' and 'stepwise' steps. Procedure uses Akaike information criterion, the small-sample-size corrected version of Akaike information criterion, Bayesian information criterion, Hannan and Quinn information criterion, the corrected form of Hannan and Quinn information criterion, Schwarz criterion and significance levels as selection criteria, where the significance levels for entry and for stay are set to 0.15 as default. Multicollinearity detection in regression model are performed by checking tolerance value, which is set to 1e-7 as default. Continuous variables nested within class effect are also considered in this package.
+	stepwise function is used to do univariate and multivariate stepwise regression analysis. In this function, model selection method, 'forward' and 'stepwise' direction, are included, and continuous variables nested within class effect are also considered. Besides, some common information criteria can be specified.
 }
 \usage{
 stepwise(data, y, notX, include, Class, selection, select, sle, sls, tolerance,

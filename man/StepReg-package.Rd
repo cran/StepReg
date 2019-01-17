@@ -13,7 +13,7 @@
 Package: \tab StepReg\cr
 Type: \tab Package\cr
 Version: \tab 1.0.0\cr
-Date: \tab 2017-10-30\cr
+Date: \tab 2019-01-17\cr
 License: \tab GPL (>= 2)\cr
 }
 }
