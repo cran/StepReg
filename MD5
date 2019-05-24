@@ -1,9 +1,9 @@
-6e41786f32242186dd919b90841b7089 *DESCRIPTION
+8067eebb0eefb7c85c11da427a042e10 *DESCRIPTION
 e5484c8b8c97b59f8a5c74db64dbb885 *NAMESPACE
 2a4c86203003c5fb73cd12bee0c87acb *R/RcppExports.R
-ce6c5bc32fe9c627c8984a0f1b4ad6ff *R/stepwise.R
-c94a80ba580ac365c503d54a16e4f8cd *man/StepReg-package.Rd
+3a492f0da2913af1cb1241748c52b281 *R/stepwise.R
+531eda704fa779ba2e6e45d35b5e0169 *man/StepReg-package.Rd
 99c86474a301110c472e344ef8b81517 *man/bestCandidate_RCpp.Rd
-e1271dfb38dfdc337648cc652090e2d9 *man/stepwise.Rd
+756be7462995979f35aa5bb5cba5dbb6 *man/stepwise.Rd
 14635f447aefc9ee84dff3d4bb2dffa1 *src/RcppExports.cpp
 4a0d011256cfb6822e3113af6b4abe2e *src/Rcppeigen_StepwiseRegression.cpp

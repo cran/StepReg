@@ -4,11 +4,11 @@
 	Stepwise Regression
 }
 \description{
-	stepwise function is used to do univariate and multivariate stepwise regression analysis. In this function, model selection method, 'forward' and 'stepwise' direction, are included, and continuous variables nested within class effect are also considered. Besides, some common information criteria can be specified.
+	'stepwise' function is used to do univariate and multivariate stepwise regression analysis and it includes 'forward' and 'stepwise' direction model selection method. Continuous variables nested within class effect and weighted stepwise  are also considered. Besides, some common information criteria can be specified.
 }
 \usage{
-stepwise(data, y, notX, include, Class, selection, select, sle, sls, tolerance,
-	Trace, Choose)
+stepwise(data, y, notX, include, Class, weights, selection, select, sle, sls,
+    tolerance, Trace, Choose)
 }
 \arguments{
   \item{data}{
@@ -25,6 +25,9 @@ stepwise(data, y, notX, include, Class, selection, select, sle, sls, tolerance,
 }
   \item{Class}{
   Class effect variable
+}
+  \item{weights}{
+  The weights names numeric vector to provide a weight for each observation in the input data set. And note that weights should be ranged from 0 to 1, while negative numbers are forcibly converted to 0, and numbers greater than 1 are forcibly converted to 1. If you do not specify a weight vector, each observation has a default weight of 1.
 }
   \item{selection}{
   Model selection method including "forward" and "stepwise",forward selection starts with no effects in the model and adds effects, while stepwise regression is similar to the forward method except that effects already in the model do not necessarily stay there
@@ -87,7 +90,7 @@ dfY <- data.frame(matrix(c(rnorm(20,0,2),c(rep(1,10),rep(2,10)),rnorm(20,2,3)),2
 colnames(dfY) <- paste("Y",1:3,sep="")
 dfX <- data.frame(matrix(c(rnorm(100,0,2),rnorm(100,2,1)),20,10))
 colnames(dfX) <- paste("X",1:10,sep="")
-dfyx <- cbind(dfY,dfX)
+yx <- cbind(dfY,dfX)
 
 #for univariate regression
 y <- c("Y1")
@@ -100,25 +103,29 @@ ClassY2 <- c("Y2")
 #*  without continuous variable nested in class effect
 Class0 <- NULL
 # without forced effect in regression model
-include0 <- NULL
+inc0 <- NULL
 # force the 'Y2' into the regression model
-includeY2 <- c("Y2")
-selection <- 'stepwise'
-tolerance <- 1e-7
+incY2 <- c("Y2")
+sele <- 'stepwise'
+tol <- 1e-7
 Trace <- "Pillai"
 sle <- 0.15
 sls <- 0.15
+# weights vector
+w0 <- c(rep(0.5,2),rep(1,18))
+w2 <- c(rep(0.5,3),rep(1,14),0.5,1,0.5)
+
 
 #univariate regression for 'SBC' select and 'AIC' choose 
 #without forced effect and continuous variable nested in class effect
-stepwise(dfyx, y, notX, include0, Class0, selection, "SBC", sle, sls, tolerance, Trace, 'AIC')
+stepwise(yx, y, notX, inc0, Class0, w0, sele, "SBC", sle, sls, tol, Trace, 'AIC')
 
 #univariate regression for 'AICc' select and 'HQc' choose
 #with forced effect and continuous variable nested in class effect 
-stepwise(dfyx, y, notX, includeY2, ClassY2, selection, 'AICc', sle, sls, tolerance, Trace, 'HQc')
+stepwise(yx, y, notX, incY2, ClassY2, w2, sele, 'AICc', sle, sls, tol, Trace, 'HQc')
 
 #multivariate regression for 'HQ' select and 'BIC' choose
 #with forced effect and continuous variable nested in class effect
-stepwise(dfyx, ym, notXm, includeY2, ClassY2, selection, 'HQ', sle, sls, tolerance, Trace, 'BIC')
+stepwise(yx, ym, notXm, incY2, ClassY2, w2, sele, 'HQ', sle, sls, tol, Trace, 'BIC')
 }
 \keyword{stepwise regression}

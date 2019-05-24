@@ -6,14 +6,14 @@
   Stepwise Regression Analysis
 }
 \description{
-  	Stepwise regression analysis for variable selection can be used to get the best candidate final regression model in univariate or multivariate regression analysis with the 'forward' and 'stepwise' steps. Procedure uses Akaike information criterion, the small-sample-size corrected version of Akaike information criterion, Bayesian information criterion, Hannan and Quinn information criterion, the corrected form of Hannan and Quinn information criterion, Schwarz criterion and significance levels as selection criteria, where the significance levels for entry and for stay are set to 0.15 as default. Multicollinearity detection in regression model are performed by checking tolerance value, which is set to 1e-7 as default. Continuous variables nested within class effect are also considered in this package.
+  	Stepwise regression analysis for variable selection can be used to get the best candidate final regression model in univariate or multivariate regression analysis with the 'forward' and 'stepwise' steps. Procedure uses Akaike information criterion, the small-sample-size corrected version of Akaike information criterion, Bayesian information criterion, Hannan and Quinn information criterion, the corrected form of Hannan and Quinn information criterion, Schwarz criterion and significance levels as selection criteria, where the significance levels for entry and for stay are set to 0.15 as default. Multicollinearity detection in regression model are performed by checking tolerance value, which is set to 1e-7 as default. Continuous variables nested within class effect and weighted stepwise regression are also considered in this package.
 }
 \details{
 \tabular{ll}{
 Package: \tab StepReg\cr
 Type: \tab Package\cr
-Version: \tab 1.0.0\cr
-Date: \tab 2019-01-17\cr
+Version: \tab 1.1.0\cr
+Date: \tab 2019-05-24\cr
 License: \tab GPL (>= 2)\cr
 }
 }

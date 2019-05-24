@@ -1,20 +1,40 @@
-stepwise <-  function(data,y,notX=NULL,include=NULL,Class=NULL,selection="stepwise",select="SBC",sle=0.15,sls=0.15,tolerance=1e-7,Trace="Pillai",Choose="SBC"){
+stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nrow(data))),selection="stepwise",select="SBC",sle=0.15,sls=0.15,tolerance=1e-7,Trace="Pillai",Choose="SBC"){
+  ## weights
+  if (!is.null(weights) && !is.numeric(weights)){
+    stop("'weights' must be a numeric vector")
+  }
+  if(any(weights < 0) | any(weights > 1)){
+    if(any(weights < 0)){
+      warning("'weights' with negtive values are forcibly converted to 0")
+      weights[weights < 0] <- 0
+    }
+    if(any(weights > 1)){
+      warning("'weights' greater than 1 are forcibly converted to 1")
+      weights[weights > 1] <- 1
+    }
+   
+    warning("'weights' should be a numeric vector ranging from 0 to 1")
+  }
+  if(any(weights==0)){
+    data <- data[which(weights!=0),]
+    weights <- weights[weights != 0]
+  }
   ## y 
   nameset <- colnames(data)
   if(is.numeric(y)){
     if(0 %in% y){
-      stop("0 should be remove from y")
+      stop("0 should be remove from 'y'")
     }else{
       Yname <- nameset[y]
     }
   }else if(is.character(y)){
     if(!all(y %in% nameset)){
-      stop("character y should be included in data set")
+      stop("'y' should be included in data set")
     }else{
       Yname <- y
     }
   }else{
-    stop("y should be numeric or character vector")
+    stop("'y' should be numeric or character vector")
   }
   nY <- length(Yname)
   Y <- as.matrix(data[,Yname])
@@ -28,19 +48,19 @@ stepwise <-  function(data,y,notX=NULL,include=NULL,Class=NULL,selection="stepwi
     }
   }else if(is.character(notX)){
     if(!all(notX %in% nameset)){
-      stop("character notX should be included in data set")
+      stop("'notX' should be included in data set")
     }else{
       notXname <- notX
     }
   }else if(is.null(notX)){
     notXname <- notX
   }else{
-    stop("illegal notX variable")
+    stop("illegal 'notX' variable")
   }
   X <- as.matrix(data[,!nameset %in% c(Yname,notXname)])
   
   if(nrow(Y) != nrow(X)){
-    stop("Line number of Y does not equal that of X")
+    stop("The rows of y does not equals independent variable")
   }else{
     nObs <- nrow(X)    
   }
@@ -51,8 +71,8 @@ stepwise <-  function(data,y,notX=NULL,include=NULL,Class=NULL,selection="stepwi
   if(is.null(Class)){
     Classname <- NULL
   }else{
-    if(length(Class) >1){
-      stop("class effect should be catalogy variable only for 1 variable")
+    if(length(Class) > 1){
+      stop("class effect should be catalogy variable and should be not greater than one variable")
     }else{
       if(is.numeric(Class)){
         if(0 %in% Class){
@@ -72,6 +92,9 @@ stepwise <-  function(data,y,notX=NULL,include=NULL,Class=NULL,selection="stepwi
     NoClass <- nlevels(as.factor(NestClass))
     VecClass <- levels(as.factor(NestClass))
   }
+  ## weighted data
+  Y <- Y*sqrt(weights)
+  Xf <- Xf*sqrt(weights)
   ## continous to continous-nesting-class
   if(NoClass > 1){
     Xf1 <- NULL
@@ -114,7 +137,7 @@ stepwise <-  function(data,y,notX=NULL,include=NULL,Class=NULL,selection="stepwi
     }
   }
   ##
-  b <- matrix(1,nObs,1)
+  b <- matrix(1,nObs,1)*sqrt(weights)
   if(length(includename) != 0){
     includek <- which(XName %in% includename)
     includeAll <- 0
