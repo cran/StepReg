@@ -1,6 +1,15 @@
-stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nrow(data))),selection="stepwise",select="SBC",sle=0.15,sls=0.15,tolerance=1e-7,Trace="Pillai",Choose="SBC"){
+stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nrow(data))),selection="stepwise",select="SBC",sle=0.15,sls=0.15,tolerance=1e-7,Trace="Pillai",Choose=NULL){
+  ##select and Choose
+  if(!is.character(select) | !select %in% c("AIC","AICc","BIC","CP","HQ","HQc","Rsq","adjRsq","SL","SBC")){
+    stop("'select' must be one of 'AIC','AICc','BIC','CP','HQ','HQc','Rsq','adjRsq','SL','SBC'")
+  }
+  if(!is.null(Choose)){
+    if(!is.character(Choose) | !Choose %in% c("AIC","AICc","BIC","CP","HQ","HQc","Rsq","adjRsq","SBC")){
+      stop("'Choose' must be one of 'AIC','AICc','BIC','CP','HQ','HQc','Rsq','adjRsq',NULL,'SBC'")
+    }
+  }
   ## weights
-  if (!is.null(weights) && !is.numeric(weights)){
+  if (!is.null(weights) & !is.numeric(weights)){
     stop("'weights' must be a numeric vector")
   }
   if(any(weights < 0) | any(weights > 1)){
@@ -12,7 +21,7 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
       warning("'weights' greater than 1 are forcibly converted to 1")
       weights[weights > 1] <- 1
     }
-   
+    
     warning("'weights' should be a numeric vector ranging from 0 to 1")
   }
   if(any(weights==0)){
@@ -92,7 +101,13 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
     NoClass <- nlevels(as.factor(NestClass))
     VecClass <- levels(as.factor(NestClass))
   }
+
+  ## Total sum of squares corrected for the mean for the dependent variable
+  Yd <- Y-mean(Y)
+  SST <- t(Yd*sqrt(weights)) %*% (Yd*sqrt(weights))
+  SSTdet <- abs(det(SST))
   ## weighted data
+  b <- matrix(1,nObs,1)*sqrt(weights)
   Y <- Y*sqrt(weights)
   Xf <- Xf*sqrt(weights)
   ## continous to continous-nesting-class
@@ -108,17 +123,25 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
     }
     Xf <- Xf1
   }
-  # get sigma from BIC
-  if (select=="BIC"|Choose=="BIC"){
-    if(ncol(Xf)>nObs){ 
-      sigma <- 0
-    }else{
-      lmf <- lm(Y~Xf)
-      sigma <- sum(deviance(lmf)/df.residual(lmf))/nY
+  # get sigma for BIC and CP
+  if(ncol(Xf)>nObs){
+    sigmaVal <- 0
+  }else{
+    Ys <- Y/sqrt(weights)
+    Xfs <- Xf/sqrt(weights)
+    lmf <- lm(Ys~Xfs,weights = weights)
+    sigmaVal <- sum(deviance(lmf)/df.residual(lmf))/nY
+  }
+  if(is.null(Choose)){
+    if(select=="CP" & sigmaVal == 0){
+      stop("The CP criterion cannot be used as sigma=0 for the full model")
     }
   }else{
-    sigma <- 0
+    if((select=="CP" | Choose=="CP") & sigmaVal == 0){
+      stop("The CP criterion cannot be used as sigma=0 for the full model")
+    }
   }
+  
   #include
   if(is.null(include)){
     includename <- NULL
@@ -136,8 +159,7 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
       stop("elements in notX should not be included in include")
     }
   }
-  ##
-  b <- matrix(1,nObs,1)*sqrt(weights)
+  ##include intercept
   if(length(includename) != 0){
     includek <- which(XName %in% includename)
     includeAll <- 0
@@ -147,15 +169,17 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
     b <- cbind(b,Xf[,includeAll])
     Xf <- Xf[,-includeAll]
   }
-  
   tmpX <-b 
   nX <- nX - length(includename)
+  
   slcOpt <- list(serial = 'numeric', bestValue = 'numeric', bestPoint = 'numeric', enOrRe = 'logical', nVarIn = 'numeric')
   class(slcOpt) <- select
-  chsOpt <- list(serial = 'numeric', bestValue = 'numeric', bestPoint = 'numeric', enOrRe = 'logical', nVarIn = 'numeric')
-  class(chsOpt) <- Choose
+  if(!is.null(Choose)){
+    chsOpt <- list(serial = 'numeric', bestValue = 'numeric', bestPoint = 'numeric', enOrRe = 'logical', nVarIn = 'numeric')
+    class(chsOpt) <- Choose
+  }
+  #k=0
   I <- diag(nObs)
-  #k=1
   for(k in 0:length(includename)){
     tmpX1 <- as.matrix(tmpX[,c(1:(k*NoClass+1))])
     qrX <- qr(tmpX1)
@@ -169,47 +193,14 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
     SSEpSq <- t(SSEp)%*%SSEp
     SSESqdet <- abs(det(SSEpSq))
     SSEdet <- abs(det(SSEp))
-    
-    if(class(chsOpt)=="AIC"){
-      chsOptbestValue <- nObs*log(SSEdet/nObs)+(2*p*nY*nObs+nY*(nY+1))/nObs-2/nObs+nObs+2
-    }
-    if(class(chsOpt)=="AICc"){
-      chsOptbestValue <- nObs*log(SSEdet/nObs)+nObs*(nObs+p)*nY/(nObs-p-nY-1)
-    }
-    if(class(chsOpt)=="BIC"){
-      chsOptbestValue <- nObs*log(SSEdet/nObs)+2*(2+p)*(nObs*sigma/SSEdet)-2*(nObs*sigma/SSEdet)^2
-    }
-    if(class(chsOpt)=="HQ"){
-      chsOptbestValue <- log(SSEdet)+2*log(log(nObs))*p*nY/nObs
-    }
-    if(class(chsOpt)=="HQc"){
-      chsOptbestValue <- log(SSESqdet)+2*log(log(nObs))*p*nY/(nObs-p-nY-1)
-    }
-    if(class(chsOpt)=="SBC"){
-      chsOptbestValue <- nObs*log(SSEdet/nObs)+log(nObs)*p
+    if(!is.null(Choose)){
+       chsOptbestValue <- ModelFitStat(class(chsOpt),SSEdet,SSTdet,nObs,nY,p,sigmaVal)
     }
     # Calculate bestValue of select
     if (class(slcOpt) == 'SL') {
       slcOptbestValue <- 1
     }else{
-      if(class(slcOpt)=="AIC"){
-        slcOptbestValue <- nObs*log(SSEdet/nObs)+(2*p*nY*nObs+nY*(nY+1))/nObs-2/nObs+nObs+2
-      }
-      if(class(slcOpt)=="AICc"){
-        slcOptbestValue <- nObs*log(SSEdet/nObs)+nObs*(nObs+p)*nY/(nObs-p-nY-1)
-      }
-      if(class(slcOpt)=="BIC"){
-        slcOptbestValue <- nObs*log(SSEdet/nObs)+2*(2+p)*(nObs*sigma/SSEdet)-2*(nObs*sigma/SSEdet)^2
-      }
-      if(class(slcOpt)=="HQ"){
-        slcOptbestValue <- log(SSEdet)+2*log(log(nObs))*p*nY/nObs
-      }
-      if(class(slcOpt)=="HQc"){
-        slcOptbestValue <- log(SSESqdet)+2*log(log(nObs))*p*nY/(nObs-p-nY-1)
-      }
-      if(class(slcOpt)=="SBC"){
-        slcOptbestValue <- nObs*log(SSEdet/nObs)+log(nObs)*p
-      }
+      slcOptbestValue <- ModelFitStat(class(slcOpt),SSEdet,SSTdet,nObs,nY,p,sigmaVal)
     }
     # Calculate select
     if(k!=0){
@@ -218,14 +209,28 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
       slcOpt$bestValue[slcOpt$serial] <- slcOptbestValue
       slcOpt$enOrRe[slcOpt$serial] <- TRUE
       slcOpt$nVarIn[slcOpt$serial] <- p
-      chsOpt$bestValue[slcOpt$serial] <- chsOptbestValue
+      if (!is.null(Choose)){
+        chsOpt$bestValue[slcOpt$serial] <- chsOptbestValue
+      }
     }else{
       slcOpt$serial <- 1
       slcOpt$bestPoint <- 0
       slcOpt$enOrRe <- TRUE
       slcOpt$nVarIn <- p
-      slcOpt$bestValue <- slcOptbestValue
-      chsOpt$bestValue <- chsOptbestValue
+      #forced Rsq=0 and adjRsq=0 with weighted data when Xf=b
+      if(select=="Rsq" | select=="adjRsq"){
+        slcOpt$bestValue <- 0
+      }else{
+        slcOpt$bestValue <- slcOptbestValue
+      }
+      if (!is.null(Choose)){
+        #forced Rsq=0 and adjRsq=0 with weighted data when Xf=b
+        if(Choose=="Rsq" | Choose=="adjRsq"){
+          chsOpt$bestValue <- 0
+        }else{
+          chsOpt$bestValue <- chsOptbestValue
+        }
+      }
     }
   }
   
@@ -265,49 +270,36 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
     }
     X0 <- as.matrix(X0)
     X1 <- as.matrix(X1)
-    stepvalue <- bestCandidate_RCpp(findIn,NoClass,nObs,sigma,tolerance,Trace,class(slcOpt),Y,X1,X0,nk)
+    stepvalue <- optimization(findIn,NoClass,nObs,sigmaVal,tolerance,Trace,class(slcOpt),Y,X1,X0,nk,SSTdet)
     
     if(stepvalue$rank0==stepvalue$rank && findIn ==FALSE){
       break
     }else{
       if (class(slcOpt) == 'SL') {
         if (findIn == TRUE) {
-          indicator <- stepvalue$PIc > log10(sls)
+          indicator <- stepvalue$PIC > log10(sls)
         } else {
-          indicator <- stepvalue$PIc < log10(sle)
+          indicator <- stepvalue$PIC < log10(sle)
         }
-      } else{
-        indicator <- round(stepvalue$PIc,digits=7) <= round(slcOpt$bestValue[slcOpt$serial],digits=7)
+      }else if(class(slcOpt) == 'Rsq' | class(slcOpt) == 'adjRsq'){
+        indicator <- round(stepvalue$PIC,digits=7) > round(slcOpt$bestValue[slcOpt$serial],digits=7)
+      }else{
+        indicator <- round(stepvalue$PIC,digits=7) <= round(slcOpt$bestValue[slcOpt$serial],digits=7)
       }
       if (indicator == TRUE) {
         if(addVar == TRUE){
-          Order <- which(XName %in% X1Name[stepvalue$seq])
+          Order <- which(XName %in% X1Name[stepvalue$SEQ])
         }else{
           XfX0 <- which(varIn %in% 1)
-          Order <- XfX0[stepvalue$seq]
+          Order <- XfX0[stepvalue$SEQ]
         }
         slcOpt$serial <- slcOpt$serial + 1
         slcOpt$bestPoint[slcOpt$serial] <- Order + nk
-        slcOpt$bestValue[slcOpt$serial] <- stepvalue$PIc
+        slcOpt$bestValue[slcOpt$serial] <- stepvalue$PIC
         slcOpt$enOrRe[slcOpt$serial] <- addVar
         slcOpt$nVarIn[slcOpt$serial] <- if (addVar == TRUE) p + 1 else p - 1
-        if(class(chsOpt)=="SBC"){
-          chsOpt$bestValue[slcOpt$serial] = nObs*log(stepvalue$SSE/nObs)+log(nObs)*stepvalue$rank
-        }
-        if(class(chsOpt)=="AIC"){
-          chsOpt$bestValue[slcOpt$serial] = nObs*log(stepvalue$SSE/nObs)+(2*stepvalue$rank*nY*nObs+nY*(nY+1))/nObs-2/nObs+nObs+2
-        }
-        if(class(chsOpt)=="AICc"){
-          chsOpt$bestValue[slcOpt$serial] = nObs*log(stepvalue$SSE/nObs)+nObs*(nObs+stepvalue$rank)*nY/(nObs-stepvalue$rank-nY-1)
-        }
-        if(class(chsOpt)=="HQ"){
-          chsOpt$bestValue[slcOpt$serial] = nObs*log(stepvalue$SSE/nObs)+2*log(log(nObs))*stepvalue$rank*nY/nObs
-        }
-        if(class(chsOpt)=="HQc"){
-          chsOpt$bestValue[slcOpt$serial] = nObs*log(stepvalue$SSE*stepvalue$SSE/nObs)+2*log(log(nObs))*stepvalue$rank*nY/(nObs-stepvalue$rank-nY-1)
-        }
-        if(class(chsOpt)=="BIC"){
-          chsOpt$bestValue[slcOpt$serial] = nObs*log(stepvalue$SSE/nObs)+2*(2+stepvalue$rank)*(nObs*sigma/stepvalue$SSE)-2*(nObs*sigma/stepvalue$SSE)*(nObs*sigma/stepvalue$SSE)
+        if(!is.null(Choose)){
+          chsOpt$bestValue[slcOpt$serial] <- ModelFitStat(class(chsOpt),stepvalue$SSE,SSTdet,nObs,nY,stepvalue$rank,sigmaVal)
         }
         varIn[Order] <- varIn[Order]+pointer 
         
@@ -334,11 +326,25 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
   
   varName <- array(FALSE, slcOpt$serial)
   varName[1:slcOpt$serial] <- c('intercept',XName[slcOpt$bestPoint])
-  process <- data.frame(Step = 0:(slcOpt$serial-1), VarName = varName, EnterModel = slcOpt$enOrRe,
-                        VarPosition = slcOpt$bestPoint, VarNumber = slcOpt$nVarIn, Select = slcOpt$bestValue, Choose = chsOpt$bestValue)
-  chores <- process[1:(length(includename)+which.min(process[(length(includename)+1):nrow(process),"Choose"])),]
-  remVar <- chores[chores[,3]=="FALSE",2]
-  resVar <- chores[chores[,3]=="TRUE",2]
+  if(!is.null(Choose)){
+    process <- data.frame(Step = 0:(slcOpt$serial-1), VarName = varName, EnterModel = slcOpt$enOrRe,
+                          VarPosition = slcOpt$bestPoint, VarNumber = slcOpt$nVarIn, Select = slcOpt$bestValue, Choose = chsOpt$bestValue)
+  }else{
+    process <- data.frame(Step = 0:(slcOpt$serial-1), VarName = varName, EnterModel = slcOpt$enOrRe,
+                          VarPosition = slcOpt$bestPoint, VarNumber = slcOpt$nVarIn, Select = slcOpt$bestValue)
+  }
+  if(!is.null(Choose)){
+    if(Choose=="Rsq" | Choose=="adjRsq"){
+      optN <- which.max(process[(length(includename)+1):nrow(process),"Choose"])
+    }else{
+      optN <- which.min(process[(length(includename)+1):nrow(process),"Choose"])
+    }
+    sleres <- process[1:(length(includename)+optN),]
+  }else{
+    sleres <- process
+  }
+  remVar <- sleres[sleres[,3]=="FALSE",2]
+  resVar <- sleres[sleres[,3]=="TRUE",2]
   model <- resVar
   if(length(remVar) > 0){
     for(i in remVar){

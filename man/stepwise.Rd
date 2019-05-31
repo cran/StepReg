@@ -33,7 +33,7 @@ stepwise(data, y, notX, include, Class, weights, selection, select, sle, sls,
   Model selection method including "forward" and "stepwise",forward selection starts with no effects in the model and adds effects, while stepwise regression is similar to the forward method except that effects already in the model do not necessarily stay there
 }
   \item{select}{
-  specifies the criterion that uses to determine the order in which effects enter and/or leave at each step of the specified selection method including Akaike Information Criterion(AIC), the Corrected form of Akaike Information Criterion(AICc),Bayesian Information Criterion(BIC),Schwarz criterion(SBC),Hannan and Quinn Information Criterion(HQ), Significant Levels(SL) and so on
+  specifies the criterion that uses to determine the order in which effects enter and/or leave at each step of the specified selection method including Akaike Information Criterion(AIC), the Corrected form of Akaike Information Criterion(AICc),Bayesian Information Criterion(BIC),Schwarz criterion(SBC),Hannan and Quinn Information Criterion(HQ), R-square statistic(Rsq), adjusted R-square statistic(adjRsq), Mallows Cp statistic(CP) and Significant Levels(SL)
 }
   \item{sle}{
   Specifies the significance level for entry
@@ -48,7 +48,7 @@ stepwise(data, y, notX, include, Class, weights, selection, select, sle, sls,
   Statistic for multivariate regression analysis, including Wilks' lamda ("Wilks"), Pillai Trace ("Pillai") and Hotelling-Lawley's Trace ("Hotelling")
 }
   \item{Choose}{
-  Chooses from the list of models at the steps of the selection process the model that yields the best value of the specified criterion. If the optimal value of the specified criterion occurs for models at more than one step, then the model with the smallest number of parameters is chosen. If you do not specify the Choose option, then the model selected is the model at the final step in the selection process
+  Chooses from the list of models at the steps of the selection process the model that yields the best value of the specified criterion. If the optimal value of the specified criterion occurs for models at more than one step, then the model with the smallest number of parameters is chosen. Choose method includes AIC, AICc, BIC, HQ, HQc, SBC,Rsq, adjRsq, CP and NULL, if you do not specify the Choose option, then the model selected is the model at the final step in the selection process
 }
 }
 \details{
@@ -63,9 +63,13 @@ Hannan, E. J., & Quinn, B. G. (1979). The determination of the order of an autor
 
 Harold Hotelling. (1992). The Generalization of Student's Ratio. Breakthroughs in Statistics. Springer New York.
 
+Hocking, R. R. (1976). A biometrics invited paper. the analysis and selection of variables in linear regression. Biometrics, 32(1), 1-49.
+
 Hurvich, C. M., & Tsai, C. (1989). Regression and time series model selection in small samples. Biometrika, 76(2), 297-307.
 
 Judge, & GeorgeG. (1985). The Theory and practice of econometrics /-2nd ed. The Theory and practice of econometrics /. Wiley.
+
+Mallows, C. L. (1973). Some comments on cp. Technometrics, 15(4), 661-676.
 
 Mardia, K. V., Kent, J. T., & Bibby, J. M. (1979). Multivariate analysis. Mathematical Gazette, 37(1), 123-131.
 
@@ -116,15 +120,17 @@ w0 <- c(rep(0.5,2),rep(1,18))
 w2 <- c(rep(0.5,3),rep(1,14),0.5,1,0.5)
 
 
-#univariate regression for 'SBC' select and 'AIC' choose 
+#univariate regression with select = 'SBC' &  choose = 'AIC' and select = 'CP' & choose = NULL 
 #without forced effect and continuous variable nested in class effect
 stepwise(yx, y, notX, inc0, Class0, w0, sele, "SBC", sle, sls, tol, Trace, 'AIC')
+stepwise(yx, y, notX, inc0, Class0, w0, sele, "CP", sle, sls, tol, Trace, NULL)
 
-#univariate regression for 'AICc' select and 'HQc' choose
+#univariate regression with select='AICc'  & choose='HQc' and select='Rsq' & choose = NULL 
 #with forced effect and continuous variable nested in class effect 
 stepwise(yx, y, notX, incY2, ClassY2, w2, sele, 'AICc', sle, sls, tol, Trace, 'HQc')
+stepwise(yx, y, notX, incY2, ClassY2, w2, sele, 'Rsq', sle, sls, tol, Trace, NULL)
 
-#multivariate regression for 'HQ' select and 'BIC' choose
+#multivariate regression with select='HQ'  & choose='BIC'
 #with forced effect and continuous variable nested in class effect
 stepwise(yx, ym, notXm, incY2, ClassY2, w2, sele, 'HQ', sle, sls, tol, Trace, 'BIC')
 }

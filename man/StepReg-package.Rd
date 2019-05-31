@@ -6,14 +6,14 @@
   Stepwise Regression Analysis
 }
 \description{
-  	Stepwise regression analysis for variable selection can be used to get the best candidate final regression model in univariate or multivariate regression analysis with the 'forward' and 'stepwise' steps. Procedure uses Akaike information criterion, the small-sample-size corrected version of Akaike information criterion, Bayesian information criterion, Hannan and Quinn information criterion, the corrected form of Hannan and Quinn information criterion, Schwarz criterion and significance levels as selection criteria, where the significance levels for entry and for stay are set to 0.15 as default. Multicollinearity detection in regression model are performed by checking tolerance value, which is set to 1e-7 as default. Continuous variables nested within class effect and weighted stepwise regression are also considered in this package.
+  	Stepwise regression analysis for variable selection can be used to get the best candidate final regression model in univariate or multivariate regression analysis with the 'forward' and 'stepwise' steps. Procedure uses Akaike information criterion, corrected Akaike information criterion, Bayesian information criterion, Hannan and Quinn information criterion, corrected Hannan and Quinn information criterion, Schwarz criterion and significance levels as selection criteria. Multicollinearity detection in regression model are performed by checking tolerance value. Continuous variables nested within class effect and weighted stepwise regression are also considered in this package.
 }
 \details{
 \tabular{ll}{
 Package: \tab StepReg\cr
 Type: \tab Package\cr
-Version: \tab 1.1.0\cr
-Date: \tab 2019-05-24\cr
+Version: \tab 1.2.0\cr
+Date: \tab 2019-05-30\cr
 License: \tab GPL (>= 2)\cr
 }
 }
@@ -31,9 +31,13 @@ Hannan, E. J., & Quinn, B. G. (1979). The determination of the order of an autor
 
 Harold Hotelling. (1992). The Generalization of Student's Ratio. Breakthroughs in Statistics. Springer New York.
 
+Hocking, R. R. (1976). A biometrics invited paper. the analysis and selection of variables in linear regression. Biometrics, 32(1), 1-49.
+
 Hurvich, C. M., & Tsai, C. (1989). Regression and time series model selection in small samples. Biometrika, 76(2), 297-307.
 
 Judge, & GeorgeG. (1985). The Theory and practice of econometrics /-2nd ed. The Theory and practice of econometrics /. Wiley.
+
+Mallows, C. L. (1973). Some comments on cp. Technometrics, 15(4), 661-676.
 
 Mardia, K. V., Kent, J. T., & Bibby, J. M. (1979). Multivariate analysis. Mathematical Gazette, 37(1), 123-131.
 
