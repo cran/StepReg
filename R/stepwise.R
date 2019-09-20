@@ -101,7 +101,7 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
     NoClass <- nlevels(as.factor(NestClass))
     VecClass <- levels(as.factor(NestClass))
   }
-
+  
   ## Total sum of squares corrected for the mean for the dependent variable
   Yd <- Y-mean(Y)
   SST <- t(Yd*sqrt(weights)) %*% (Yd*sqrt(weights))
@@ -115,6 +115,7 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
     Xf1 <- NULL
     NoSub <- rep(0,NoClass+1)
     for (k in 1:NoClass){
+      #k=1
       tempNo <- sum(NestClass %in% VecClass[k])
       NoSub[1+k] <- tempNo+NoSub[k]
       X_part <- matrix(0,tempNo,NoClass*nX)
@@ -160,17 +161,19 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
     }
   }
   ##include intercept
+  nInclude <- c(1)
   if(length(includename) != 0){
     includek <- which(XName %in% includename)
+    nInclude <- c(1,1:length(includename)+1) #modified by junhuili @ 20190918
     includeAll <- 0
     for(k in includek){
       includeAll <- append(includeAll,(NoClass*(k-1)+1):(k*NoClass))
     }
     b <- cbind(b,Xf[,includeAll])
-    Xf <- Xf[,-includeAll]
+    #Xf <- Xf[,-includeAll] #modified by junhuili@20190917
   }
-  tmpX <-b 
-  nX <- nX - length(includename)
+  tmpX <-b
+  #nX <- nX - length(includename)
   
   slcOpt <- list(serial = 'numeric', bestValue = 'numeric', bestPoint = 'numeric', enOrRe = 'logical', nVarIn = 'numeric')
   class(slcOpt) <- select
@@ -194,7 +197,7 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
     SSESqdet <- abs(det(SSEpSq))
     SSEdet <- abs(det(SSEp))
     if(!is.null(Choose)){
-       chsOptbestValue <- ModelFitStat(class(chsOpt),SSEdet,SSTdet,nObs,nY,p,sigmaVal)
+      chsOptbestValue <- ModelFitStat(class(chsOpt),SSEdet,SSTdet,nObs,nY,p,sigmaVal)
     }
     # Calculate bestValue of select
     if (class(slcOpt) == 'SL') {
@@ -235,13 +238,16 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
   }
   
   addVar <- TRUE
-  varIn <- rep(0,nX)
+  #varIn <- rep(0,length(XName)) #modified by junhuili @ 20190918
+  varIn <- slcOpt$bestPoint
   # 4th. while loop for adding and deleting Independent variate-------------
+
   while (TRUE) {
     findIn <- if (addVar == TRUE) FALSE else TRUE
-    pointer <- if(addVar == TRUE) 1 else -1
+    pointer <- if(addVar == TRUE) 1 else -1 #modified by junhuili @ 20190918
     p <- slcOpt$nVarIn[slcOpt$serial]
-    addX <- which(varIn %in% 1)
+    #addX <- which(varIn %in% 1) #modified by junhuili @ 20190917
+    addX <- varIn[-c(nInclude)]
     if (NoClass==1){
       if (length(addX) > 0){
         X0 <-  cbind(b,Xf[,addX])
@@ -270,8 +276,8 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
     }
     X0 <- as.matrix(X0)
     X1 <- as.matrix(X1)
-    stepvalue <- optimization(findIn,NoClass,nObs,sigmaVal,tolerance,Trace,class(slcOpt),Y,X1,X0,nk,SSTdet)
-    
+    stepvalue <- stepOne(findIn,NoClass,nObs,sigmaVal,tolerance,Trace,class(slcOpt),Y,X1,X0,nk,SSTdet)
+
     if(stepvalue$rank0==stepvalue$rank && findIn ==FALSE){
       break
     }else{
@@ -287,21 +293,54 @@ stepwise <- function(data,y,notX=NULL,include=NULL,Class=NULL,weights=c(rep(1,nr
         indicator <- round(stepvalue$PIC,digits=7) <= round(slcOpt$bestValue[slcOpt$serial],digits=7)
       }
       if (indicator == TRUE) {
+        #goodness of fit
+        SEQ <- stepvalue$SEQ
+        if(SEQ>0){
+          SEQclass <- pointer*((SEQ-1)*NoClass+1):(SEQ*NoClass)
+          X01 <- cbind(X0,as.matrix(X1[,SEQclass]))
+          X02 <- X01[,qr(X01)$pivot[1:qr(X01)$rank]]
+          smr <- summary(lm(Y~X02))
+          if(length(y)==1){
+            f <- smr$fstatistic
+            if(is.nan(f[1])){
+              pval <- NaN
+            }else{
+              pval <- pf(f[1],f[2],f[3],lower.tail=F)
+            }
+          }else{
+            for(ny in 1:length(y)){
+              f <- smr[[ny]]$fstatistic
+              if(is.nan(f[1])){
+                pval <- NaN
+              }else{
+                pval <- pf(f[1],f[2],f[3],lower.tail=F)
+              }
+            }
+          }
+        }
+        if(is.nan(pval)==TRUE & (class(slcOpt)!='Rsq' & class(slcOpt)!='adjRsq')){
+          break
+        }
+        
+        Order <- which(XName %in% X1Name[stepvalue$SEQ])
         if(addVar == TRUE){
-          Order <- which(XName %in% X1Name[stepvalue$SEQ])
+          #Order <- which(XName %in% X1Name[stepvalue$SEQ])  #modified by junhuili @ 20190918
+          varIn <- append(varIn,Order)
         }else{
-          XfX0 <- which(varIn %in% 1)
-          Order <- XfX0[stepvalue$SEQ]
+          #XfX0 <- which(varIn %in% 1)  #modified by junhuili @ 20190918
+          #Order <- XfX0[stepvalue$SEQ]  #modified by junhuili @ 20190918
+          varIn <- varIn[!varIn %in% Order] #modified by junhuili @ 20190918
         }
         slcOpt$serial <- slcOpt$serial + 1
-        slcOpt$bestPoint[slcOpt$serial] <- Order + nk
+        #slcOpt$bestPoint[slcOpt$serial] <- Order + nk #modified by junhuili @ 20190917
+        slcOpt$bestPoint[slcOpt$serial] <- Order
         slcOpt$bestValue[slcOpt$serial] <- stepvalue$PIC
         slcOpt$enOrRe[slcOpt$serial] <- addVar
         slcOpt$nVarIn[slcOpt$serial] <- if (addVar == TRUE) p + 1 else p - 1
         if(!is.null(Choose)){
           chsOpt$bestValue[slcOpt$serial] <- ModelFitStat(class(chsOpt),stepvalue$SSE,SSTdet,nObs,nY,stepvalue$rank,sigmaVal)
         }
-        varIn[Order] <- varIn[Order]+pointer 
+        #varIn[Order] <- varIn[Order]+pointer #modified by junhuili @ 20190918
         
         if(selection == 'forward') {
           next

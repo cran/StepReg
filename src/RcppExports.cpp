@@ -7,9 +7,9 @@
 using namespace Rcpp;
 using std::string;
 
-// optimization
-Rcpp::List optimization(bool findIn, int p, int n, double sigma, double tolerance, string Ftrace, string criteria, const Eigen::MatrixXd& Y, const Eigen::MatrixXd& X1, const Eigen::MatrixXd& X0, int k, double SST);
-RcppExport SEXP _StepReg_optimization(SEXP findInSEXP, SEXP pSEXP, SEXP nSEXP, SEXP sigmaSEXP, SEXP toleranceSEXP, SEXP FtraceSEXP, SEXP criteriaSEXP, SEXP YSEXP, SEXP X1SEXP, SEXP X0SEXP, SEXP kSEXP, SEXP SSTSEXP) {
+// stepOne
+Rcpp::List stepOne(bool findIn, int p, int n, double sigma, double tolerance, string Ftrace, string criteria, const Eigen::MatrixXd& Y, const Eigen::MatrixXd& X1, const Eigen::MatrixXd& X0, int k, double SST);
+RcppExport SEXP _StepReg_stepOne(SEXP findInSEXP, SEXP pSEXP, SEXP nSEXP, SEXP sigmaSEXP, SEXP toleranceSEXP, SEXP FtraceSEXP, SEXP criteriaSEXP, SEXP YSEXP, SEXP X1SEXP, SEXP X0SEXP, SEXP kSEXP, SEXP SSTSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -25,13 +25,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X0(X0SEXP);
     Rcpp::traits::input_parameter< int >::type k(kSEXP);
     Rcpp::traits::input_parameter< double >::type SST(SSTSEXP);
-    rcpp_result_gen = Rcpp::wrap(optimization(findIn, p, n, sigma, tolerance, Ftrace, criteria, Y, X1, X0, k, SST));
+    rcpp_result_gen = Rcpp::wrap(stepOne(findIn, p, n, sigma, tolerance, Ftrace, criteria, Y, X1, X0, k, SST));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_StepReg_optimization", (DL_FUNC) &_StepReg_optimization, 12},
+    {"_StepReg_stepOne", (DL_FUNC) &_StepReg_stepOne, 12},
     {NULL, NULL, 0}
 };
 

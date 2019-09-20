@@ -125,10 +125,10 @@ w2 <- c(rep(0.5,3),rep(1,14),0.5,1,0.5)
 stepwise(yx, y, notX, inc0, Class0, w0, sele, "SBC", sle, sls, tol, Trace, 'AIC')
 stepwise(yx, y, notX, inc0, Class0, w0, sele, "CP", sle, sls, tol, Trace, NULL)
 
-#univariate regression with select='AICc'  & choose='HQc' and select='Rsq' & choose = NULL 
+#univariate regression with select='AICc'  & choose='HQc' and select='BIC' & choose = NULL 
 #with forced effect and continuous variable nested in class effect 
 stepwise(yx, y, notX, incY2, ClassY2, w2, sele, 'AICc', sle, sls, tol, Trace, 'HQc')
-stepwise(yx, y, notX, incY2, ClassY2, w2, sele, 'Rsq', sle, sls, tol, Trace, NULL)
+stepwise(yx, y, notX, incY2, ClassY2, w2, sele, 'BIC', sle, sls, tol, Trace, NULL)
 
 #multivariate regression with select='HQ'  & choose='BIC'
 #with forced effect and continuous variable nested in class effect

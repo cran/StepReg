@@ -1,5 +1,5 @@
-\name{optimization}
-\alias{optimization}
+\name{stepOne}
+\alias{stepOne}
 \title{
 	Optimized residual models
 }
@@ -7,7 +7,7 @@
 	Get the optimized residual models statistics with forward or backward direction in only one step
 }
 \usage{
-	optimization(findIn, p, n, sigma, tolerance, Ftrace, criteria, Y,X1, X0, k, SST)
+	stepOne(findIn, p, n, sigma, tolerance, Ftrace, criteria, Y,X1, X0, k, SST)
 }
 
 \arguments{

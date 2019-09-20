@@ -145,9 +145,9 @@ Eigen::MatrixXd removeColumn(const Eigen::MatrixXd& matrix, unsigned int colToRe
 	return X;
 }
 // [[Rcpp::export]]
-Rcpp::List optimization(bool findIn,int p,int n,double sigma,double tolerance, string Ftrace, string criteria, const Eigen::MatrixXd& Y,const Eigen::MatrixXd& X1,const Eigen::MatrixXd& X0,int k,double SST){
+Rcpp::List stepOne(bool findIn,int p,int n,double sigma,double tolerance, string Ftrace, string criteria, const Eigen::MatrixXd& Y,const Eigen::MatrixXd& X1,const Eigen::MatrixXd& X0,int k,double SST){
 	double initPIC;  //minimum or maximum of P-value or Information criteria value
-	if(criteria=="SL" || criteria=="Rsq" || criteria=="adjRsq"){
+	if("SL"==criteria || "Rsq"==criteria || "adjRsq"==criteria){
 		if(false==findIn){
 			initPIC = 0;
 		}else{
@@ -212,7 +212,7 @@ Rcpp::List optimization(bool findIn,int p,int n,double sigma,double tolerance, s
 		}
 		nD = rank_f - rank_r;
 		if(nD != 0){
-			if(criteria=="SL"){   
+			if("SL"==criteria){   
 				if(nY >1){
 					Eigen::MatrixXd H = RSSr-RSSf;
 					Eigen::MatrixXd E = RSSf;
@@ -222,7 +222,7 @@ Rcpp::List optimization(bool findIn,int p,int n,double sigma,double tolerance, s
 					v1=n-rank_f;
 					m1=(abs(p1-q1)-1)*0.5;
 					n1=(v1-p1-1)*0.5;
-					if(Ftrace=="Pillai"){
+					if("Pillai"==Ftrace){
 						TraceV=(H*RSSr.inverse()).trace();
 						v11=s1*(2*m1+s1+1);
 						v22=s1*(2*n1+s1+1);
@@ -235,7 +235,7 @@ Rcpp::List optimization(bool findIn,int p,int n,double sigma,double tolerance, s
 							rank2=rank1;
 						}
 					}
-					if(Ftrace=="Hotelling"){
+					if("Hotelling"==Ftrace){
 						TraceV=(H*E.inverse()).trace();
 						v11=s1*(2*m1+s1+1);
 						v22=2*(s1*n1+1);
@@ -248,7 +248,7 @@ Rcpp::List optimization(bool findIn,int p,int n,double sigma,double tolerance, s
 							rank2=rank1;
 						}
 					}
-					if(Ftrace=="Wilks"){
+					if("Wilks"==Ftrace){
 						TraceV=RSSfd/RSSrd;
 						v11=p1*q1;
 						double u1 = (v11-2)*0.25;
@@ -280,7 +280,7 @@ Rcpp::List optimization(bool findIn,int p,int n,double sigma,double tolerance, s
 						rank2=rank1;
 					} 
 				}
-			}else if(criteria=="Rsq" || criteria=="adjRsq"){
+			}else if("Rsq"==criteria || "adjRsq"==criteria){
 				PIC = InforCriteria(RSSXd,nY,rank1,n,criteria,sigma,SST); 
 				if(PIC>initPIC){
 					initPIC=PIC;
