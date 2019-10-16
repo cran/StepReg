@@ -1,4 +1,5 @@
 useDynLib(StepReg, .registration=TRUE)
 importFrom(Rcpp, evalCpp)
 importFrom("stats", "deviance", "df.residual", "lm", "pf")
+importFrom("utils", "combn")
 exportPattern("^[[:alpha:]]+")

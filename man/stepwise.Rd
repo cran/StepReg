@@ -4,11 +4,11 @@
 	Stepwise Regression
 }
 \description{
-	'stepwise' function is used to do univariate and multivariate stepwise regression analysis and it includes 'forward' and 'stepwise' direction model selection method. Continuous variables nested within class effect and weighted stepwise  are also considered. Besides, some common information criteria can be specified.
+	'stepwise' function is used to do univariate and multivariate stepwise regression analysis and it includes 'forward', 'backward' and 'bidirection' direction model selection method. Continuous variables nested within class effect and weighted stepwise  are also considered. Besides, some common information criteria can be specified.
 }
 \usage{
-stepwise(data, y, notX, include, Class, weights, selection, select, sle, sls,
-    tolerance, Trace, Choose)
+stepwise(data, y, exclude, include, Class, weights, selection,
+    select, sle, sls, tolerance, Trace, Choose)
 }
 \arguments{
   \item{data}{
@@ -17,7 +17,7 @@ stepwise(data, y, notX, include, Class, weights, selection, select, sle, sls,
   \item{y}{
   Numeric or character vector for dependent variables
 }
-  \item{notX}{
+  \item{exclude}{
   Numeric or character vector for independent variables removed from stepwise regression analysis
 }
   \item{include}{
@@ -30,10 +30,10 @@ stepwise(data, y, notX, include, Class, weights, selection, select, sle, sls,
   The weights names numeric vector to provide a weight for each observation in the input data set. And note that weights should be ranged from 0 to 1, while negative numbers are forcibly converted to 0, and numbers greater than 1 are forcibly converted to 1. If you do not specify a weight vector, each observation has a default weight of 1.
 }
   \item{selection}{
-  Model selection method including "forward" and "stepwise",forward selection starts with no effects in the model and adds effects, while stepwise regression is similar to the forward method except that effects already in the model do not necessarily stay there
+  Model selection method including "forward", "backward" and "bidirection",forward selection starts with no effects in the model and adds effects, backward selection starts with all effects in the model and removes effects, while bidirection regression is similar to the forward method except that effects already in the model do not necessarily stay there
 }
   \item{select}{
-  specifies the criterion that uses to determine the order in which effects enter and/or leave at each step of the specified selection method including Akaike Information Criterion(AIC), the Corrected form of Akaike Information Criterion(AICc),Bayesian Information Criterion(BIC),Schwarz criterion(SBC),Hannan and Quinn Information Criterion(HQ), R-square statistic(Rsq), adjusted R-square statistic(adjRsq), Mallows Cp statistic(CP) and Significant Levels(SL)
+  Specifies the criterion that uses to determine the order in which effects enter and/or leave at each step of the specified selection method including Akaike Information Criterion(AIC), the Corrected form of Akaike Information Criterion(AICc),Bayesian Information Criterion(BIC),Schwarz criterion(SBC),Hannan and Quinn Information Criterion(HQ), R-square statistic(Rsq), adjusted R-square statistic(adjRsq), Mallows Cp statistic(CP) and Significant Levels(SL)
 }
   \item{sle}{
   Specifies the significance level for entry
@@ -96,21 +96,6 @@ dfX <- data.frame(matrix(c(rnorm(100,0,2),rnorm(100,2,1)),20,10))
 colnames(dfX) <- paste("X",1:10,sep="")
 yx <- cbind(dfY,dfX)
 
-#for univariate regression
-y <- c("Y1")
-notX <- c("Y3")
-#for multivariate regression you can use this
-ym <- c("Y1","Y3")
-notXm <- NULL
-#*  with continuous variable nested in class effect
-ClassY2 <- c("Y2")
-#*  without continuous variable nested in class effect
-Class0 <- NULL
-# without forced effect in regression model
-inc0 <- NULL
-# force the 'Y2' into the regression model
-incY2 <- c("Y2")
-sele <- 'stepwise'
 tol <- 1e-7
 Trace <- "Pillai"
 sle <- 0.15
@@ -119,19 +104,24 @@ sls <- 0.15
 w0 <- c(rep(0.5,2),rep(1,18))
 w2 <- c(rep(0.5,3),rep(1,14),0.5,1,0.5)
 
-
 #univariate regression with select = 'SBC' &  choose = 'AIC' and select = 'CP' & choose = NULL 
 #without forced effect and continuous variable nested in class effect
-stepwise(yx, y, notX, inc0, Class0, w0, sele, "SBC", sle, sls, tol, Trace, 'AIC')
-stepwise(yx, y, notX, inc0, Class0, w0, sele, "CP", sle, sls, tol, Trace, NULL)
+
+stepwise(yx, y="Y1", exclude="Y3", include=NULL, Class=NULL,w0,
+selection="backward", select="SBC", sle, sls, tol, Trace, Choose='AIC')
+stepwise(yx, y="Y1",exclude="Y3", include=NULL, Class=NULL, w0,
+selection="bidirection", select="CP", sle, sls, tol, Trace, NULL)
 
 #univariate regression with select='AICc'  & choose='HQc' and select='BIC' & choose = NULL 
 #with forced effect and continuous variable nested in class effect 
-stepwise(yx, y, notX, incY2, ClassY2, w2, sele, 'AICc', sle, sls, tol, Trace, 'HQc')
-stepwise(yx, y, notX, incY2, ClassY2, w2, sele, 'BIC', sle, sls, tol, Trace, NULL)
+stepwise(yx, y="Y1", exclude="Y3", include="Y2", Class="Y2", w2,
+selection="forward", select='AICc', sle, sls, tol, Trace, 'HQc')
+stepwise(yx, y="Y1", exclude="Y3", include="Y2", Class="Y2", w2,
+selection="bidirection", 'BIC', sle, sls, tol, Trace, NULL)
 
 #multivariate regression with select='HQ'  & choose='BIC'
 #with forced effect and continuous variable nested in class effect
-stepwise(yx, ym, notXm, incY2, ClassY2, w2, sele, 'HQ', sle, sls, tol, Trace, 'BIC')
+stepwise(yx, y=c("Y1","Y3"), exclude=NULL, include="Y2", Class="Y2", w2,
+selection="bidirection", select='HQ', sle, sls, tol, Trace, 'BIC')
 }
 \keyword{stepwise regression}

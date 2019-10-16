@@ -64,6 +64,6 @@ Sawa, T. (1978). Information criteria for discriminating among alternative regre
 Schwarz, G. (1978). Estimating the dimension of a model. Annals of Statistics, 6(2), pags. 15-18.
 }
 \author{
-Junhui Li
+Junhui Li Xiaohuan Lu
 }
 \keyword{model fit statistics}
