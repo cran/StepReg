@@ -1,11 +1,11 @@
-98df1d3683738258421075242240cf47 *DESCRIPTION
+6a939fc6a6906280eae91310b4a67a11 *DESCRIPTION
 a873228cd5bdfd51f11302c53e98c219 *NAMESPACE
 f813b5d13f30ce7c12c7cdeae231e292 *R/ModelFitStat.R
 2a751e776dd05e8c5885650956d24a89 *R/RcppExports.R
-6a8fd13d5475b7fb057b774e94d13fef *R/bestsubset.R
-aa862a5dca83301f6e66c6de5883f0cd *R/stepwise.R
+85a4fe8cc9498abcc9af127bceabdc5b *R/bestsubset.R
+e6e9583aa67f519f74773a09a45d0f16 *R/stepwise.R
 d54fc6adc7259b809d434e67e976c643 *man/ModelFitStat.Rd
-070cf10cb3f8ffc5b8d4795cc0397498 *man/StepReg-package.Rd
+fe0fe726af190085c868a0cba27e3a4e *man/StepReg-package.Rd
 f201345b8079694cc0b33e6fef7d8cec *man/bestsubset.Rd
 47b7482a09fa9ed1e56f43cda424f1cf *man/stepOne.Rd
 aa24395905b5a4d75994a905d8642097 *man/stepwise.Rd

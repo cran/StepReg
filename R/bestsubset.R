@@ -178,6 +178,7 @@ bestsubset <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep
 	finalResult <- NULL
 	for(nsub in sort(as.numeric(as.character(levels(tempBest[,1]))))){
 		subResult <- subset(tempBest,tempBest[,1]==nsub)
+		subResult[,select] <- as.numeric(as.character(subResult[,select]))
 		if(select=='Rsq'|select=='adjRsq'){
 			subResultSort <- subResult[order(subResult[,2],decreasing = TRUE),]
 		}else{
