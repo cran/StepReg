@@ -116,10 +116,10 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
   colnames(b) <- "Intercept"
   Y <- Y*sqrt(weights)
   Xf <- Xf*sqrt(weights)
+  qrxf <- qr(Xf)
   ## continous to continous-nesting-class
   if(NoClass > 1){
     Xf1 <- NULL
-    mb <- NULL
     NoSub <- rep(0,NoClass+1)
     for (k in 1:NoClass){
       #k=1
@@ -127,13 +127,9 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
       NoSub[1+k] <- tempNo+NoSub[k]
       X_part <- matrix(0,tempNo,NoClass*nX)
       X_part[,seq(k,NoClass*nX,by=NoClass)] <- Xf[(NoSub[k]+1):NoSub[k+1],]
-      b_part <-	matrix(0,tempNo,NoClass)
-      b_part[,seq(k,NoClass,by=NoClass)] <- b[(NoSub[k]+1):NoSub[k+1],]
       Xf1 <- rbind(Xf1,X_part)
-      mb <- rbind(mb,b_part)
     }
     Xf <- Xf1
-    #b <- mb
   }
   # get sigma for BIC and CP
   if(ncol(Xf)>nObs){
@@ -173,14 +169,12 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
   nInclude <- 1
   if(length(includename) != 0){
     includek <- which(XName %in% includename)
-    #nInclude <- c(1,1:length(includename)+1) #modified by junhuili @ 20190918
     nInclude <- c(1,includek+1) #modified by junhuili @ 20191012
     includeAll <- 0
     for(k in includek){
       includeAll <- append(includeAll,(NoClass*(k-1)+1):(k*NoClass))
     }
     b <- cbind(b,Xf[,includeAll])
-    #colnames(b) <- c("Intercept",includename)
   }
   nk <- length(includename)
   
@@ -199,9 +193,6 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
     p <- qrX$rank
     tmpX1 <- tmpX1[,qrX$pivot[1:p]]
     IdentityVec <- diag(nObs)
-    #lmresult <- lm(Y~tmpX1-1)
-    #res <- residuals(lmresult)
-    #SSEp <- res %*% res
     tempSSEp <- tmpX1 %*% solve(t(tmpX1) %*% tmpX1) %*% t(tmpX1)
     SSEp <- t(Y)%*%(IdentityVec-tempSSEp)%*%Y
     SSEpSq <- t(SSEp)%*%SSEp
@@ -217,9 +208,7 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
       slcOpt$bestValue <- ModelFitStat(class(slcOpt),SSEdet,SSTdet,nObs,nY,p,sigmaVal)
     }
     slcOpt$serial <- 1
-    #slcOpt$bestPoint <- c(0:(round(p/NoClass,0)-1))
     slcOpt$bestPoint <- c(0:nX)
-    #slcOpt$bestPoint <- 0
     slcOpt$nVarIn <- p
     if(p<nX){
       slcOpt$enOrRe <- c(rep(TRUE,p/NoClass),rep(FALSE,nX-p/NoClass))
@@ -227,22 +216,13 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
       slcOpt$enOrRe[1:(p/NoClass)] <- rep(TRUE,p/NoClass)
     }
   }else{
-    #if(length(includename) != 0){
-    #	b <- cbind(b,Xf[,includeAll])
-    #	#Xf <- Xf[,-includeAll] #modified by junhuili@20190917
-    #}
     tmpX <- b
-    #nX <- nX - length(includename)
-    #k=0
     IdentityVec <- diag(nObs)
     for(k in 0:length(includename)){
       tmpX1 <- as.matrix(tmpX[,c(1:(k*NoClass+1))])
       qrX <- qr(tmpX1)
       p <- qrX$rank
       tmpX1 <- tmpX1[,qrX$pivot[1:p]]
-      #lmresult <- lm(Y~tmpX1-1)
-      #res <- residuals(lmresult)
-      #SSEp <- res %*% res
       tempSSEp <- tmpX1 %*% solve(t(tmpX1) %*% tmpX1) %*% t(tmpX1)
       SSEp <- t(Y)%*%(IdentityVec-tempSSEp)%*%Y
       SSEpSq <- t(SSEp)%*%SSEp
@@ -294,17 +274,13 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
   }else{
     addVar <- TRUE	
   }
-  #varIn <- rep(0,length(XName)) #modified by junhuili @ 20190918
   varIn <- slcOpt$bestPoint
-  # 4th. while loop for adding and deleting Independent variate-------------
-  
+
   while (TRUE) {
     findIn <- if (addVar == TRUE) FALSE else TRUE
     pointer <- if(addVar == TRUE) 1 else -1 #modified by junhuili @ 20190918
     p <- slcOpt$nVarIn[slcOpt$serial]
-    #addX <- which(varIn %in% 1) #modified by junhuili @ 20190917
     addX <- varIn[-c(nInclude)]
-    
     if(NoClass==1){
       if(length(addX) > 0){
         X0 <-	cbind(b,Xf[,addX])
@@ -324,7 +300,6 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
           MresdX <- append(MresdX,temp)
         }
         X0 <- cbind(b,Xf[,MresdX])
-        #X0 <- cbind(b,Xf[,c(3:12)])
         X1 <- Xf[,-MresdX]
         X0Name <- XName[addX]
         X1Name <- XName[-addX]
@@ -381,23 +356,14 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
         if(is.nan(pval)==TRUE && (class(slcOpt)!='Rsq' && class(slcOpt)!='adjRsq')){
           break
         }
-        
-        if(selection=="backward"){
-          Order <- which(XName %in% X0Name[stepvalue$SEQ])
-        }else{
-          Order <- which(XName %in% X1Name[stepvalue$SEQ])
-        }
-        
         if(addVar == TRUE){
-          #Order <- which(XName %in% X1Name[stepvalue$SEQ])	#modified by junhuili @ 20190918
+          Order <- which(XName %in% X1Name[stepvalue$SEQ])
           varIn <- append(varIn,Order)
         }else{
-          #XfX0 <- which(varIn %in% 1)	#modified by junhuili @ 20190918
-          #Order <- XfX0[stepvalue$SEQ]	#modified by junhuili @ 20190918
+          Order <- which(XName %in% X0Name[stepvalue$SEQ])
           varIn <- varIn[!varIn %in% Order] #modified by junhuili @ 20190918
         }
         slcOpt$serial <- slcOpt$serial + 1
-        #slcOpt$bestPoint[slcOpt$serial] <- Order + nk #modified by junhuili @ 20190917
         slcOpt$bestPoint[slcOpt$serial] <- Order
         slcOpt$bestValue[slcOpt$serial] <- stepvalue$PIC
         slcOpt$enOrRe[slcOpt$serial] <- addVar
@@ -405,23 +371,21 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
         if(!is.null(Choose)){
           chsOpt$bestValue[slcOpt$serial] <- ModelFitStat(class(chsOpt),stepvalue$SSE,SSTdet,nObs,nY,stepvalue$rank,sigmaVal)
         }
-        #varIn[Order] <- varIn[Order]+pointer #modified by junhuili @ 20190918
-        
-        if(selection == 'forward' | selection == 'backward') {
-          next
-        }else if (selection == 'bidirection') {
-          if (addVar == FALSE) {
+        if(selection == 'bidirection'){
+          if(addVar == FALSE){
             next
-          } else if (addVar == TRUE) {
+          }else{
             addVar <- FALSE
             next
           }
+        }else{
+          next
         }
-      }else {
+      }else{
         if(selection == 'bidirection' && addVar == FALSE) {
           addVar <- TRUE
           next
-        }else {
+        }else{
           break
         }
       }
@@ -430,7 +394,6 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
   
   varName <- array(FALSE, slcOpt$serial)
   varName[1:(slcOpt$serial)] <- c('intercept',XName[slcOpt$bestPoint[1:slcOpt$serial]])
-  
   if(!is.null(Choose)){
     process <- data.frame(Step = 0:(slcOpt$serial-1), VarName = varName, EnterModel = slcOpt$enOrRe[1:slcOpt$serial],
                           VarPosition = slcOpt$bestPoint[1:slcOpt$serial], VarNumber = slcOpt$nVarIn, Select = slcOpt$bestValue, Choose = chsOpt$bestValue)
@@ -448,29 +411,14 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
   }else{
     sleres <- process
   }
-  #duplication postion and remove intercept
-  if(qrX$rank-1 < nX){
-    dupPos <- (qrX$pivot-1)[-1]
-    dupVar <- XName[dupPos[(qrX$rank-1):nX]]
-    cat("Removed ",dupVar," variable from the model due to multicolinearrility\n")
-  }else{
-    dupVar <- NULL
-  }
-  remVar <- c(sleres[sleres[,3]=="FALSE",2],dupVar)
-  
+  resVar <- sleres[,2]
   if(selection=="backward"){
-    resVar <- XName[!XName %in% remVar]
-  }else{
-    resVar <- sleres[sleres[,3]=="TRUE",2]
+    resVar <- c("intercept",XName[!XName %in% resVar])
+  }else if(selection=="bidirection"){
+    Xtab <- table(resVar)
+    resVar <- resVar[!resVar %in% names(Xtab)[Xtab%%2 == 0]]
   }
-  model <- resVar
-  if(length(remVar) > 0){
-    for(i in remVar){
-      resVar[which(resVar %in% i)[1]] <- NA
-    }
-    model <- resVar[!is.na(resVar)]
-  }
-  results <- list(process,model)
+  results <- list(process,resVar)
   names(results) <- c("process","variate")
   return(results)
 }
