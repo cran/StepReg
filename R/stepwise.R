@@ -275,7 +275,7 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
     addVar <- TRUE	
   }
   varIn <- slcOpt$bestPoint
-
+  
   while (TRUE) {
     findIn <- if (addVar == TRUE) FALSE else TRUE
     pointer <- if(addVar == TRUE) 1 else -1 #modified by junhuili @ 20190918
@@ -416,7 +416,8 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
     resVar <- c("intercept",XName[!XName %in% resVar])
   }else if(selection=="bidirection"){
     Xtab <- table(resVar)
-    resVar <- resVar[!resVar %in% names(Xtab)[Xtab%%2 == 0]]
+    dupresVar <- resVar[!resVar %in% names(Xtab)[Xtab%%2 == 0]]
+    resVar <- rev(unique(rev(dupresVar)))
   }
   results <- list(process,resVar)
   names(results) <- c("process","variate")
