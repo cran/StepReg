@@ -125,12 +125,12 @@ bestsubset <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep
 	wgtData <- cbind(b,Xf)
 	
 	# get sigma for BIC and CP
-	if(ncol(Xf)>nObs){
+	Ys <- Y/sqrt(weights)
+	Xfs <- Xf/sqrt(weights)
+	lmf <- lm(Ys~Xfs,weights = weights)
+	if(lmf$rank>=nObs){
 		sigmaVal <- 0
 	}else{
-		Ys <- Y/sqrt(weights)
-		Xfs <- Xf/sqrt(weights)
-		lmf <- lm(Ys~Xfs,weights = weights)
 		sigmaVal <- sum(deviance(lmf)/df.residual(lmf))/nY
 	}
 	if(select=="CP" & sigmaVal == 0){

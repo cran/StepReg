@@ -131,13 +131,16 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
     }
     Xf <- Xf1
   }
+  
   # get sigma for BIC and CP
-  if(ncol(Xf)>nObs){
+  #qr(Xf)$rank not no. of Xf # modified by junhuili @20191225
+  #lmf$rank = qr(Xf)$rank + 1(intercept) ## modified by junhuili @20191227
+  Ys <- Y/sqrt(weights)
+  Xfs <- Xf/sqrt(weights)
+  lmf <- lm(Ys~Xfs,weights = weights)
+  if(lmf$rank >= nObs){
     sigmaVal <- 0
-  }else{
-    Ys <- Y/sqrt(weights)
-    Xfs <- Xf/sqrt(weights)
-    lmf <- lm(Ys~Xfs,weights = weights)
+  }else{ 
     sigmaVal <- sum(deviance(lmf)/df.residual(lmf))/nY
   }
   if(is.null(Choose)){
@@ -391,30 +394,70 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
       }
     }#valid
   }#while
-  
   varName <- array(FALSE, slcOpt$serial)
-  varName[1:(slcOpt$serial)] <- c('intercept',XName[slcOpt$bestPoint[1:slcOpt$serial]])
-  if(!is.null(Choose)){
-    process <- data.frame(Step = 0:(slcOpt$serial-1), VarName = varName, EnterModel = slcOpt$enOrRe[1:slcOpt$serial],
-                          VarPosition = slcOpt$bestPoint[1:slcOpt$serial], VarNumber = slcOpt$nVarIn, Select = slcOpt$bestValue, Choose = chsOpt$bestValue)
+  fname <- if(selection=="backward") c('') else c('intercept')
+  varName[1:(slcOpt$serial)] <- c(fname,XName[slcOpt$bestPoint[1:slcOpt$serial]])
+  if(selection=="backward"){
+    qrXf <- qr(as.matrix(tmpX))
+    if(ncol(tmpX)>qrXf$rank){
+      dupVarName <- c("",XName[sort(qrXf$pivot[(1+qrXf$rank):ncol(tmpX)],decreasing = TRUE)-1])
+    }else{
+      dupVarName <- NULL
+    }
+    if(length(dupVarName)>1){
+      process <- data.frame(Step=rep(0,length(dupVarName)),EffectRemoved=dupVarName,
+                            EffectNumber=ncol(tmpX):qrXf$rank,Select = slcOpt$bestValue[1])
+      if(!is.null(Choose)){
+        ChooseVal <- c(rep(chsOpt$bestValue[1],length(dupVarName)),chsOpt$bestValue[-1])
+      }
+    }else{
+      process <- data.frame(Step=0,EffectRemoved=varName[1],
+                            EffectNumber=ncol(tmpX),Select = slcOpt$bestValue[1])
+      if(!is.null(Choose)){
+        ChooseVal <- chsOpt$bestValue
+      }
+    }
+    if(length(slcOpt$nVarIn)>1){
+      process <- rbind(process,data.frame(Step = 1:(slcOpt$serial-1), EffectRemoved = varName[-1], 
+                                          EffectNumber = slcOpt$nVarIn[-1], Select = slcOpt$bestValue[-1]))
+    }
+  }else if(selection=="forward"){
+    process <- data.frame(Step = 0:(slcOpt$serial-1), EffectEntered = varName, EffectNumber = slcOpt$nVarIn, Select = slcOpt$bestValue)
   }else{
-    process <- data.frame(Step = 0:(slcOpt$serial-1), VarName = varName, EnterModel = slcOpt$enOrRe[1:slcOpt$serial],
-                          VarPosition = slcOpt$bestPoint[1:slcOpt$serial], VarNumber = slcOpt$nVarIn, Select = slcOpt$bestValue)
+    PosE <- which(slcOpt$enOrRe[1:slcOpt$serial] %in% TRUE)
+    PosR <- which(slcOpt$enOrRe[1:slcOpt$serial] %in% FALSE)
+    varE <- slcOpt$enOrRe[1:slcOpt$serial]
+    VarR <- slcOpt$enOrRe[1:slcOpt$serial]
+    varE[PosR] <- ""
+    varE[PosE] <- c(varName[PosE])
+    VarR[PosR] <- c(varName[PosR])
+    VarR[PosE] <- ""
+    process <- data.frame(Step = 0:(slcOpt$serial-1), EffectEntered = varE, EffectRemoved = VarR,
+                            EffectNumber = slcOpt$nVarIn, Select = slcOpt$bestValue)
   }
   if(!is.null(Choose)){
-    if(Choose=="Rsq" | Choose=="adjRsq"){
-      optN <- which.max(process[(length(includename)+1):nrow(process),"Choose"])
-    }else{
-      optN <- which.min(process[(length(includename)+1):nrow(process),"Choose"])
+    if(selection != "backward"){
+      ChooseVal <- chsOpt$bestValue
     }
+    process <- data.frame(process,Choose = ChooseVal)
+    
+    if(Choose=="Rsq" | Choose=="adjRsq"){
+      optVal <- max(process[(length(includename)+1):nrow(process),"Choose"])
+    }else{
+      optVal <- min(process[(length(includename)+1):nrow(process),"Choose"])
+    }
+    optNset <- which(process[(length(includename)+1):nrow(process),"Choose"] %in% optVal)
+    optN <- optNset[length(optNset)]
     sleres <- process[1:(length(includename)+optN),]
   }else{
     sleres <- process
   }
-  resVar <- sleres[,2]
+  resVar <- as.character(sleres[,2])
   if(selection=="backward"){
     resVar <- c("intercept",XName[!XName %in% resVar])
   }else if(selection=="bidirection"){
+    emtpy <- which(resVar %in% "")
+    resVar[emtpy] <- as.character(sleres[emtpy,c(3)])
     Xtab <- table(resVar)
     dupresVar <- resVar[!resVar %in% names(Xtab)[Xtab%%2 == 0]]
     resVar <- rev(unique(rev(dupresVar)))
