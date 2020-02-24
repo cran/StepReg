@@ -433,22 +433,31 @@ stepwise <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep(1
     VarR[PosR] <- c(varName[PosR])
     VarR[PosE] <- ""
     process <- data.frame(Step = 0:(slcOpt$serial-1), EffectEntered = varE, EffectRemoved = VarR,
-                            EffectNumber = slcOpt$nVarIn, Select = slcOpt$bestValue)
+                          EffectNumber = slcOpt$nVarIn, Select = slcOpt$bestValue)
   }
   if(!is.null(Choose)){
     if(selection != "backward"){
-      ChooseVal <- chsOpt$bestValue
+      ChooseVal <- chsOpt$bestValue 
     }
     process <- data.frame(process,Choose = ChooseVal)
+    ChooseSet <- process[(length(includename)+1):nrow(process),"Choose"]
+    ChooseSet1 <- ChooseSet[-length(ChooseSet)]
+    ChooseSet2 <- ChooseSet[-1]
     
     if(Choose=="Rsq" | Choose=="adjRsq"){
-      optVal <- max(process[(length(includename)+1):nrow(process),"Choose"])
+      if(all(ChooseSet1 < ChooseSet2)==TRUE){
+        optVal <- length(ChooseSet)
+      }else{
+        optVal <- min(which(c(ChooseSet1 < ChooseSet2) == FALSE))
+      }
     }else{
-      optVal <- min(process[(length(includename)+1):nrow(process),"Choose"])
+      if(all(ChooseSet1 > ChooseSet2)==TRUE){
+        optVal <- length(ChooseSet)
+      }else{
+        optVal <- min(which(c(ChooseSet1 < ChooseSet2) == TRUE))
+      }
     }
-    optNset <- which(process[(length(includename)+1):nrow(process),"Choose"] %in% optVal)
-    optN <- optNset[length(optNset)]
-    sleres <- process[1:(length(includename)+optN),]
+    sleres <- process[1:(length(includename)+optVal),]
   }else{
     sleres <- process
   }

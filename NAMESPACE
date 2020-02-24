@@ -1,5 +1,7 @@
 useDynLib(StepReg, .registration=TRUE)
 importFrom(Rcpp, evalCpp)
-importFrom("stats", "deviance", "df.residual", "lm", "pf")
+importFrom("stats", "deviance", "df.residual", "lm", "pf", "coef", "fitted", "glm", "pchisq")
 importFrom("utils", "combn")
+importFrom("statmod", "glm.scoretest")
+importFrom("ResourceSelection", "hoslem.test")
 exportPattern("^[[:alpha:]]+")

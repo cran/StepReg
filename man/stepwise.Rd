@@ -1,10 +1,10 @@
 \name{stepwise}
 \alias{stepwise}
 \title{
-	Stepwise Regression
+  Stepwise Regression
 }
 \description{
-	'stepwise' function is used to do univariate and multivariate stepwise regression analysis and it includes 'forward', 'backward' and 'bidirection' direction model selection method. Continuous variables nested within class effect and weighted stepwise  are also considered. Besides, some common information criteria can be specified.
+  Stepwise regression analysis can be performed  with univariate and multivariate based on information criteria specified, which includes 'forward', 'backward' and 'bidirection' direction model selection method. Also continuous variables nested within class effect and weighted stepwise are considered.
 }
 \usage{
 stepwise(data, y, exclude, include, Class, weights, selection,
