@@ -12,8 +12,8 @@
 \tabular{ll}{
 Package: \tab StepReg\cr
 Type: \tab Package\cr
-Version: \tab 1.4.0\cr
-Date: \tab 2020-2-22\cr
+Version: \tab 1.4.1\cr
+Date: \tab 2020-3-23\cr
 License: \tab GPL (>= 2)\cr
 }
 }
@@ -43,6 +43,8 @@ Hurvich, C. M., & Tsai, C. (1989). Regression and time series model selection in
 
 Judge, & GeorgeG. (1985). The Theory and practice of econometrics /-2nd ed. The Theory and practice of econometrics /. Wiley.
 
+Lovison, G. . (2005). On rao score and pearson x2 statistics in generalized linear models. Statistical Papers, 46(4), 555-574.
+
 Mallows, C. L. (1973). Some comments on cp. Technometrics, 15(4), 661-676.
 
 Mardia, K. V., Kent, J. T., & Bibby, J. M. (1979). Multivariate analysis. Mathematical Gazette, 37(1), 123-131.
@@ -53,10 +55,14 @@ Mcquarrie, A. D. R., & Tsai, C. L. (1998). Regression and Time Series Model Sele
 
 Pillai, K. C. S. (2006). Pillai's Trace. Encyclopedia of Statistical Sciences. John Wiley & Sons, Inc.
 
+Robert Gilchrist. (1982). Glim 82: proceedings of the international conference on generalised linear models. Lecture Notes in Statistics, 14(9), 3008-11.
+
 R.S. Sparks, W. Zucchini, & D. Coutsourides. (1985). On variable selection in multivariate regression. Communication in Statistics- Theory and Methods, 14(7), 1569-1587.
 
 Sawa, T. (1978). Information criteria for discriminating among alternative regression models. Econometrica, 46(6), 1273-1291.
 
 Schwarz, G. (1978). Estimating the dimension of a model. Annals of Statistics, 6(2), pags. 15-18.
+
+Smyth, G. K. . (2003). Pearson's goodness of fit statistic as a score test statistic. Lecture Notes-Monograph Series, 40, 115-126.
 }
 \keyword{ package }

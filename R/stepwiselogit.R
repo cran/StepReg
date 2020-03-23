@@ -1,5 +1,5 @@
 stepwiselogit <-
-function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sle=0.15,sls=0.15,goft=TRUE){
+function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sle=0.15,sls=0.15){
   if(!selection %in% c("forward","backward","bidirection","score")){
     stop("selection should be one of 'forward','backward','bidirection','score'.")
   }
@@ -144,9 +144,9 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
         k <- fit$rank
         if(select=="SL"){
           threshold <- sle
-          z <- glm.scoretest(fit,as.matrix(data[Xresidual]))
-          stv <- z^2
-          PIC <- pchisq(stv, df=1, lower.tail=FALSE)
+		  stlist <- scoretest(fit,as.matrix(data[Xresidual]))
+		  stv <- stlist$score
+          PIC <- stlist$pvalue
         }else{
           threshold <- fit$aic
           PIC <- NULL
@@ -283,12 +283,6 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
     result <- list()
     result$SummaryOfSelection <- SoSset
     result$AnalysisOfMaximumLikelihoodEstimate <- MLE
-    if(goft==TRUE){
-      observedData <- as.numeric(data[,Yname])
-      fittedData <- fitted(fitmodel)
-      htest <- hoslem.test(observedData,fittedData)
-      result$GoodnessOfTest <- htest
-    }
   }
   return(result)
 }

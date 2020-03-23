@@ -1,10 +1,10 @@
 \name{ModelFitStat}
 \alias{ModelFitStat}
 \title{
-	calculate model fit statistics
+Compute model fit statistics
 }
 \description{
-	calculate model fit statistics adjRsq, AIC, AICc, BIC, CP, HQ, HQc, Rsq and SBC 
+Compute model fit statistics adjRsq, AIC, AICc, BIC, CP, HQ, HQc, Rsq and SBC 
 }
 \usage{
 ModelFitStat(Stattype,SSE,SST,n,nY,p,sigmaVal)

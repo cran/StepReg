@@ -8,7 +8,7 @@
 }
 \usage{
   stepwiselogit(data, y, exclude = NULL, include = NULL, selection = "bidirection",
-  select = "SL", sle = 0.15, sls = 0.15, goft = TRUE)
+  select = "SL", sle = 0.15, sls = 0.15)
 }
 \arguments{
   \item{data}{
@@ -34,9 +34,6 @@
 }
   \item{sls}{
   Specifies the significance level for staying in the model, default is 0.15
-}
-  \item{goft}{
-  performs the Hosmer and Lemeshow goodness-of-fit test for the case of a binary response model
 }
 }
 \value{

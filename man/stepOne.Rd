@@ -1,61 +1,61 @@
 \name{stepOne}
 \alias{stepOne}
 \title{
-	Optimized residual models
+Choose the best model in one step
 }
 \description{
-	Get the optimized residual models statistics with forward or backward direction in only one step
+Choose the best model with minimal information criteria statistics in forward selection or maximal ones in backward elimination
 }
 \usage{
-	stepOne(findIn, p, n, sigma, tolerance, Ftrace, criteria, Y,X1, X0, k, SST)
+stepOne(findIn, p, n, sigma, tolerance, Ftrace, criteria, Y,X1, X0, k, SST)
 }
 
 \arguments{
   \item{findIn}{
-	Logical value, if FALSE then add independent variable to regression model, otherwise remove independent variable from regression model
+  Logical value, if FALSE then add independent variable to regression model, otherwise remove independent variable from regression model
 }
   \item{p}{
-	The number of independent variable entered in regression
+  The number of independent variable entered in regression
 }
   \item{n}{
-	The sample size
+  The sample size
 }
   \item{sigma}{
-	Pure error variance from full regressoin model for Bayesian information criterion(BIC)
+  Pure error variance from full regressoin model for Bayesian information criterion(BIC)
 }
   \item{tolerance}{
-	Tolerance value for multicollinearity
+  Tolerance value for multicollinearity
 }
   \item{Ftrace}{
-	Statistic of multivariate regression including Wilks` lambda, Pillai trace and Hotelling-lawley trace
+  Statistic of multivariate regression including Wilks` lambda, Pillai trace and Hotelling-lawley trace
 }
   \item{criteria}{
-	Information criterion including AIC, AICc, BIC, SBC, HQ, HQc and SL
+  Information criterion including AIC, AICc, BIC, SBC, HQ, HQc and SL
 }
   \item{Y}{
-	Data set for dependent variable
+  Data set for dependent variable
 }
   \item{X1}{
-	Data set for independent variables not in regression model
+  Data set for independent variables not in regression model
 }
   \item{X0}{
-	Data set for independent variables entered in regression model
+  Data set for independent variables entered in regression model
 }
   \item{k}{
-	Forces the first k effects entered in regression model, and the selection methods are performed on the other effects in the data set
+  Forces the first k effects entered in regression model, and the selection methods are performed on the other effects in the data set
 }
   \item{SST}{
-	Total sum of squares corrected for the mean for the dependent variable
+  Total sum of squares corrected for the mean for the dependent variable
 }
 }
 \details{
-	This function can compute probability value or information criteria statistics with multivariate and univariate regression using least square method
+  This function can compute probability value or information criteria statistics with multivariate and univariate regression using least square method
 }
 \value{
-	\item{PIC }{P value or Information Criteria statistic value}
-	\item{SEQ }{Pointer for independent variable enter or eliminate }
-	\item{SSE }{Maximum or minimum of SSE }
-	\item{RkCh }{Rank changed or not }
+  \item{PIC }{P value or Information Criteria statistic value}
+  \item{SEQ }{Pointer for independent variable enter or eliminate }
+  \item{SSE }{Maximum or minimum of SSE }
+  \item{RkCh }{Rank changed or not }
 }
 \references{
 Alsubaihi, A. A., Leeuw, J. D., and Zeileis, A. (2002). Variable selection in multivariable regression using sas/iml. , 07(i12).
@@ -85,6 +85,6 @@ Sawa, T. (1978). Information criteria for discriminating among alternative regre
 Schwarz, G. (1978). Estimating the dimension of a model. Annals of Statistics, 6(2), pags. 15-18.
 }
 \author{
-	Junhui Li
+  Junhui Li
 }
 \keyword{stepwise regression}
