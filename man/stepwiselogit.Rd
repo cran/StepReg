@@ -15,10 +15,10 @@
   Data set including dependent and independent variables to be analyzed
 }
   \item{y}{
-  Numeric or character vector for dependent variables
+  A character or numeric vector indicating the subset of dependent variables
 }
   \item{exclude}{
-  Numeric or character vector for independent variables removed from stepwise regression analysis
+  A character or numeric vector indicating the subset of independent variables removed from logstic stepwise regression analysis
 }
   \item{include}{
   Forces the effects vector listed in the data to be included in all models. The selection methods are performed on the other effects in the data set

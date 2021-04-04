@@ -13,13 +13,13 @@ weights = c(rep(1, nrow(data))),select = "SBC", tolerance = 1e-07, best = 5)
 
 \arguments{
   \item{data}{
- Data set including dependent and independent variables to be analyzed
+  Data set including dependent and independent variables to be analyzed
 }
   \item{y}{
-  Numeric or character vector for dependent variables
+  A character or numeric vector indicating the subset of dependent variables
 }
   \item{exclude}{
-  Numeric or character vector for independent variables removed from stepwise regression analysis
+  A character or numeric vector indicating the subset of independent variables removed from datasets
 }
   \item{include}{
   Forces the effects vector listed in the data to be included in all models. The selection methods are performed on the other effects in the data set
@@ -28,16 +28,16 @@ weights = c(rep(1, nrow(data))),select = "SBC", tolerance = 1e-07, best = 5)
   Class effect variable
 }
   \item{weights}{
- The weights names numeric vector to provide a weight for each observation in the input data set. And note that weights should be ranged from 0 to 1, while negative numbers are forcibly converted to 0, and numbers greater than 1 are forcibly converted to 1. If you do not specify a weight vector, each observation has a default weight of 1.
+  The weights names numeric vector to provide a weight for each observation in the input data set. And note that weights should be ranged from 0 to 1, while negative numbers are forcibly converted to 0, and numbers greater than 1 are forcibly converted to 1. If you do not specify a weight vector, each observation has a default weight of 1.
 }
   \item{select}{
-Specifies the criterion that uses to calculate all models including Akaike Information Criterion(AIC), the Corrected form of Akaike Information Criterion(AICc),Bayesian Information Criterion(BIC),Schwarz criterion(SBC),Hannan and Quinn Information Criterion(HQ), R-square statistic(Rsq), adjusted R-square statistic(adjRsq) and Mallows Cp statistic(CP)
+  Specifies the criterion that uses to calculate all models including Akaike Information Criterion(AIC), the Corrected form of Akaike Information Criterion(AICc),Bayesian Information Criterion(BIC),Schwarz criterion(SBC),Hannan and Quinn Information Criterion(HQ), R-square statistic(Rsq), adjusted R-square statistic(adjRsq) and Mallows Cp statistic(CP)
 }
   \item{tolerance}{
-Tolerance value for multicollinearity, default is 1e-7 
+  Tolerance value for multicollinearity, default is 1e-7 
 }
   \item{best}{
-Controls the number of models displayed in the output, default is 5
+  Controls the number of models displayed in the output, default is 5
 }
 }
 \references{

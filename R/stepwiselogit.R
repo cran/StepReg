@@ -1,5 +1,4 @@
-stepwiselogit <-
-function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sle=0.15,sls=0.15){
+stepwiselogit <- function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sle=0.15,sls=0.15){
   if(!selection %in% c("forward","backward","bidirection","score")){
     stop("selection should be one of 'forward','backward','bidirection','score'.")
   }
@@ -64,6 +63,17 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
   }
   ## x set name
   Xname <- nameset[!nameset %in% c(Yname,excludename,includename)]
+  ## convert x dataset to numeric
+  Xdataset <- data[,c(Xname,includename)]
+  if(!all(sapply(Xdataset, class)=="numeric")){
+    n <- which(sapply(Xdataset, class)!="numeric")
+    for(i in n){
+      Xdataset[,i] <- as.numeric(Xdataset[,i])
+    }
+  }
+  YXdata <- cbind(data[,Yname],Xdataset)
+  colnames(YXdata)[1:length(Yname)] <- Yname
+  
   result <- list()
   if(selection=="score"){ #score
     bestSubSet <- NULL
@@ -71,7 +81,7 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
     colnames(subSet) <- c("NumberofVariables",select,"VariablesIncludedinModel")
     if(length(includename)!=0){
       fm <- paste(Yname,"~",paste0(includename,collapse = "+"),sep="")
-      fit <- glm(fm,data,family="binomial")
+      fit <- glm(fm,YXdata,family="binomial")
       PIC <- fit$aic
       k <- fit$rank
       if(select=="IC(1)"){
@@ -79,9 +89,9 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
       }else if(select=="IC(3/2)"){
         PIC <- PIC-0.5*k
       }else if(select=="SBC"){
-        PIC <- PIC+(log(nrow(data))-2)*k
+        PIC <- PIC+(log(nrow(YXdata))-2)*k
       }else if(select=="AICc"){
-        PIC <- PIC+2*k*(k+1)/(nrow(data)-k-1)
+        PIC <- PIC+2*k*(k+1)/(nrow(YXdata)-k-1)
       }
       subSet[1,1] <- fit$rank
       subSet[1,2] <- PIC
@@ -94,7 +104,7 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
       for(ncom in 1:ncol(comTable)){
         comVar <- c(includename,Xname[comTable[,ncom]])
         fm <- paste(Yname,"~",paste0(comVar,collapse = "+"),sep="")
-        fit <- glm(fm,data,family="binomial")
+        fit <- glm(fm,YXdata,family="binomial")
         PIC <- fit$aic
         k <- fit$rank
         if(select=="IC(1)"){
@@ -102,9 +112,9 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
         }else if(select=="IC(3/2)"){
           PIC <- PIC-0.5*k
         }else if(select=="SBC"){
-          PIC <- PIC+(log(nrow(data))-2)*k
+          PIC <- PIC+(log(nrow(YXdata))-2)*k
         }else if(select=="AICc"){
-          PIC <- PIC+2*k*(k+1)/(nrow(data)-k-1)
+          PIC <- PIC+2*k*(k+1)/(nrow(YXdata)-k-1)
         }
         subSet[1,1] <- fit$rank
         subSet[1,2] <- round(PIC,4)
@@ -112,7 +122,7 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
         bestSubSet <- rbind(bestSubSet,subSet)
       }
     }
-	result$RegressionModelsSelectedbyInformationCriterion <- bestSubSet
+    result$RegressionModelsSelectedbyInformationCriterion <- bestSubSet
   }else{ #forward # bidirection # backward
     if(selection=="backward"){
       addVar <- FALSE
@@ -140,12 +150,12 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
         FITi <- NULL
         comVar <- c(1,includename,Xmodel)
         fm <- paste(Yname,"~",paste0(comVar,collapse = "+"),sep="")
-        fit <- glm(fm,data,family="binomial")
+        fit <- glm(fm,YXdata,family="binomial")
         k <- fit$rank
         if(select=="SL"){
           threshold <- sle
-		  stlist <- scoretest(fit,as.matrix(data[Xresidual]))
-		  stv <- stlist$score
+          stlist <- scoretest(fit,as.matrix(YXdata[Xresidual]))
+          stv <- stlist$score
           PIC <- stlist$pvalue
         }else{
           threshold <- fit$aic
@@ -153,7 +163,7 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
           for(i in Xresidual){
             #i="cell"
             fmFwd <- paste(Yname,"~",paste0(c(comVar,i),collapse = "+"),sep="")
-            fit <- glm(fmFwd,data,family="binomial")
+            fit <- glm(fmFwd,YXdata,family="binomial")
             PIC <- append(PIC,fit$aic)
           }
           names(PIC) <- Xresidual
@@ -164,11 +174,11 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
             PIC <- PIC-0.5*fit$rank
             threshold <- threshold-0.5*k
           }else if(select=="SBC"){
-            PIC <- PIC+(log(nrow(data))-2)*fit$rank
-            threshold <- threshold+(log(nrow(data))-2)*k
+            PIC <- PIC+(log(nrow(YXdata))-2)*fit$rank
+            threshold <- threshold+(log(nrow(YXdata))-2)*k
           }else if(select=="AICc"){
-            PIC <- PIC+2*fit$rank*(fit$rank+1)/(nrow(data)-fit$rank-1)
-            threshold <- threshold+2*k*(k+1)/(nrow(data)-k-1)
+            PIC <- PIC+2*fit$rank*(fit$rank+1)/(nrow(YXdata)-fit$rank-1)
+            threshold <- threshold+2*k*(k+1)/(nrow(YXdata)-k-1)
           }
         }
         mPIC <- min(PIC)
@@ -191,7 +201,7 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
       }else{
         comVar <- c(1,includename,Xmodel)
         fm <- paste(Yname,"~",paste0(comVar,collapse = "+"),sep="")
-        fit <- glm(fm,data,family="binomial")
+        fit <- glm(fm,YXdata,family="binomial")
         k <- fit$rank
         if(select=="SL"){
           threshold <- sls
@@ -215,7 +225,7 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
           for(i in Xmodel){
             comVarBwd <- Xmodel[!Xmodel %in% i]
             fmBwd <- paste(Yname,"~1",plus,paste0(comVarBwd,collapse = "+"),sep="")
-            fit <- glm(fmBwd,data,family="binomial")
+            fit <- glm(fmBwd,YXdata,family="binomial")
             PIC <- append(PIC,fit$aic)
           }
           names(PIC) <- Xmodel
@@ -226,8 +236,8 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
             PIC <- PIC-0.5*fit$rank
             threshold <- threshold-0.5*k
           }else if(select=="SBC"){
-            PIC <- PIC+(log(nrow(data))-2)*fit$rank
-            threshold <- threshold+(log(nrow(data))-2)*k
+            PIC <- PIC+(log(nrow(YXdata))-2)*fit$rank
+            threshold <- threshold+(log(nrow(YXdata))-2)*k
           }
           mPIC <- min(PIC)
           mP <- which.min(PIC)
@@ -243,7 +253,7 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
           Xmodel <- Xmodel[-mP]
           nStep <- nStep+1
           if(select=="SL"){
-            SoS[1,] <- c(nStep,"",minmaxVar,1,length(c(Xmodel,includename)),"",round(FITi[mP,3:4],4)) 
+            SoS[1,] <- c(nStep,"",minmaxVar,1,length(c(Xmodel,includename)),"",round(FITi[mP+1,3:4],4)) 
           }else{
             SoS[1,] <- c(nStep,"",minmaxVar,1,length(c(Xmodel,includename)),round(mPIC,4))
           }
@@ -275,7 +285,7 @@ function(data,y,exclude=NULL,include=NULL,selection="bidirection",select="SL",sl
     SoSset <- as.data.frame(SoSset)
     #Analysis of Maximum Likelihood Estimate
     fmodel <- paste(Yname,"~",paste0(c(includename,Xmodel),collapse = "+"),sep="")
-    fitmodel <- glm(fmodel,data,family="binomial")
+    fitmodel <- glm(fmodel,YXdata,family="binomial")
     MLE <- round(coef(summary(fitmodel)),4)
     MLE <- cbind(rownames(MLE),MLE)
     colnames(MLE)[1] <- c("Parameter")

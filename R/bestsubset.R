@@ -146,6 +146,8 @@ bestsubset <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep
 		whichin <- which(XNameMC %in% includename)
 		if(NoClass>1){
 			whichin <- sort(c(whichin*2,whichin*2+1))
+		}else{
+			whichin <- whichin + 1
 		}
 		lmresult <- lm(Y~wgtData[,c(1,whichin)]-1)
 		lmresd <- as.matrix(lmresult$residuals)
@@ -163,6 +165,8 @@ bestsubset <- function(data,y,exclude=NULL,include=NULL,Class=NULL,weights=c(rep
 			whichin <- which(XNameMC %in% comVar)
 			if(NoClass>1){
 				whichin <- sort(c(whichin*2,whichin*2+1))
+			}else{
+				whichin <- whichin + 1
 			}
 			lmresult <- lm(Y~wgtData[,c(1,whichin)]-1)
 			lmresd <- as.matrix(lmresult$residuals)

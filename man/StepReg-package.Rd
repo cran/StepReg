@@ -12,8 +12,8 @@
 \tabular{ll}{
 Package: \tab StepReg\cr
 Type: \tab Package\cr
-Version: \tab 1.4.1\cr
-Date: \tab 2020-3-23\cr
+Version: \tab 1.4.2\cr
+Date: \tab 2021-04-04\cr
 License: \tab GPL (>= 2)\cr
 }
 }
