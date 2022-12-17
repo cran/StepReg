@@ -47,14 +47,8 @@ mtcars$yes <- mtcars$wt
 formula <- cbind(mpg,drat) ~ . + 0
 stepwise(formula=formula,
          data=mtcars,
-         include=NULL,
          selection="bidirection",
-         select="AIC",
-         sle=0.15,
-         sls=0.15,
-         multivarStat="Pillai",
-         weights=NULL,
-         best=NULL)
+         select="AIC")
 }
 \references{
 Alsubaihi, A. A., Leeuw, J. D., and Zeileis, A. (2002). Variable selection in multivariable regression using sas/iml. , 07(i12).

@@ -48,7 +48,8 @@
 #' modelFitStat("AIC",fit,"LeastSquare")
 #' 
 #' @author Junhui Li 
-#' @export modelFitStat
+#' 
+#' @export
 
 modelFitStat <- function(ic,fit,method=c("LeastSquare","Likelihood"),cox=FALSE){
   method <- match.arg(method)

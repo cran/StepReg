@@ -46,18 +46,13 @@ lung <- survival::lung
 my.data <- na.omit(lung)
 my.data$status1 <- ifelse(my.data$status==2,1,0)
 data <- my.data
-formula = Surv(time, status1) ~ . - status
+formula = Surv(time, status1) ~ . - status 
 
-stepwiseCox(formula,
-data,
-include=NULL,
-selection=c("bidirection"),
+stepwiseCox(formula=formula,
+data=my.data,
+selection="bidirection",
 select="HQ",
-method=c("efron"),
-sle=0.15,
-sls=0.15,
-weights=NULL,
-best=NULL)
+method="efron")
 
 }
 \references{

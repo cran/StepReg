@@ -2,7 +2,7 @@
 #' 
 #' Stepwise linear regression analysis selects model based on information criteria and F or approximate F test with 'forward', 'backward', 'bidirection' and 'score' model selection method.
 #' 
-#' @param formula Model formulae. The models fitted by the lm functions are specified in a compact symbolic form. The basic structure of a formula is the tilde symbol (~) and at least one independent (righthand) variable. In most (but not all) situations, a single dependent (lefthand) variable is also needed. Thus we can construct a formula quite simple formula (y ~ x). Multiple independent variables by simply separating them with the plus (+) symbol (y ~ x1 + x2). Variables in the formula are removed with a minus(-) symbol (y ~ x1 - x2). One particularly useful feature is the . operator when modelling with lots of variables (y ~ .). The %in% operator indicates that the terms on its left are nested within those on the right. For example y ~ x1 + x2 %in% x1 expands to the formula y ~ x1 + x1:x2. A model with no intercept can be specified as y ~ x - 1 or y ~ x + 0 or y ~ 0 + x. Multivariate multiple regression can be specified as cbind(y1,y2) ~ x1 + x2.
+#' @param formula Model formulae. The models fitted by the lm functions are specified in a compact symbolic form. The basic structure of a formula is the tilde symbol (~) and at least one independent (righthand) variable. In most (but not all) situations, a single dependent (lefthand) variable is also needed. Thus we can construct a formula quite simple formula (y ~ x). Multiple independent variables by simply separating them with the plus (+) symbol (y ~ x1 + x2). Variables in the formula are removed with a minus(-) symbol (y ~ x1 - x2). One particularly useful feature is the . operator when modelling with lots of variables (y ~ .). The \%in\% operator indicates that the terms on its left are nested within those on the right. For example y ~ x1 + x2 \%in\% x1 expands to the formula y ~ x1 + x1:x2. A model with no intercept can be specified as y ~ x - 1 or y ~ x + 0 or y ~ 0 + x. Multivariate multiple regression can be specified as cbind(y1,y2) ~ x1 + x2.
 #'
 #' @param data Data set including dependent and independent variables to be analyzed
 #'
@@ -64,21 +64,16 @@
 #' formula <- cbind(mpg,drat) ~ . + 0
 #' stepwise(formula=formula,
 #'          data=mtcars,
-#'          include=NULL,
 #'          selection="bidirection",
-#'          select="AIC",
-#'          sle=0.15,
-#'          sls=0.15,
-#'          multivarStat="Pillai",
-#'          weights=NULL,
-#'          best=NULL)
+#'          select="AIC")
 #' @keywords stepwise regression
 #' 
 #' @importFrom utils combn
 #' 
 #' @importFrom stats anova coef glm lm logLik pf reformulate sigma terms
 #' 
-#' @export stepwise
+#' @export
+#' 
 stepwise <- function(formula,
                      data,
                      include=NULL,
@@ -97,20 +92,17 @@ stepwise <- function(formula,
     stop("select = 'SL' is not allowed when specifing selection = 'score'")
   }
   ## extract response, independent variable and intercept
-  if(class(formula)!="formula"){
-    stop("class of formula object isn't 'formula'")
+  stopifnot(inherits(formula, "formula"))
+  termForm <- terms(formula,data=data)
+  #yName <- rownames(attr(termForm,"factors"))[1]
+  #yName <- all.vars(formula)[1]
+  vars <- as.character(attr(termForm, "variables"))[-1]
+  yName <- vars[attr(termForm, "response")]
+  xName <- attr(termForm,"term.labels")
+  if(attr(termForm, "intercept")==0){
+    intercept <- "0"
   }else{
-    termForm <- terms(formula,data=data)
-    #yName <- rownames(attr(termForm,"factors"))[1]
-    #yName <- all.vars(formula)[1]
-    vars <- as.character(attr(termForm, "variables"))[-1]
-    yName <- vars[attr(termForm, "response")]
-    xName <- attr(termForm,"term.labels")
-    if(attr(termForm, "intercept")==0){
-      intercept <- "0"
-    }else{
-      intercept <- "1"
-    }
+    intercept <- "1"
   }
   if(is.character(include)){
     if(!all(include %in% xName)){
@@ -142,7 +134,6 @@ stepwise <- function(formula,
   for(i in names(table(allVarClass))){
     classTable[names(table(allVarClass)) %in% i,2] <- paste0(names(allVarClass[allVarClass %in% i]),collapse=" ")
   }
-  classTable$class <- paste0(classTable$class,":")
   ## detect multicollinearity
   if(any(allVarClass=="factor")){
     factVar <- names(which(allVarClass=="factor"))
@@ -181,16 +172,16 @@ stepwise <- function(formula,
   ModInf <- matrix(NA,9,1)
   ModInf <- cbind(ModInf,matrix(c(yName,mergeIncName,selection,select,sle,sle,approxF,mulcolMergeName,intercept),9,1))
   ModInf <- data.frame(ModInf)
-  colnames(ModInf) <- c("","")
-  ModInf[,1] <- c("Response Variable = ",
-                  "Included Variable = ",
-                  "Selection Method = ",
-                  "Select Criterion = ",
-                  "Entry Significance Level(sle) = ",
-                  "Stay Significance Level(sls) = ",
-                  "Variable significance test = ",
-                  "Multicollinearity Terms = ",
-                  "Intercept = ")
+  colnames(ModInf) <- c("Paramters","Value")
+  ModInf[,1] <- c("Response Variable",
+                  "Included Variable",
+                  "Selection Method",
+                  "Select Criterion",
+                  "Entry Significance Level(sle)",
+                  "Stay Significance Level(sls)",
+                  "Variable significance test",
+                  "Multicollinearity Terms",
+                  "Intercept")
   if(select=="SL"){
     if(selection=="forward"){
       ModInf <- ModInf[-6,]
@@ -203,8 +194,8 @@ stepwise <- function(formula,
     ModInf <- ModInf[-c(5:6),]
   }
   rownames(ModInf) <- 1:nrow(ModInf)
-  result$'Basic Information' <- ModInf
-  result$'Variable Class' <- classTable
+  result$'Summary of Parameters' <- ModInf
+  result$'Variables Type' <- classTable
   if(selection=="score"){
     ## best subset model selection
     tempresult <- matrix(NA,1,4)
@@ -249,7 +240,12 @@ stepwise <- function(formula,
     }
     finalResult <- finalResult[-1,]
     rownames(finalResult) <- 1:nrow(finalResult)
-    result$Process <- finalResult
+    result$'Process of Selection' <- finalResult
+    if(select=="Rsq" | select=="adjRsq"){
+      xModel <- unlist(strsplit(finalResult[which.max(as.numeric(finalResult[,3])),4]," "))
+    }else{
+      xModel <- unlist(strsplit(finalResult[which.min(as.numeric(finalResult[,3])),4]," "))
+    }
   }else{
     subBestPoint <- data.frame(Step=numeric(),
                                EnteredEffect=character(),
@@ -417,32 +413,34 @@ stepwise <- function(formula,
         }
       }
     }#while
-    if(is.null(xModel)){
-      parEst <- NULL
-    }else{
-      parEst <- summary(lm(reformulate(xModel,yName),data=weightData))
-      parEstList <- list()
-      if(nY>1){
-        for(i in names(parEst)){
-          parEstList[i] <- list(parEst[[i]]$coefficients)
-        }
-      }else{
-        parEstList <- list(parEst$coefficients)
-        names(parEstList) <- yName
-      }
-    }
     bestPoint$DF <- abs(as.numeric(bestPoint$DF))
     bestPoint$DF[is.na(bestPoint$DF)] <- ""
-    result$Process <- bestPoint
-    result$Varaibles <- xModel
-    result$Coefficients <- parEstList
+    result$'Process of Selection' <- bestPoint
   }
+  if(is.null(xModel)){
+    parEst <- NULL
+  }else{
+    parEst <- summary(lm(reformulate(xModel,yName),data=weightData))
+    parEstList <- list()
+    if(nY>1){
+      for(i in names(parEst)){
+        subParEst <- parEst[[i]]$coefficients
+        subParEst <- data.frame(rownames(subParEst),subParEst)
+        colnames(subParEst) <- c("Variable","Estimate","StdError","t.value","P.value")
+        parEstList[i] <- list(subParEst)
+      }
+    }else{
+      subParEst <- parEst$coefficients
+      subParEst <- data.frame(rownames(subParEst),subParEst)
+      colnames(subParEst) <- c("Variable","Estimate","StdError","t.value","P.value")
+      parEstList <- list(subParEst)
+      names(parEstList) <- yName
+    }
+  }
+  variables <- as.data.frame(t(data.frame(xModel)))
+  colnames(variables) <- paste0("variables",1:length(xModel))
+  result$'Selected Varaibles' <- variables
+  result$'Coefficients of the Selected Variables' <- parEstList
+  class(result) <- c("StepReg","list")
   return(result)
 }
-
-
-
-
-
-
-

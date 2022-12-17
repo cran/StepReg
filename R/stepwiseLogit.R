@@ -2,7 +2,7 @@
 #' 
 #' Stepwise logistic regression analysis selects model based on information criteria and Wald or Score test with 'forward', 'backward', 'bidirection' and 'score' model selection method.
 #' 
-#' @param formula Model formulae. The models fitted by the glm functions are specified in a compact symbolic form. The basic structure of a formula is the tilde symbol (~) and at least one independent (righthand) variable. In most (but not all) situations, a single dependent (lefthand) variable is also needed. Thus we can construct a formula quite simple formula (y ~ x). Multiple independent variables by simply separating them with the plus (+) symbol (y ~ x1 + x2). Variables in the formula are removed with a minus(-) symbol (y ~ x1 - x2). One particularly useful feature is the . operator when modelling with lots of variables (y ~ .). The %in% operator indicates that the terms on its left are nested within those on the right. For example y ~ x1 + x2 %in% x1 expands to the formula y ~ x1 + x1:x2. A model with no intercept can be specified as y ~ x - 1 or y ~ x + 0 or y ~ 0 + x.
+#' @param formula Model formulae. The models fitted by the glm functions are specified in a compact symbolic form. The basic structure of a formula is the tilde symbol (~) and at least one independent (righthand) variable. In most (but not all) situations, a single dependent (lefthand) variable is also needed. Thus we can construct a formula quite simple formula (y ~ x). Multiple independent variables by simply separating them with the plus (+) symbol (y ~ x1 + x2). Variables in the formula are removed with a minus(-) symbol (y ~ x1 - x2). One particularly useful feature is the . operator when modelling with lots of variables (y ~ .). The \%in\% operator indicates that the terms on its left are nested within those on the right. For example y ~ x1 + x2 \%in\% x1 expands to the formula y ~ x1 + x1:x2. A model with no intercept can be specified as y ~ x - 1 or y ~ x + 0 or y ~ 0 + x.
 #' 
 #' @param data Data set including dependent and independent variables to be analyzed
 #' 
@@ -57,21 +57,19 @@
 #' @author Junhui Li 
 #' 
 #' @examples
-#' formula=vs ~ .
+#' data(mtcars)
+#' formula <- vs ~ .
 #' stepwiseLogit(formula,
 #'               data=mtcars,
-#'               include=NULL,
 #'               selection="bidirection",
 #'               select="SL",
 #'               sle=0.15,
 #'               sls=0.15,
-#'               sigMethod="Rao",
-#'               weights=NULL,
-#'               best=NULL)
+#'               sigMethod="Rao")
 #' 
 #' @keywords stepwise logistic regression
 #'
-#' @export stepwiseLogit
+#' @export
 
 stepwiseLogit <- function(formula,
                           data,
@@ -86,18 +84,15 @@ stepwiseLogit <- function(formula,
   selection <- match.arg(selection)
   select <- match.arg(select)
   sigMethod <- match.arg(sigMethod)
-  if(class(formula)!="formula"){
-    stop("class of formula object isn't 'formula'")
+  stopifnot(inherits(formula, "formula"))
+  termForm <- terms(formula,data=data)
+  vars <- as.character(attr(termForm, "variables"))[-1]
+  yName <- vars[attr(termForm, "response")]
+  xName <- attr(termForm,"term.labels")
+  if(attr(termForm, "intercept")==0){
+    intercept <- "0"
   }else{
-    termForm <- terms(formula,data=data)
-    vars <- as.character(attr(termForm, "variables"))[-1]
-    yName <- vars[attr(termForm, "response")]
-    xName <- attr(termForm,"term.labels")
-    if(attr(termForm, "intercept")==0){
-      intercept <- "0"
-    }else{
-      intercept <- "1"
-    }
+    intercept <- "1"
   }
   if(is.character(include)){
     if(!all(include %in% xName)){
@@ -122,7 +117,6 @@ stepwiseLogit <- function(formula,
   for(i in names(table(allVarClass))){
     classTable[names(table(allVarClass)) %in% i,2] <- paste0(names(allVarClass[allVarClass %in% i]),collapse=" ")
   }
-  classTable$class <- paste0(classTable$class,":")
   ## detect multicollinearity
   if(any(allVarClass=="factor")){
     factVar <- names(which(allVarClass=="factor"))
@@ -147,16 +141,16 @@ stepwiseLogit <- function(formula,
   ModInf <- matrix(NA,9,1)
   ModInf <- cbind(ModInf,matrix(c(yName,mergeIncName,selection,select,sle,sle,sigMethod,mulcolMergeName,intercept),9,1))
   ModInf <- data.frame(ModInf)
-  colnames(ModInf) <- c("","")
-  ModInf[,1] <- c("Response Variable = ",
-                  "Included Variable = ",
-                  "Selection Method = ",
-                  "Select Criterion = ",
-                  "Entry Significance Level(sle) = ",
-                  "Stay Significance Level(sls) = ",
-                  "Variable significance test = ",
-                  "Multicollinearity Terms = ",
-                  "Intercept = ")
+  colnames(ModInf) <- c("Paramters","Value")
+  ModInf[,1] <- c("Response Variable",
+                  "Included Variable",
+                  "Selection Method",
+                  "Select Criterion",
+                  "Entry Significance Level(sle)",
+                  "Stay Significance Level(sls)",
+                  "Variable significance test",
+                  "Multicollinearity Terms",
+                  "Intercept")
   if(select=="SL"){
     if(selection=="forward"){
       ModInf <- ModInf[-6,]
@@ -169,8 +163,8 @@ stepwiseLogit <- function(formula,
     ModInf <- ModInf[-c(5:6),]
   }
   rownames(ModInf) <- 1:nrow(ModInf)
-  result$'Basic Information' <- ModInf
-  result$'Variable Class' <- classTable
+  result$'Summary of Parameters' <- ModInf
+  result$'Variables Type' <- classTable
   if(selection=="score"){ #score
     bestSubSet <- NULL
     singSet <- matrix(NA,1,3)
@@ -230,7 +224,13 @@ stepwiseLogit <- function(formula,
     finalResult <- finalResult[-1,]
     RegPIC <- rbind(includeSubSet,finalResult)
     rownames(RegPIC) <- c(1:nrow(RegPIC))
-    result$Process <- RegPIC
+    result$'Process of Selection' <- RegPIC
+    RegPIC[,2] %in% min(RegPIC[,2])
+    if(select=="SL"){
+      xModel <- unlist(strsplit(RegPIC[which.max(as.numeric(RegPIC[,2])),3]," "))
+    }else{
+      xModel <- unlist(strsplit(RegPIC[which.min(as.numeric(RegPIC[,2])),3]," "))
+    }
   }else{ #forward # bidirection # backward
     subBestPoint <- data.frame(Step=numeric(),
                                EnteredEffect=character(),
@@ -390,13 +390,17 @@ stepwiseLogit <- function(formula,
     }else{
       bestPoint[,1] <- c(1:nrow(bestPoint))
     }
-    
-    lastModel <- reformulate(xModel,yName)
-    lastFit <- glm(lastModel,data=data,weights=weights,family="binomial")
-    MLE <- coef(summary(lastFit))
-    result$Process <- bestPoint
-    result$Variables <- xModel
-    result$Coefficients <- MLE
+    result$'Process of Selection' <- bestPoint
   }
+  lastModel <- reformulate(xModel,yName)
+  lastFit <- glm(lastModel,data=data,weights=weights,family="binomial")
+  MLE <- coef(summary(lastFit))
+  MLE <- data.frame(rownames(MLE),MLE)
+  colnames(MLE) <- c("Variable","Estimate","StdError","t.value","P.value")
+  variables <- as.data.frame(t(data.frame(xModel)))
+  colnames(variables) <- paste0("variables",1:length(xModel))
+  result$'Selected Varaibles' <- variables
+  result$'Coefficients of the Selected Variables' <- MLE
+  class(result) <- c("StepReg","list")
   return(result)
 }
