@@ -1,0 +1,24 @@
+---
+title: "StepReg report"
+output: html_document
+params:
+  modelSelection: NA
+  selectionPlot: NA
+---
+
+```{r include = FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+library(ggplot2)
+```
+
+**Statistics of Variable Selection:**
+
+```{r comment = NA}
+params$modelSelection
+```
+
+**Visualization of Variable Selection:**
+
+```{r}
+params$selectionPlot
+```

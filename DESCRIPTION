@@ -1,17 +1,45 @@
 Package: StepReg
+Version: 1.5.0
 Title: Stepwise Regression Analysis
-Version: 1.4.4
-Date: 2022-12-10
-Author: Junhui Li,Xiaohuan Lu,Kun Cheng,Wenxin Liu
-Maintainer: Junhui Li <junhuili@cau.edu.cn>
-Description: Three most common types of stepwise regression including linear regression, logistic regression and cox proportional hazard regression can be performed to select best model with methods of forward selection, backward elimination, bidirectional selection and best subset selection. A widely used selection criteria are available for variable selection.
+Authors@R: c(
+    person("Junhui", "Li", , "junhui.li11@umassmed.edu", role = c("cre"),
+           comment = c(ORCID = "0000-0003-3973-1700")),
+    person("Junhui", "Li", , "junhui.li11@umassmed.edu", role = c("aut"),
+    comment = c(ORCID = "0000-0003-3973-1700")),
+    person("Kai", "Hu", , "kai.hu@umassmed.edu", role = c("aut")),
+    person("Xiaohuan", "Lu", , role = c("aut")),
+    person("Kun", "Cheng", , role = c("ctb")),
+    person("Sushmita", "Nayak", , role = c("ctb")),
+    person("Cesar", "Bautista Sotelo", , role = c("ctb")),
+    person("Michael", "Lodato", , role = c("ctb")),
+    person("Robert", "H Brown", , role = c("ctb")),
+    person("Wenxin", "Liu", , role = c("aut")),
+    person("Lihua", "Julie Zhu", , role = c("aut"))
+  )
+Date: 2024-03-17
+Description: The stepwise regression analysis is a statistical technique used to identify a subset of predictor variables essential for constructing predictive models. This package performs stepwise regression analysis across various regression models such as linear, logistic, Cox proportional hazards, Poisson, and gamma regression. It incorporates diverse stepwise regression algorithms like forward selection, backward elimination, and bidirectional elimination alongside the best subset method. Additionally, it offers a wide range of selection criteria, including Akaike Information Criterion (AIC), corrected AIC (AICc), Sawa Bayesian Information Criterion (BIC), Schwarz Bayesian Information Criterion (SBC), Significant Levels (SL), among others. Moreover, it facilitates the concurrent selection of multiple methods and criteria for variable selection. For user-friendly exploration and analysis, StepReg provides an intuitive R Shiny app.
 License: MIT + file LICENSE
 VignetteBuilder: knitr
-Suggests: knitr
-Imports: dplyr, purrr, stringr, survival
+Suggests: knitr, testthat, BiocStyle, kableExtra
+Imports: dplyr, ggplot2, ggrepel, purrr, stringr, survival, flextable,
+        xlsx, shiny, cowplot, rlang, GGally, ggcorrplot, tidyr,
+        summarytools, shinythemes, rmarkdown, DT, shinycssloaders,
+        shinyjs
 Encoding: UTF-8
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 NeedsCompilation: no
-Packaged: 2022-12-17 15:38:44 UTC; lij11
 Repository: CRAN
-Date/Publication: 2022-12-17 16:20:02 UTC
+Packaged: 2024-03-21 19:12:19 UTC; lij11
+Author: Junhui Li [cre] (<https://orcid.org/0000-0003-3973-1700>),
+  Junhui Li [aut] (<https://orcid.org/0000-0003-3973-1700>),
+  Kai Hu [aut],
+  Xiaohuan Lu [aut],
+  Kun Cheng [ctb],
+  Sushmita Nayak [ctb],
+  Cesar Bautista Sotelo [ctb],
+  Michael Lodato [ctb],
+  Robert H Brown [ctb],
+  Wenxin Liu [aut],
+  Lihua Julie Zhu [aut]
+Maintainer: Junhui Li <junhui.li11@umassmed.edu>
+Date/Publication: 2024-03-21 21:40:06 UTC

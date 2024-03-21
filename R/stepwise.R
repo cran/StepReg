@@ -1,30 +1,42 @@
-#' Stepwise Linear Model Regression
+#' Main wrapper function for stepwise regression
 #' 
-#' Stepwise linear regression analysis selects model based on information criteria and F or approximate F test with 'forward', 'backward', 'bidirection' and 'score' model selection method.
+#' Select optimal model using various stepwise regression strategies, e.g., Forward Selection, Backward Elimination, Bidirectional Elimination; meanwhile, it also supports Best Subset method. Four types of models are currently implemented: linear regression, logistic regression, Cox regression, Poisson, and Gamma regression. For selection criteria, a.k.a, stop rule, users can choose from AIC, AICc, BIC, HQ, Significant Level, and more.
 #' 
-#' @param formula Model formulae. The models fitted by the lm functions are specified in a compact symbolic form. The basic structure of a formula is the tilde symbol (~) and at least one independent (righthand) variable. In most (but not all) situations, a single dependent (lefthand) variable is also needed. Thus we can construct a formula quite simple formula (y ~ x). Multiple independent variables by simply separating them with the plus (+) symbol (y ~ x1 + x2). Variables in the formula are removed with a minus(-) symbol (y ~ x1 - x2). One particularly useful feature is the . operator when modelling with lots of variables (y ~ .). The \%in\% operator indicates that the terms on its left are nested within those on the right. For example y ~ x1 + x2 \%in\% x1 expands to the formula y ~ x1 + x1:x2. A model with no intercept can be specified as y ~ x - 1 or y ~ x + 0 or y ~ 0 + x. Multivariate multiple regression can be specified as cbind(y1,y2) ~ x1 + x2.
-#'
-#' @param data Data set including dependent and independent variables to be analyzed
-#'
-#' @param include Force vector of effects name to be included in all models.
+#' @param formula (formula) The formula used for model fitting by defining the scope of dependent and independent variables. The formula takes the form of a '~' (tilde) symbol, with the response variable(s) on the left-hand side, and the predictor variable(s) on the right-hand side. The 'lm()' function uses this formula to fit a regression model. A formula can be as simple as 'y ~ x'. For multiple predictors, they must be separated by the '+' (plus) symbol, e.g. 'y ~ x1 + x2'. To include an interaction term between variables, use the ':' (colon) symbol: 'y ~ x1 + x1:x2'. Use the '.' (dot) symbol to indicate that all other variables in the dataset should be included as predictors, e.g. 'y ~ .'. In the case of multiple response variables (multivariate), the formula can be specified as 'cbind(y1, y2) ~ x1 + x2'. By default, an intercept term is always included in the models, to exclude it, include '0' or '- 1' in your formula: 'y ~ 0 + x1', 'y ~ x1 + 0', and 'y ~ x1 - 1'.
 #' 
-#' @param selection Model selection method including "forward", "backward", "bidirection" and 'score',forward selection starts with no effects in the model and adds effects, backward selection starts with all effects in the model and removes effects, while bidirection regression is similar to the forward method except that effects already in the model do not necessarily stay there, and score method requests specifies the best-subset selection method, which uses the branch-and-bound technique to efficiently search for subsets of model effects that best predict the response variable.
+#' @param data (data.frame) A dataset consisting of predictor variable(s) and response variable(s).
 #' 
-#' @param select Specify the criterion that uses to determine the order in which effects enter and leave at each step of the specified selection method including "AIC","AICc","BIC","CP","HQ","HQc","Rsq","adjRsq","SBC" and "SL".
+#' @param type (character) The stepwise regression type. Choose from 'linear', 'logit', 'poisson', 'cox', and 'Gamma'. Default is 'linear'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}
 #' 
-#' @param sle Specify the significance level for entry, default is 0.15
+#' @param include (NULL|character) A character vector specifying predictor variables that will always stay in the model. A subset of the predictors in the dataset.
 #' 
-#' @param sls Specify the significance level for staying in the model, default is 0.15
+#' @param strategy (character) The model selection strategy. Choose from 'forward', 'backward', 'bidirectional' and 'subset'. Default is 'forward'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}
 #' 
-#' @param weights Numeric vector to provide a weight for each observation in the input data set. Note that weights should be ranged from 0 to 1, while negative numbers are forcibly converted to 0, and numbers greater than 1 are forcibly converted to 1. If you do not specify a weight vector, each observation has a default weight of 1.
+#' @param metric (character) The model selection criterion (model fit score). Used for the evaluation of the predictive performance of an intermediate model. Choose from 'AIC', 'AICc', 'BIC', 'CP', 'HQ', 'Rsq', 'adjRsq', 'SL', 'SBC', 'IC(3/2)', 'IC(1)'. Default is 'AIC'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}
 #' 
-#' @param multivarStat Statistic for multivariate regression analysis, including Wilks' lamda ("Wilks"), Pillai Trace ("Pillai"), Hotelling-Lawley's Trace ("Hotelling"), Roy's Largest Root ("Roy")
-#'
-#' @param best Control the number of models displayed in the output, default is NULL, which means all possible model will be displayed.
+#' @param sle (numeric) Significance Level to Enter. It is the statistical significance level that a predictor variable must meet to be included in the model. E.g. if 'sle = 0.05', a predictor with a P-value less than 0.05 will 'enter' the model. Default is 0.15.
 #' 
-#' @references 
+#' @param sls (numeric) Significance Level to Stay. Similar to 'sle', 'sls' is the statistical significance level that a predictor variable must meet to 'stay' in the model. E.g. if 'sls = 0.1', a predictor that was previously included in the model but whose P-value is now greater than 0.1 will be removed.
 #' 
-#' Alsubaihi, A. A., Leeuw, J. D., and Zeileis, A. (2002). Variable selection in multivariable regression using sas/iml. , 07(i12).
+#' @param tolerance (numeric)  A statistical measure used to assess multicollinearity in a multiple regression model. It is calculated as the proportion of the variance in a predictor variable that is not accounted for by the other predictor variables in the model. Default is 1e-07.
+#' 
+#' @param weight (numeric) A numeric vector specifying the coefficients assigned to the predictor variables. The magnitude of the weight reflects the degree to which each predictor variable contributes to the prediction of the response variable. The range of weight should be from 0 to 1. Values greater than 1 will be coerced to 1, and values less than 0 will be coerced to 0. Default is NULL, which means that all weight are set equal.
+#' 
+#' @param test_method_linear (character) Test method for multivariate linear regression analysis, choose from 'Pillai', 'Wilks', 'Hotelling-Lawley', 'Roy'. Default is 'Pillai'. For univariate regression, 'F-test' will be used. 
+#' 
+#' @param test_method_glm (character) Test method for logit, Poisson, or Gamma regression analysis, choose from 'Rao', 'LRT'. Default is 'Rao'. Only "Rao" is available for strategy = 'subset'.
+#' 
+#' @param test_method_cox (character) Test method for cox regression analysis, choose from 'efron', 'breslow', 'exact'. Default is 'efron'.
+#' 
+#' @param best_n (numeric(integer)) The number of models to be retained in the process output. Default is 3, indicating that only the top 3 best models with the same number of variables are displayed. If all models are displayed, set it to Inf.
+#'  
+#' @param num_digits (numeric(integer)) The number of digits to keep when rounding the results. Default is 6.
+#' 
+# @param report_name (NULL|character) The output report name with extented format, '.html', 'pdf', '.docx', '.pptx', '.xlsx' and '.rtf' are supported. If NULL, do not output report file. Default is NULL.
+#' 
+#' @references
+#' 
+#' Alsubaihi, A. A., Leeuw, J. D., and Zeileis, A. (2002). Variable strategy in multivariable regression using sas/iml. , 07(i12).
 #' 
 #' Darlington, R. B. (1968). Multiple regression in psychological research and practice. Psychological Bulletin, 69(3), 161.
 #' 
@@ -34,9 +46,9 @@
 #' 
 #' Harold Hotelling. (1992). The Generalization of Student's Ratio. Breakthroughs in Statistics. Springer New York.
 #' 
-#' Hocking, R. R. (1976). A biometrics invited paper. the analysis and selection of variables in linear regression. Biometrics, 32(1), 1-49.
+#' Hocking, R. R. (1976). A biometrics invited paper. the analysis and strategy of variables in linear regression. Biometrics, 32(1), 1-49.
 #' 
-#' Hurvich, C. M., & Tsai, C. (1989). Regression and time series model selection in small samples. Biometrika, 76(2), 297-307.
+#' Hurvich, C. M., & Tsai, C. (1989). Regression and time series model strategy in small samples. Biometrika, 76(2), 297-307.
 #' 
 #' Judge, & GeorgeG. (1985). The Theory and practice of econometrics /-2nd ed. The Theory and practice of econometrics /. Wiley.
 #' 
@@ -46,401 +58,166 @@
 #' 
 #' Mckeon, J. J. (1974). F approximations to the distribution of hotelling's t20. Biometrika, 61(2), 381-383.
 #' 
-#' Mcquarrie, A. D. R., & Tsai, C. L. (1998). Regression and Time Series Model Selection. Regression and time series model selection /. World Scientific.
+#' Mcquarrie, A. D. R., & Tsai, C. L. (1998). Regression and Time Series Model strategy. Regression and time series model strategy /. World Scientific.
 #' 
 #' Pillai, K. . (1955). Some new test criteria in multivariate analysis. The Annals of Mathematical Statistics, 26(1), 117-121.
 #' 
-#' R.S. Sparks, W. Zucchini, & D. Coutsourides. (1985). On variable selection in multivariate regression. Communication in Statistics- Theory and Methods, 14(7), 1569-1587.
+#' R.S. Sparks, W. Zucchini, & D. Coutsourides. (1985). On variable strategy in multivariate regression. Communication in Statistics- Theory and Methods, 14(7), 1569-1587.
 #' 
 #' Sawa, T. (1978). Information criteria for discriminating among alternative regression models. Econometrica, 46(6), 1273-1291.
 #' 
 #' Schwarz, G. (1978). Estimating the dimension of a model. Annals of Statistics, 6(2), pags. 15-18.
 #' 
-#' @author Junhui Li 
+#' @author Junhui Li, Kai Hu, Xiaohuan Lu
 #' 
+#' @return A list containing multiple tables will be returned.
+#' \itemize{
+#' \item Summary of arguments for model selection: Arguments used in the stepwise function, either default or user-supplied values.
+#' \item Summary of variables in dataset: Variable names, types, and classes in dataset.
+#' \item Summary of selection process under xxx(strategy) with xxx(metric): Overview of the variable selection process under specified strategy and metric.
+#' \item Summary of coefficients for the selected model with xxx(dependent variable) under xxx(strategy) and xxx(metric): Coefficients for the selected models under specified strategy with metric.
+#' }
+
 #' @examples
+#' ## perform multivariate linear stepwise regression with 'bidirection' 
+#' ## strategy and 'AIC' stop rule, excluding intercept.
 #' data(mtcars)
 #' mtcars$yes <- mtcars$wt
 #' formula <- cbind(mpg,drat) ~ . + 0
-#' stepwise(formula=formula,
-#'          data=mtcars,
-#'          selection="bidirection",
-#'          select="AIC")
+#' stepwise(formula = formula,
+#'          data = mtcars,
+#'          type = "linear",
+#'          strategy = "bidirection",
+#'          metric = "AIC")
+#' ## perform linear stepwise regression with 'bidirection' strategy and 
+#' ## "AIC","SBC","SL","AICc","BIC", and "HQ" stop rule.
+#' formula <- mpg ~ . + 1
+#' stepwise(formula = formula,
+#'          data = mtcars,
+#'          type = "linear",
+#'          strategy = c("forward","bidirection"),
+#'          metric = c("AIC","SBC","SL","AICc","BIC","HQ"))
+#'
+#' ## perform logit stepwise regression with 'forward' strategy and significance
+#' ## level as stop rule.
+#' data(remission)
+#' formula <- remiss ~ .
+#' stepwise(formula = formula,
+#'          data = remission,
+#'          type = "logit",
+#'          strategy = "forward",
+#'          metric = "SL",
+#'          sle=0.05,
+#'          sls=0.05)
 #' @keywords stepwise regression
 #' 
+#' @import survival
+#' @importFrom stringr str_replace
 #' @importFrom utils combn
+#' @importFrom dplyr %>% mutate_if mutate
+#' @importFrom rlang arg_match
+#' @importFrom stats anova coef glm lm logLik pf reformulate sigma terms deviance df.residual formula model.frame
 #' 
-#' @importFrom stats anova coef glm lm logLik pf reformulate sigma terms
+#' @param num_digits (numeric(integer)) The number of digits to keep when rounding the results. Default is 6.
 #' 
 #' @export
-#' 
+
 stepwise <- function(formula,
                      data,
-                     include=NULL,
-                     selection=c("forward","backward","bidirection","score"),
-                     select=c("AIC","AICc","BIC","CP","HQ","HQc","Rsq","adjRsq","SL","SBC"),
-                     sle=0.15,
-                     sls=0.15,
-                     multivarStat=c("Pillai","Wilks","Hotelling-Lawley","Roy"),
-                     weights=NULL,
-                     best=NULL){
-  selection <- match.arg(selection)
-  select <- match.arg(select)
-  multivarStat <- match.arg(multivarStat)
-  ## score and SL
-  if(selection=="score" & select=="SL"){
-    stop("select = 'SL' is not allowed when specifing selection = 'score'")
-  }
-  ## extract response, independent variable and intercept
-  stopifnot(inherits(formula, "formula"))
-  termForm <- terms(formula,data=data)
-  #yName <- rownames(attr(termForm,"factors"))[1]
-  #yName <- all.vars(formula)[1]
-  vars <- as.character(attr(termForm, "variables"))[-1]
-  yName <- vars[attr(termForm, "response")]
-  xName <- attr(termForm,"term.labels")
-  if(attr(termForm, "intercept")==0){
-    intercept <- "0"
+                     type = c("linear", "logit", "cox", "poisson", "Gamma"),
+                     include = NULL,
+                     strategy = c("forward", "backward", "bidirection", "subset"),
+                     metric = c("AIC", "AICc", "BIC", "CP", "HQ", "Rsq", "adjRsq", "SL", "SBC", "IC(3/2)", "IC(1)"),
+                     sle = 0.15,
+                     sls = 0.15,
+                     test_method_linear = c("Pillai", "Wilks", "Hotelling-Lawley", "Roy"),
+                     test_method_glm = c("Rao", "LRT"),
+                     test_method_cox = c("efron", "breslow", "exact"),
+                     tolerance = 1e-7,
+                     weight = NULL,
+                     best_n = 3,
+                     num_digits = 6) {
+  ## validate input:
+  ## check required parameters
+  ## place match.arg() in the main function because validationUtils.R can't return type even with <<-, and type represents all values in c().
+  type <- match.arg(type)
+  strategy <- arg_match(strategy, c("forward", "backward", "bidirection", "subset") ,multiple = TRUE)
+  metric <- arg_match(metric, c("AIC", "AICc", "BIC", "CP", "HQ", "Rsq", "adjRsq", "SL", "SBC", "IC(3/2)", "IC(1)") ,multiple = TRUE)
+  
+  test_method_linear <- match.arg(test_method_linear)
+  test_method_glm <- match.arg(test_method_glm)
+  test_method_cox <- match.arg(test_method_cox)
+  
+  x_name_orig <- getXname(formula, data)
+  y_name <- getYname(formula, data)
+  intercept <- getIntercept(formula, data, type = type) # char type
+  merged_include <- getMergedVar(include)
+  model_raw <- getModel(data, type = type, intercept = intercept, x_name_orig, y_name, weight = weight, method = test_method_cox)
+  if(type != "cox") {
+    y_df <- as.matrix(model_raw$model[, y_name])
+    n_y <- ncol(y_df)
   }else{
-    intercept <- "1"
+    n_y <- 1
   }
-  if(is.character(include)){
-    if(!all(include %in% xName)){
-      stop("variable in include is not included formula or dataset")
-    }else{
-      includeName <- include
-      mergeIncName <- paste0(includeName,collapse=" ")
-    }
-  }else if(is.null(include)){
-    includeName <- NULL
-    mergeIncName <- "NULL"
-  }else{
-    stop("include should be character vector indicating variable to be included in all models")
-  }
-  if(!is.null(weights)){
-    if(length(weights)==nrow(data)){
-      weightData <- data*sqrt(weights)
-    }else{
-      stop("Variable length is different ('(weights)')")
-    }
-  }else{
-    weightData <- data
-  }
-
-  lmFull <- lm(formula,data=weightData)
-  allVarClass <- attr(lmFull$terms,"dataClasses")
-  classTable <- as.data.frame(table(allVarClass))
-  colnames(classTable) <- c("class","variable")
-  for(i in names(table(allVarClass))){
-    classTable[names(table(allVarClass)) %in% i,2] <- paste0(names(allVarClass[allVarClass %in% i]),collapse=" ")
-  }
-  ## detect multicollinearity
-  if(any(allVarClass=="factor")){
-    factVar <- names(which(allVarClass=="factor"))
-    for(i in factVar){
-      weightData[,i] <- as.factor(as.numeric(weightData[,i]))
-    }
-  }
-  xMatrix <- as.matrix(weightData[,xName])
-  qrXList <- qr(xMatrix,tol=1e-7)
-  rank0 <- qrXList$rank
-  pivot0 <- qrXList$pivot
-  if(rank0 < length(pivot0)){
-    mulcolX <- colnames(qrXList$qr)[pivot0[(rank0+1):length(pivot0)]]
-    mulcolMergeName <- paste0(mulcolX,collapse=" ")
-  }else{
-    mulcolX <- NULL
-    mulcolMergeName <- "NULL"
-  }
-  xName <- setdiff(xName,mulcolX)
-  Y <- as.matrix(lmFull$model[,yName])
-  nY <- ncol(Y)
-  nObs <- nrow(data)
-  # get sigma for BIC and CP
-  if(nY==1){
-    approxF <- "F"
-  }else{
-    approxF <- multivarStat
-    if(any(c(select)==c("BIC","CP","Rsq","adjRsq"))){
-      stop("Can't specify 'BIC','CP','Rsq' or 'adjRsq' when using multivariate multiple regression")
-    }
-  }
-  if((select=="CP" | select=='BIC') & lmFull$rank >= nObs){
-    stop("'select' can't specify 'CP' or 'BIC' when variable number is greater than number of observation")
-  }
+  sigma_value <- getSigmaFullModel(model_raw, type, n_y)
+  
+  validateUtils(formula = formula, data = data, type = type, include = include, strategy = strategy, metric = metric, sle = sle, sls = sls, sigma_value = sigma_value, test_method_linear = test_method_linear, test_method_glm = test_method_glm, test_method_cox = test_method_cox, tolerance = tolerance, weight = weight, best_n = best_n, n_y = n_y)
+  test_method <- getTestMethod(data, model_raw, type, metric, n_y, test_method_linear, test_method_glm, test_method_cox)
+  
+  multico_x <- getMulticolX(data, x_name_orig, tolerance)
+  merged_multico_x <- getMergedVar(multico_x)
+  x_name <- setdiff(x_name_orig, multico_x)
+  
   result <- list()
-  ModInf <- matrix(NA,9,1)
-  ModInf <- cbind(ModInf,matrix(c(yName,mergeIncName,selection,select,sle,sle,approxF,mulcolMergeName,intercept),9,1))
-  ModInf <- data.frame(ModInf)
-  colnames(ModInf) <- c("Paramters","Value")
-  ModInf[,1] <- c("Response Variable",
-                  "Included Variable",
-                  "Selection Method",
-                  "Select Criterion",
-                  "Entry Significance Level(sle)",
-                  "Stay Significance Level(sls)",
-                  "Variable significance test",
-                  "Multicollinearity Terms",
-                  "Intercept")
-  if(select=="SL"){
-    if(selection=="forward"){
-      ModInf <- ModInf[-6,]
-    }else if(selection=="backward"){
-      ModInf <- ModInf[-5,]
-    }else if(selection=="score"){
-      ModInf <- ModInf[-c(5:6),]
+  ## table1
+  table1_para_value <- getTable1SummaryOfParameters(data, type, x_name_orig, y_name, merged_multico_x, merged_include, strategy, metric, sle, sls, test_method, tolerance, intercept)
+  result$'Summary of arguments for model selection' <- table1_para_value
+  
+  ## table2
+  table2_class_table <- getTable2TypeOfVariables(model_raw)
+  result$'Summary of variables in dataset' <- table2_class_table
+  
+  ## table3
+  table3_process_table_metric <- list()
+  x_final_model_metric <- list()
+  for(stra in strategy){
+    for(met in metric) {
+      if(stra == "subset") {
+        table3_process_table <- getSubsetWrapper(data, type, met, x_name, y_name, intercept, include, weight = weight, best_n, test_method, sigma_value)
+        x_final_model <- getXNameSelected(table3_process_table,met)
+        table3_process_table[,met] <- as.numeric(table3_process_table[,met])
+      }else{
+        out_final_stepwise <- getStepwiseWrapper(data, type = type, stra, met, sle, sls, weight = weight, x_name, y_name, intercept, include, test_method, sigma_value)
+        table3_process_table <- out_final_stepwise$process_table
+        remove_col <- NULL
+        if(stra == "forward") {
+          remove_col <- "Remove_effect"
+        } else if(stra == "backward") {
+          remove_col <- "Enter_effect"
+        }
+        table3_process_table <- table3_process_table[,!colnames(table3_process_table) %in% remove_col]
+        if(all(table3_process_table[,"Number_effect"] == table3_process_table[,"Number_parms"])){
+          table3_process_table <- table3_process_table[,!colnames(table3_process_table) %in% "Number_effect"]
+        }
+        x_in_model <- out_final_stepwise$x_in_model
+        x_final_model <- c(include, x_in_model)
+      }
+      #table3_process_table[,met] <- table3_process_table[,met] %>% as.numeric() %>% round(num_digits) %>% as.character()
+      table3_process_table[,met] <- table3_process_table[,met] %>% as.numeric()
+      result[[paste0("Summary of selection process under ",stra," with ",met,collapse="")]] <- table3_process_table %>% mutate_if(is.numeric, round, num_digits) %>% mutate_if(is.numeric,as.character) # to keep digits as we expected, convert numeric to character for html output.
+      x_final_model_metric[[stra]][[met]] <- x_final_model
     }
-  }else{
-    ModInf <- ModInf[-c(5:6),]
-  }
-  rownames(ModInf) <- 1:nrow(ModInf)
-  result$'Summary of Parameters' <- ModInf
-  result$'Variables Type' <- classTable
-  if(selection=="score"){
-    ## best subset model selection
-    tempresult <- matrix(NA,1,4)
-    colnames(tempresult) <- c("NoVariable","RankModel",select,"VariablesEnteredinModel")
-    finalResult <- tempresult
-    if(!is.null(includeName)){
-      lmIncForm <- reformulate(c(intercept,includeName), yName)
-      lmInc <- lm(lmIncForm,data=weightData)
-      tempresult[1,c(1:4)] <- c(length(attr(lmInc$terms,"term.labels")),lmInc$rank,modelFitStat(select,lmInc,"LeastSquare"),paste(c(intercept,includeName),collapse=" "))
-      finalResult <- rbind(finalResult,tempresult)
-      checkX <- xName[!xName %in% includeName]
-    }else{
-      checkX <- xName
-    }
-    for(nv in 1:length(checkX)){
-      comTable <- combn(length(checkX),nv)
-      subSet <- NULL
-      for(ncom in 1:ncol(comTable)){
-        comVar <- c(intercept,includeName,checkX[comTable[,ncom]])
-        tempFormula <- reformulate(comVar, yName)
-        lmresult <- lm(tempFormula,data=weightData)
-        tempresult[1,1:4] <- c(length(attr(lmresult$terms,"term.labels")),lmresult$rank,modelFitStat(select,lmresult,"LeastSquare"),paste(comVar,collapse=" "))
-        subSet <- rbind(subSet,tempresult)
+    ##table4
+    table4_coef_model_metric <- list()
+    table4_coef_model_metric[[stra]] <- getTable4CoefModel(type = type, intercept, include, x_final_model_metric[[stra]] , y_name, n_y, data, weight, test_method_cox)
+    for(met in metric){
+      table4_coef_model <- table4_coef_model_metric[[stra]][[met]]
+      for(i in names(table4_coef_model)) {
+        #colnames(table4_coef_model[[i]]) %>% str_replace(" ", "_") -> colnames(table4_coef_model[[i]])
+        result[[paste0("Summary of coefficients for the selected model with ", i, " under ",stra," and ",met,sep=" ")]] <- table4_coef_model[[i]] %>% mutate_if(is.numeric, round, num_digits) %>% mutate_if(is.numeric,as.character)
       }
-      if(is.null(best)){
-        nbest <- nrow(subSet)
-      }else{
-        if(nrow(subSet)>best){
-          nbest <- best
-        }else{
-          nbest <- nrow(subSet)
-        }
-      }
-      bestSubSet <- as.data.frame(subSet)
-      bestSubSet[,2] <- as.numeric(bestSubSet[,2])
-      if(select=="Rsq" | select=="adjRsq"){
-        subResultSort <- bestSubSet[order(bestSubSet[,2],decreasing = TRUE),]
-      }else{
-        subResultSort <- bestSubSet[order(bestSubSet[,2],decreasing = FALSE),]
-      }
-      finalResult <- rbind(finalResult,subResultSort[1:nbest,])
-    }
-    finalResult <- finalResult[-1,]
-    rownames(finalResult) <- 1:nrow(finalResult)
-    result$'Process of Selection' <- finalResult
-    if(select=="Rsq" | select=="adjRsq"){
-      xModel <- unlist(strsplit(finalResult[which.max(as.numeric(finalResult[,3])),4]," "))
-    }else{
-      xModel <- unlist(strsplit(finalResult[which.min(as.numeric(finalResult[,3])),4]," "))
-    }
-  }else{
-    subBestPoint <- data.frame(Step=numeric(),
-                               EnteredEffect=character(),
-                               RemovedEffect=character(),
-                               DF=numeric(),
-                               NumberEffectIn=numeric(),
-                               NumberParmsIn=numeric(),
-                               select=numeric())
-    colnames(subBestPoint)[7] <- select
-    bestPoint <- subBestPoint
-    if(selection == "backward"){
-      addIdx <- FALSE
-      xModel <- c(intercept,includeName,setdiff(xName,includeName))
-      xResidual <- NULL
-      if (select == 'SL') {
-        PIC <- 1
-      }else{
-        PIC <- modelFitStat(select,lmFull,"LeastSquare")
-      }
-      bestPoint[1,] <- c(0,"","","",length(attr(lmFull$terms,"term.labels")),lmFull$rank,PIC)
-    }else{
-      addIdx <- TRUE
-      xModel <- c(intercept,includeName)
-      xResidual <- setdiff(xName,includeName)
-      fmInt <- reformulate(intercept, yName)
-      fitInt <- lm(fmInt,data=weightData)
-      if(select == 'SL') {
-        PIC <- 1
-      }else{
-        if(intercept=='1'){
-          PIC <- modelFitStat(select,fitInt,"LeastSquare")
-        }else{
-          if(select %in% c("Rsq","adjRsq")){
-            PIC <- 0
-          }else{
-            PIC <- Inf
-          }
-        }
-      }
-      bestPoint[1,] <- c(0,intercept,"",fitInt$rank,length(attr(fitInt$terms,"term.labels")),fitInt$rank,PIC)
-      if(!is.null(includeName)){
-        fmInc <- reformulate(c(intercept,includeName),yName)
-        fitInc <- lm(fmInc,data=weightData)
-        if(select == 'SL') {
-          PIC <- anova(fitInc,fitInt,test=approxF)[2,'Pr(>F)']
-        }else{
-          PIC <- modelFitStat(select,fitInc,"LeastSquare")
-        }
-        subBestPoint[1,] <- c(0,mergeIncName,"",anova(fitInc,fitInt,test=approxF)[2,'Df'],length(attr(fitInt$terms,"term.labels")),fitInc$rank,PIC)
-        bestPoint <- rbind(bestPoint,subBestPoint)
-      }
-    }
-    while(TRUE){
-      fm0 <- reformulate(xModel,yName)
-      lmAlt <- lm(fm0,data=weightData)
-      if(addIdx==TRUE){
-        xCheck <- xResidual
-        if(length(xCheck)==0){
-          break
-        }
-        xCheckList <- as.list(xCheck)
-        names(xCheckList) <- xCheck
-        fmX <- lapply(xCheckList, function(x){reformulate(c(xModel,x),yName)})
-      }else{
-        xCheck <- setdiff(xModel,c(intercept,includeName))
-        if(length(xCheck)==0){
-          break
-        }
-        xCheckList <- as.list(xCheck)
-        names(xCheckList) <- xCheck
-        fmX <- lapply(xCheckList,function(x){reformulate(setdiff(xModel,x),yName)})
-      }
-      fitX <- lapply(fmX,function(x){lm(x,data=weightData)})
-      if(select=="SL"){
-        PICset <- sapply(fitX,function(x){anova(x,lmAlt,test=approxF)[2,'Pr(>F)']})
-        Fset <- sapply(fitX,function(x){anova(x,lmAlt,test=approxF)[2,'F']})
-      }else{
-        if(addIdx==FALSE & length(xCheck)==1 & intercept=="0"){
-          PICset <- Inf
-          names(PICset) <- xCheck
-        }else{
-          PICset <- sapply(fitX,function(x){modelFitStat(select,x,"LeastSquare")})
-        }
-      }
-      if(select=="Rsq" | select=="adjRsq" | (select=="SL" & addIdx==FALSE)){
-        PIC <- max(PICset)
-        minmaxVar <- names(which.max(PICset))
-        bestLm <- fitX[[minmaxVar]]
-      }else{
-        PIC <- min(PICset)
-        minmaxVar <- names(which.min(PICset))
-        bestLm <- fitX[[minmaxVar]]
-        if(sum(PICset %in% PIC)>1 & select=="SL"){
-          Fvalue <- max(Fset)
-          minmaxVar <- names(which.max(Fset))
-          bestLm <- fitX[[minmaxVar]]
-          PIC <- PICset[minmaxVar]
-        }
-      }
-      if(bestLm$rank==lmAlt$rank & addIdx==TRUE){
-        break
-      }else{
-        if(select=='SL'){
-          if(addIdx==FALSE){
-            indicator <- PIC > sls
-          }else{
-            indicator <- PIC < sle
-          }
-        }else if(select=='Rsq' | select=='adjRsq'){
-          indicator <- PIC > as.numeric(bestPoint[nrow(bestPoint),7])
-        }else{
-          indicator <- PIC <= as.numeric(bestPoint[nrow(bestPoint),7])
-        }
-        if(indicator==TRUE){
-          #goodness of fit
-          smr <- summary(bestLm)
-          if(nY==1){
-            f <- smr$fstatistic
-            if(is.nan(f[1])){
-              pval <- NaN
-            }else{
-              pval <- pf(f[1],f[2],f[3],lower.tail=F)
-            }
-          }else{
-            for(ny in 1:nY){
-              f <- smr[[ny]]$fstatistic
-              if(is.nan(f[1])){
-                pval <- NaN
-              }else{
-                pval <- pf(f[1],f[2],f[3],lower.tail=F)
-              }
-            }
-          }
-          if(is.nan(pval)==TRUE & (select!='Rsq' | select!='adjRsq')){
-            break
-          }
-          if(addIdx==TRUE){
-            xModel <- append(xModel,minmaxVar)
-            xResidual <- setdiff(xResidual,minmaxVar)
-            subBestPoint[1,] <- c(as.numeric(bestPoint[nrow(bestPoint),1])+1,minmaxVar,"",anova(lmAlt,bestLm,test=approxF)[2,'Df'],length(attr(bestLm$terms,"term.labels")),bestLm$rank,PIC)
-          }else{
-            xResidual <- append(xResidual,minmaxVar)
-            xModel <- setdiff(xModel,minmaxVar)
-            subBestPoint[1,] <- c(as.numeric(bestPoint[nrow(bestPoint),1])+1,"",minmaxVar,anova(bestLm,lmAlt,test=approxF)[2,'Df'],length(attr(bestLm$terms,"term.labels")),bestLm$rank,PIC)
-          }
-          bestPoint <- rbind(bestPoint,subBestPoint)
-          
-          if(selection == 'bidirection'){
-            if(addIdx==FALSE){
-              next
-            }else{
-              addIdx <- FALSE
-              next
-            }
-          }else{
-            next
-          }
-        }else{
-          if(selection == 'bidirection' & addIdx==FALSE) {
-            addIdx <- TRUE
-            next
-          }else{
-            break
-          }
-        }
-      }
-    }#while
-    bestPoint$DF <- abs(as.numeric(bestPoint$DF))
-    bestPoint$DF[is.na(bestPoint$DF)] <- ""
-    result$'Process of Selection' <- bestPoint
-  }
-  if(is.null(xModel)){
-    parEst <- NULL
-  }else{
-    parEst <- summary(lm(reformulate(xModel,yName),data=weightData))
-    parEstList <- list()
-    if(nY>1){
-      for(i in names(parEst)){
-        subParEst <- parEst[[i]]$coefficients
-        subParEst <- data.frame(rownames(subParEst),subParEst)
-        colnames(subParEst) <- c("Variable","Estimate","StdError","t.value","P.value")
-        parEstList[i] <- list(subParEst)
-      }
-    }else{
-      subParEst <- parEst$coefficients
-      subParEst <- data.frame(rownames(subParEst),subParEst)
-      colnames(subParEst) <- c("Variable","Estimate","StdError","t.value","P.value")
-      parEstList <- list(subParEst)
-      names(parEstList) <- yName
     }
   }
-  variables <- as.data.frame(t(data.frame(xModel)))
-  colnames(variables) <- paste0("variables",1:length(xModel))
-  result$'Selected Varaibles' <- variables
-  result$'Coefficients of the Selected Variables' <- parEstList
-  class(result) <- c("StepReg","list")
+  class(result) <- c("StepReg", "list", strategy)
   return(result)
 }

@@ -1,0 +1,36 @@
+#' creditCard
+#'
+#' Cross-section data on the credit history for a sample of applicants for a type of credit card. This dataset is from \code{\link[AER]{CreditCard}}
+#'
+#' \itemize{
+#'   \item card Factor. Was the application for a credit card accepted?
+#'   \item reports Number of major derogatory reports.
+#'   \item age Age in years plus twelfths of a year.
+#'   \item income Yearly income (in USD 10,000).
+#'   \item share Ratio of monthly credit card expenditure to yearly income.
+#'   \item expenditure Average monthly credit card expenditure.
+#'   \item owner Factor. Does the individual own their home?
+#'   \item selfemp Factor. Is the individual self-employed?
+#'   \item dependents Number of dependents.
+#'   \item months Months living at current address.
+#'   \item majorcards Number of major credit cards held.
+#'   \item active Number of active credit accounts.
+#' }
+#'
+#' @details For more information, refer to \code{\link[AER]{CreditCard}}
+#'
+#' @name creditCard
+#' 
+#' @keywords datasets
+#' 
+#' @docType data
+#' 
+#' @usage data(creditCard)
+#' 
+#' @format A data frame containing 1,319 observations on 12 variables.
+#' 
+#' @references 
+#' 
+#' Greene, W.H. (2003). Econometric Analysis, 5th edition. Upper Saddle River, NJ: Prentice Hall.
+#' 
+"creditCard"

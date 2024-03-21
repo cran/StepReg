@@ -2,56 +2,104 @@
 % Please edit documentation in R/stepwise.R
 \name{stepwise}
 \alias{stepwise}
-\title{Stepwise Linear Model Regression}
+\title{Main wrapper function for stepwise regression}
 \usage{
 stepwise(
   formula,
   data,
+  type = c("linear", "logit", "cox", "poisson", "Gamma"),
   include = NULL,
-  selection = c("forward", "backward", "bidirection", "score"),
-  select = c("AIC", "AICc", "BIC", "CP", "HQ", "HQc", "Rsq", "adjRsq", "SL", "SBC"),
+  strategy = c("forward", "backward", "bidirection", "subset"),
+  metric = c("AIC", "AICc", "BIC", "CP", "HQ", "Rsq", "adjRsq", "SL", "SBC", "IC(3/2)",
+    "IC(1)"),
   sle = 0.15,
   sls = 0.15,
-  multivarStat = c("Pillai", "Wilks", "Hotelling-Lawley", "Roy"),
-  weights = NULL,
-  best = NULL
+  test_method_linear = c("Pillai", "Wilks", "Hotelling-Lawley", "Roy"),
+  test_method_glm = c("Rao", "LRT"),
+  test_method_cox = c("efron", "breslow", "exact"),
+  tolerance = 1e-07,
+  weight = NULL,
+  best_n = 3,
+  num_digits = 6
 )
 }
 \arguments{
-\item{formula}{Model formulae. The models fitted by the lm functions are specified in a compact symbolic form. The basic structure of a formula is the tilde symbol (~) and at least one independent (righthand) variable. In most (but not all) situations, a single dependent (lefthand) variable is also needed. Thus we can construct a formula quite simple formula (y ~ x). Multiple independent variables by simply separating them with the plus (+) symbol (y ~ x1 + x2). Variables in the formula are removed with a minus(-) symbol (y ~ x1 - x2). One particularly useful feature is the . operator when modelling with lots of variables (y ~ .). The \%in\% operator indicates that the terms on its left are nested within those on the right. For example y ~ x1 + x2 \%in\% x1 expands to the formula y ~ x1 + x1:x2. A model with no intercept can be specified as y ~ x - 1 or y ~ x + 0 or y ~ 0 + x. Multivariate multiple regression can be specified as cbind(y1,y2) ~ x1 + x2.}
+\item{formula}{(formula) The formula used for model fitting by defining the scope of dependent and independent variables. The formula takes the form of a '~' (tilde) symbol, with the response variable(s) on the left-hand side, and the predictor variable(s) on the right-hand side. The 'lm()' function uses this formula to fit a regression model. A formula can be as simple as 'y ~ x'. For multiple predictors, they must be separated by the '+' (plus) symbol, e.g. 'y ~ x1 + x2'. To include an interaction term between variables, use the ':' (colon) symbol: 'y ~ x1 + x1:x2'. Use the '.' (dot) symbol to indicate that all other variables in the dataset should be included as predictors, e.g. 'y ~ .'. In the case of multiple response variables (multivariate), the formula can be specified as 'cbind(y1, y2) ~ x1 + x2'. By default, an intercept term is always included in the models, to exclude it, include '0' or '- 1' in your formula: 'y ~ 0 + x1', 'y ~ x1 + 0', and 'y ~ x1 - 1'.}
 
-\item{data}{Data set including dependent and independent variables to be analyzed}
+\item{data}{(data.frame) A dataset consisting of predictor variable(s) and response variable(s).}
 
-\item{include}{Force vector of effects name to be included in all models.}
+\item{type}{(character) The stepwise regression type. Choose from 'linear', 'logit', 'poisson', 'cox', and 'Gamma'. Default is 'linear'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}}
 
-\item{selection}{Model selection method including "forward", "backward", "bidirection" and 'score',forward selection starts with no effects in the model and adds effects, backward selection starts with all effects in the model and removes effects, while bidirection regression is similar to the forward method except that effects already in the model do not necessarily stay there, and score method requests specifies the best-subset selection method, which uses the branch-and-bound technique to efficiently search for subsets of model effects that best predict the response variable.}
+\item{include}{(NULL|character) A character vector specifying predictor variables that will always stay in the model. A subset of the predictors in the dataset.}
 
-\item{select}{Specify the criterion that uses to determine the order in which effects enter and leave at each step of the specified selection method including "AIC","AICc","BIC","CP","HQ","HQc","Rsq","adjRsq","SBC" and "SL".}
+\item{strategy}{(character) The model selection strategy. Choose from 'forward', 'backward', 'bidirectional' and 'subset'. Default is 'forward'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}}
 
-\item{sle}{Specify the significance level for entry, default is 0.15}
+\item{metric}{(character) The model selection criterion (model fit score). Used for the evaluation of the predictive performance of an intermediate model. Choose from 'AIC', 'AICc', 'BIC', 'CP', 'HQ', 'Rsq', 'adjRsq', 'SL', 'SBC', 'IC(3/2)', 'IC(1)'. Default is 'AIC'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}}
 
-\item{sls}{Specify the significance level for staying in the model, default is 0.15}
+\item{sle}{(numeric) Significance Level to Enter. It is the statistical significance level that a predictor variable must meet to be included in the model. E.g. if 'sle = 0.05', a predictor with a P-value less than 0.05 will 'enter' the model. Default is 0.15.}
 
-\item{multivarStat}{Statistic for multivariate regression analysis, including Wilks' lamda ("Wilks"), Pillai Trace ("Pillai"), Hotelling-Lawley's Trace ("Hotelling"), Roy's Largest Root ("Roy")}
+\item{sls}{(numeric) Significance Level to Stay. Similar to 'sle', 'sls' is the statistical significance level that a predictor variable must meet to 'stay' in the model. E.g. if 'sls = 0.1', a predictor that was previously included in the model but whose P-value is now greater than 0.1 will be removed.}
 
-\item{weights}{Numeric vector to provide a weight for each observation in the input data set. Note that weights should be ranged from 0 to 1, while negative numbers are forcibly converted to 0, and numbers greater than 1 are forcibly converted to 1. If you do not specify a weight vector, each observation has a default weight of 1.}
+\item{test_method_linear}{(character) Test method for multivariate linear regression analysis, choose from 'Pillai', 'Wilks', 'Hotelling-Lawley', 'Roy'. Default is 'Pillai'. For univariate regression, 'F-test' will be used.}
 
-\item{best}{Control the number of models displayed in the output, default is NULL, which means all possible model will be displayed.}
+\item{test_method_glm}{(character) Test method for logit, Poisson, or Gamma regression analysis, choose from 'Rao', 'LRT'. Default is 'Rao'. Only "Rao" is available for strategy = 'subset'.}
+
+\item{test_method_cox}{(character) Test method for cox regression analysis, choose from 'efron', 'breslow', 'exact'. Default is 'efron'.}
+
+\item{tolerance}{(numeric)  A statistical measure used to assess multicollinearity in a multiple regression model. It is calculated as the proportion of the variance in a predictor variable that is not accounted for by the other predictor variables in the model. Default is 1e-07.}
+
+\item{weight}{(numeric) A numeric vector specifying the coefficients assigned to the predictor variables. The magnitude of the weight reflects the degree to which each predictor variable contributes to the prediction of the response variable. The range of weight should be from 0 to 1. Values greater than 1 will be coerced to 1, and values less than 0 will be coerced to 0. Default is NULL, which means that all weight are set equal.}
+
+\item{best_n}{(numeric(integer)) The number of models to be retained in the process output. Default is 3, indicating that only the top 3 best models with the same number of variables are displayed. If all models are displayed, set it to Inf.}
+
+\item{num_digits}{(numeric(integer)) The number of digits to keep when rounding the results. Default is 6.}
+}
+\value{
+A list containing multiple tables will be returned.
+\itemize{
+\item Summary of arguments for model selection: Arguments used in the stepwise function, either default or user-supplied values.
+\item Summary of variables in dataset: Variable names, types, and classes in dataset.
+\item Summary of selection process under xxx(strategy) with xxx(metric): Overview of the variable selection process under specified strategy and metric.
+\item Summary of coefficients for the selected model with xxx(dependent variable) under xxx(strategy) and xxx(metric): Coefficients for the selected models under specified strategy with metric.
+}
 }
 \description{
-Stepwise linear regression analysis selects model based on information criteria and F or approximate F test with 'forward', 'backward', 'bidirection' and 'score' model selection method.
+Select optimal model using various stepwise regression strategies, e.g., Forward Selection, Backward Elimination, Bidirectional Elimination; meanwhile, it also supports Best Subset method. Four types of models are currently implemented: linear regression, logistic regression, Cox regression, Poisson, and Gamma regression. For selection criteria, a.k.a, stop rule, users can choose from AIC, AICc, BIC, HQ, Significant Level, and more.
 }
 \examples{
+## perform multivariate linear stepwise regression with 'bidirection' 
+## strategy and 'AIC' stop rule, excluding intercept.
 data(mtcars)
 mtcars$yes <- mtcars$wt
 formula <- cbind(mpg,drat) ~ . + 0
-stepwise(formula=formula,
-         data=mtcars,
-         selection="bidirection",
-         select="AIC")
+stepwise(formula = formula,
+         data = mtcars,
+         type = "linear",
+         strategy = "bidirection",
+         metric = "AIC")
+## perform linear stepwise regression with 'bidirection' strategy and 
+## "AIC","SBC","SL","AICc","BIC", and "HQ" stop rule.
+formula <- mpg ~ . + 1
+stepwise(formula = formula,
+         data = mtcars,
+         type = "linear",
+         strategy = c("forward","bidirection"),
+         metric = c("AIC","SBC","SL","AICc","BIC","HQ"))
+
+## perform logit stepwise regression with 'forward' strategy and significance
+## level as stop rule.
+data(remission)
+formula <- remiss ~ .
+stepwise(formula = formula,
+         data = remission,
+         type = "logit",
+         strategy = "forward",
+         metric = "SL",
+         sle=0.05,
+         sls=0.05)
 }
 \references{
-Alsubaihi, A. A., Leeuw, J. D., and Zeileis, A. (2002). Variable selection in multivariable regression using sas/iml. , 07(i12).
+Alsubaihi, A. A., Leeuw, J. D., and Zeileis, A. (2002). Variable strategy in multivariable regression using sas/iml. , 07(i12).
 
 Darlington, R. B. (1968). Multiple regression in psychological research and practice. Psychological Bulletin, 69(3), 161.
 
@@ -61,9 +109,9 @@ Hannan, E. J., & Quinn, B. G. (1979). The determination of the order of an autor
 
 Harold Hotelling. (1992). The Generalization of Student's Ratio. Breakthroughs in Statistics. Springer New York.
 
-Hocking, R. R. (1976). A biometrics invited paper. the analysis and selection of variables in linear regression. Biometrics, 32(1), 1-49.
+Hocking, R. R. (1976). A biometrics invited paper. the analysis and strategy of variables in linear regression. Biometrics, 32(1), 1-49.
 
-Hurvich, C. M., & Tsai, C. (1989). Regression and time series model selection in small samples. Biometrika, 76(2), 297-307.
+Hurvich, C. M., & Tsai, C. (1989). Regression and time series model strategy in small samples. Biometrika, 76(2), 297-307.
 
 Judge, & GeorgeG. (1985). The Theory and practice of econometrics /-2nd ed. The Theory and practice of econometrics /. Wiley.
 
@@ -73,18 +121,18 @@ Mardia, K. V., Kent, J. T., & Bibby, J. M. (1979). Multivariate analysis. Mathem
 
 Mckeon, J. J. (1974). F approximations to the distribution of hotelling's t20. Biometrika, 61(2), 381-383.
 
-Mcquarrie, A. D. R., & Tsai, C. L. (1998). Regression and Time Series Model Selection. Regression and time series model selection /. World Scientific.
+Mcquarrie, A. D. R., & Tsai, C. L. (1998). Regression and Time Series Model strategy. Regression and time series model strategy /. World Scientific.
 
 Pillai, K. . (1955). Some new test criteria in multivariate analysis. The Annals of Mathematical Statistics, 26(1), 117-121.
 
-R.S. Sparks, W. Zucchini, & D. Coutsourides. (1985). On variable selection in multivariate regression. Communication in Statistics- Theory and Methods, 14(7), 1569-1587.
+R.S. Sparks, W. Zucchini, & D. Coutsourides. (1985). On variable strategy in multivariate regression. Communication in Statistics- Theory and Methods, 14(7), 1569-1587.
 
 Sawa, T. (1978). Information criteria for discriminating among alternative regression models. Econometrica, 46(6), 1273-1291.
 
 Schwarz, G. (1978). Estimating the dimension of a model. Annals of Statistics, 6(2), pags. 15-18.
 }
 \author{
-Junhui Li
+Junhui Li, Kai Hu, Xiaohuan Lu
 }
 \keyword{regression}
 \keyword{stepwise}

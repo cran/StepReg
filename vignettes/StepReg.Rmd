@@ -1,143 +1,496 @@
 ---
-title: "StepReg Vignette"
+title: "StepReg: Stepwise Regression Analysis"
 author:
-  - Junhui Li^[China Agricultural University, junhuili@cau.edu.cn]
-  - Junhui Li^[University of Massachusset Chan medical school, junhui.li11@umassmed.edu]
+- name: Junhui Li
+  affiliation: 
+  - University of Massachusset Chan Medical School, Worcester, USA
+- name: Kai Hu
+  affiliation: University of Massachusset Chan Medical School, Worcester, USA
+- name: Xiaohuan Lu
+  affiliation: Clark University, Worcester, USA
+- name: Wenxin Liu
+  affiliation: China Agricultural University, Beijing, China
+- name: Julie Lihua Zhu
+  affiliation: University of Massachusset Chan Medical School, Worcester, USA
 package: StepReg
+bibliography: bibliography.bib
+fontsize: 11pt
+nocite: '@*'
+link-citations: true
 output:
-  BiocStyle::html_document
+  BiocStyle::html_document:
+    toc_float: true
+  BiocStyle::pdf_document: default
 abstract: |
-  Stepwise regression is a popular data-mining method to identify a useful subset of the predictors to be used in a multiple regression model. We developed an R package StepReg, which allow users to perform linear, logistic and cox proportional hazard stepwise regression with a widely used selection criteria and stop rules are available in forward selection, backward elimination, both-direcition and best subset method. User can specify effects to be included in all models and do multivariate multiple stepwise regression.
+  The StepReg package, developed for exploratory model building tasks, offers support across diverse scenarios. It facilitates model construction for various response variable types, including continuous (linear regression), binary (logistic regression), and time-to-event (Cox regression), among others. StepReg encompasses all commonly used model selection strategies, including forward selection, backward elimination, bidirectional elimination, and best subsets. Notably, it offers flexibility in selection metrics, accommodating both information criteria (AIC, BIC, etc.) and significance level cutoffs. This vignettes provide numerous examples showcasing the effective utilization of StepReg for model development in diverse contexts. Furthermore, it delves into considerations for selecting appropriate strategies and metrics, empowering users to make informed decisions throughout the modeling process.
 vignette: |
-  %\VignetteIndexEntry{StepReg Vignette}
+  %\VignetteIndexEntry{StepReg: Stepwise Regression Analysis}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+```{r include=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
 
 # Introduction
 
-Here we applied StepReg to the well-known mtcars data and lung data for clarifying how to perform linear, logistic and Cox stepwise regression.
+Model selection is the process of choosing the most relevant features from a set of candidate variables. This procedure is crucial because it ensures that the final model is both accurate and interpretable while being computationally efficient and avoiding overfitting. Stepwise regression algorithms iteratively add or remove features from the model based on certain criteria (e.g., significance level or P-value, information criteria like AIC or BIC, etc.). The process continues until no further improvements can be made according to the chosen criterion. At the end of the stepwise procedure, you'll have a final model that includes the selected features and their coefficients.
 
-```{r library}
-#install.package("StepReg")
+StepReg simplifies model selection tasks by providing a unified programming interface. It currently supports model buildings for five distinct response variable types (section \@ref(regressioncategories)), four model selection strategies (section \@ref(modelselectionstrategies)) including the best subsets algorithm, and a variety of selection metrics (section \@ref(selectionmetrics)). Moreover, StepReg detects and addresses the multicollinearity issues if they exist (section \@ref(multicollinearity)). The output of StepReg includes multiple tables summarizing the final model and the variable selection procedures. Additionally, StepReg offers a plot function to visualize the selection steps (section \@ref(stepregoutput)). For demonstration, the vignettes include four use cases covering distinct regression scenarios (section \@ref(usecases)). Non-programmers can access the tool through the iterative Shiny app detailed in section \@ref(shinyapp).
+
+# Quick demo {#quickdemo}
+
+The following example selects an optimal linear regression model with the `mtcars` dataset.
+```{r, message = FALSE}
 library(StepReg)
-```
+#devtools::load_all("~/GitHub/StepReg/")
 
-## linear stepwise regression with data mtcar
-
-### linear stepwise regression using 'forward' method for variable selection and 'AIC' as criteria for stop rules
-```{r}
+data(mtcars)
 formula <- mpg ~ .
-sForwAIC <- stepwise(formula=formula,
-         data=mtcars,
-         selection="forward",
-         select="AIC")
-sForwAIC
+res <- stepwise(formula = formula,
+                data = mtcars,
+                type = "linear",
+                include = c("qsec"),
+                strategy = "bidirection",
+                metric = c("AIC"))
+```
+Breakdown of the parameters:
+
++ `formula`: specifies the dependent and independent variables
++ `type`: specifies the regression category, depending on your data, choose from "linear", "logit", "cox", etc.
++ `include`: specifies the variables that must be in the final model
++ `strategy`: specifies the model selection strategy, choose from "forward", "backward", "bidirection", "subset"
++ `metric`: specifies the model fit evaluation metric, choose one or more from "AIC", "AICc", "BIC", "SL", etc.
+
+The output consists of multiple tables, which can be viewed with:
+```{r, message = FALSE}
+res
 ```
 
-From the above result, we can see that stepwise() output a list with 5 tables. 
+You can also visualize the variable selection procedures with:
+```{r, message = FALSE}
+plot(res)
+```
 
-* 'Summary of Parameters' tells you what parameters is used for this function, where Intercept equals to 1 showing that this stepwise regression has a intercept, otherwise 0 has not a intercept.
+The `(+)1` refers to original model with intercept being added, `(+)` indicates variables being added to the model while `(-)` means variables being removed from the model.
 
-* 'Variables Type' is the summary of the type of all variables.
+Additionally, you can generate reports of various formats with:
+```{r, eval = FALSE}
+report(res, report_name = "path_to/demo_res", format = "html")
+```
+Replace `"path_to/demo_res"` with desired output file name, the suffix `".html"` will be added automatically. For detailed examples and more usage, refer to section \@ref(stepregoutput) and \@ref(usecases).
 
-* 'Process of Selection' let you know how variables are selected, we used AIC as the criteria so the last column is value of AIC.
+# Key features
 
-* 'Coefficients of the Selected Variables' is the coefficients of all selected variable.
+## Regression categories {#regressioncategories}
 
-### linear stepwise regression using 'bidirection' method for variable selection and 'SL' as criteria for stop rules, and we set significant level for entry(sle) is 0.15, and significant level of stay(sls) is 0.15 too.
+**StepReg** supports multiple types of regressions, including *linear*, *logit*, *cox*, *poisson*, and *gamma* regressions. These methods primarily vary by the type of response variable, which are summarized in the table below. Additional regression techniques can be incorporated upon user requests.
 
-```{r}
+```{r, echo = FALSE}
+library(knitr)
+library(kableExtra)
+
+Regression <- c("linear", "logit", "cox", "poisson", "gamma")
+Reponse <- c("continuous", "binary", "time-to-event", "count", "continuous and positively skewed")
+df <- data.frame(Regression, Reponse)
+
+kable(df, format = "html", caption = 'Common regression categories') %>% kable_styling()
+```
+
+## Model selection strategies {#modelselectionstrategies}
+
+Model selection aims to identify the subset of independent variables that provide the best predictive performance for the response variable. Both stepwise regression and best subsets approaches are implemented in StepReg. For stepwise regression, there are mainly three methods: *Forward Selection*, *Backward Elimination*, *Bidirectional Elimination*.
+
+```{r, echo = FALSE}
+Strategy <- c("Forward Selection", "Backward Elimination", "Bidirectional Elimination", "Best Subsets")
+Description <- c("In forward selection, the algorithm starts with an empty model (no predictors) and adds in variables one by one. Each step tests the addition of every possible predictor by calculating a pre-selected metric. Add the variable (if any) whose inclusion leads to the most statistically significant fit improvement. Repeat this process until more predictors no longer lead to a statistically better fit.",
+                "In backward elimination, the algorithm starts with a full model (all predictors) and deletes variables one by one. Each step test the deletion of every possible predictor by calculating a pre-selected metric. Delete the variable (if any) whose loss leads to the most statistically significant fit improvement. Repeat this process until less predictors no longer lead to a statistically better fit.",
+                "Bidirectional elimination is essentially a forward selection procedure combined with backward elimination at each iteration. Each iteration starts with a forward selection step that adds in predictors, followed by a round of backward elimination that removes predictors. Repeat this process until no more predictors are added or excluded.",
+                "Stepwise algorithms add or delete one predictor at a time and output a single model without evaluating all candidates. Therefore, it is a relatively simple procedure that only produces one model. In contrast, the *Best Subsets* algorithm calculates all possible models and output the best-fitting models with one predictor, two predictors, etc., for users to choose from.")
+df <- data.frame(Strategy, Description)
+
+kable(df, format = "html", caption = 'Model selection strategy') %>% kable_styling()
+```
+
+Given the computational constraints, when dealing with datasets featuring a substantial number of predictor variables greater than the sample size, the Bidirectional Elimination typically emerges as the most advisable approach. Forward Selection and Backward Elimination can be considered in sequence. On the contrary, the Best Subsets approach requires the most substantial processing time, yet it calculates a comprehensive set of models with varying numbers of variables. In practice, users can experiment with various methods and select a final model based on the specific dataset and research objectives at hand.
+
+## Selection metrics {#selectionmetrics}
+
+Various *selection metrics* can be used to guide the process of adding or removing predictors from the model. These metrics help to determine the importance or significance of predictors in improving the model fit. In StepReg, selection metrics include two categories: *Information Criteria* and *Significance Level* of the coefficient associated with each predictor. *Information Criteria* is a means of evaluating a model's performance, which balances model fit with complexity by penalizing models with a higher number of parameters. Lower *Information Criteria* values indicate a better trade-off between model fit and complexity. Note that when evaluating different models, it is important to compare them within the same *Information Criteria* framework rather than across multiple Information Criteria. For example, if you decide to use AIC, you should compare all models using AIC. This ensures consistency and fairness in model comparison, as each Information Criterion has its own scale and penalization factors. In practice, multiple metrics have been proposed, the ones supported by StepReg are summarized below.
+
+Importantly, given the discrepancies in terms of the precise definitions of each metric, StepReg mirrors the formulas adopted by [SAS](https://documentation.sas.com/doc/en/statcdc/14.2/statug/statug_glmselect_details15.htm) for *univariate multiple regression (UMR)* except for HQ, IC(1), and IC(3/2). A subset of the UMR can be easily extended to *multivariate multiple regression (MMR)*, which are indicated in the following table.
+
+```{r, echo = FALSE}
+Statistic <- c(
+"${n}$",
+"${p}$",
+"${q}$",
+"$\\sigma^2$",
+"${SST}$",
+"${SSE}$",
+"$\\text{LL}$",
+"${|  |}$",
+"$\\ln()$")
+
+Meanings <- c(
+"Sample Size",
+"Number of parameters including the intercept",
+"Number of dependent variables",
+"Estimate of pure error variance from fitting the full model",
+"Total sum of squares corrected for the mean for the dependent variable, which is a numeric value for UMR and a matrix for multivariate regression",
+"Error sum of squares, which is a numeric value for UMR and a matrix for multivariate regression",
+"The natural logarithm of likelihood",
+"The determinant function",
+"The natural logarithm")
+
+kable_styling(kable(data.frame(Statistic,Meanings),format = "html", align='l', escape = F, caption = 'Statistics in selection metric'))
+```
+
+```{r, echo = FALSE}
+Abbreviation <- c("", "AIC", "AICc", "BIC", "Cp", "HQ", "IC(1)", "IC(3/2)", "SBC", "SL", "Rsq", "adjRsq")
+Definition <- c("",
+                "Akaike’s Information Criterion",
+                "Corrected Akaike’s Information Criterion",
+                "Sawa Bayesian Information Criterion",
+                "Mallows’ Cp statistic",
+                "Hannan and Quinn Information Criterion",
+                "Information Criterion with Penalty Coefficient Set to 1",
+                "Information Criterion with Penalty Coefficient Set to 3/2",
+                "Schwarz Bayesian Information Criterion",
+                "Significance Level (pvalue)",
+                "R-square statistic",
+                "Adjusted R-square statistic")
+
+Formula_in_Linear <- c("linear",
+                       "$n\\ln\\left(\\frac{|\\text{SSE}|}{n}\\right) + 2pq + n + q(q+1)$ <br>[@Hurvich_Tsai_1989; @Al-Subaihi_2002]$^1$",
+                       "$n\\ln\\left(\\frac{|\\text{SSE}|}{n}\\right) + \\frac{nq(n+p)}{n-p-q-1}$ <br>[@Hurvich_Tsai_1989; @Bedrick_Tsai_1994]$^2$",
+                       "$n\\ln\\left(\\frac{SSE}{n}\\right) + 2(p+2)o - 2o^2, o = \\frac{n\\sigma^2}{SSE}$ <br>[@Sawa_1978; @Judge_1985] <br>not available for MMR",
+                       "$\\frac{SSE}{\\sigma^2} + 2p - n$ <br> [@Mallows_1973; @Hocking_1976] <br>not available for MMR",
+                       "$n\\ln\\left(\\frac{|\\text{SSE}|}{n}\\right) + 2pq\\ln(\\ln(n))$ <br>[@Hannan_Quinn_1979; @McQuarrie_Tsai_1998; @Hurvich_Tsai_1989]",
+                       "$n\\ln\\left(\\frac{|\\text{SSE}|}{n}\\right) + p$ <br>[@Nelder_Wedderburn_1972; @Smith_Spiegelhalter_1980] not available for MMR",
+                       "$n\\ln\\left(\\frac{|\\text{SSE}|}{n}\\right) + \\frac{3}{2}p$ <br>[@Smith_Spiegelhalter_1980] <br>not available for MMR",
+                       "$n\\ln\\left(\\frac{|\\text{SSE}|}{n}\\right) + p \\ln(n)$ <br>[@Hurvich_Tsai_1989; @Schwarz_1978; @Judge_1985; @Al-Subaihi_2002] <br>not available for MMR",
+                       "$\\textit{F test}$ for UMR and $\\textit{Approximate F test}$ for MMR",
+                       "$1 - \\frac{SSE}{SST}$ <br>not available for MMR",
+                       "$1 - \\frac{(n-1)(1-R^2)}{n-p}$ <br>[@Darlington_1968; @Judge_1985] <br>not available for MMR")
+
+Formula_in_Logit_Cox_Poisson_Gamma <- c("logit, cox, poisson and gamma",
+                                        "$-2\\text{LL} + 2p$ <br>[@Darlington_1968; @Judge_1985]",
+                                        "$-2\\text{LL} + \\frac{n(n+p)}{n-p-2}$ <br>[@Hurvich_Tsai_1989]",
+                                        "not available",
+                                        "not available",
+                                        "$-2\\text{LL} + 2p\\ln(\\ln(n))$ <br>[@Hannan_Quinn_1979]",
+                                        "$-2\\text{LL} + p$ <br>[@Nelder_Wedderburn_1972; @Smith_Spiegelhalter_1980]",
+                                        "$-2\\text{LL} + \\frac{3}{2}p$ <br>[@Smith_Spiegelhalter_1980]",
+                                        "$-2\\text{LL} + p\\ln(n)$ <br>[@Schwarz_1978; @Judge_1985]",
+                                        "Forward: LRT and Rao Chi-square test (logit, poisson, gamma); LRT (cox); <br><br>Backward: Wald test",
+                                        "not available",
+                                        "not available")
+df <- data.frame(Abbreviation, Definition, Formula_in_Linear, Formula_in_Logit_Cox_Poisson_Gamma)
+colnames(df) <- c("Abbreviation","Definition","Formula","")
+
+kable(df, format = "html", align = "l", 
+      booktabs = TRUE, escape = F, 
+      caption = 'Abbreviation, Definition, and Formula of the Selection Metric for Linear, Logit, Cox, Possion, and Gamma regression') %>%
+  footnote(number = c("Unsupported AIC formula (which does not affect the selection process as it only differs by constant additive and multiplicative factors):\n
+                      $AIC=n\\ln\\left(\\frac{SSE}{n}\\right) + 2p$ [@Darlington_1968; @Judge_1985]", 
+                      "Unsupported AICc formula (which does not affect the selection process as it only differs by constant additive and multiplicative factors):\n
+                      $AICc=\\ln\\left(\\frac{SSE}{n}\\right) + 1 + \\frac{2(p+1)}{n-p-2}$ [@McQuarrie_Tsai_1998]")) %>%
+  kable_styling() %>%
+  column_spec(3, width = "0.5in") %>%
+  column_spec(4, width = "0.4in")
+```
+
+No metric is necessarily optimal for all datasets. The choice of them depends on your data and research goals. We recommend using multiple metrics simultaneously, which allows the selection of the best model based on your specific needs. Below summarizes general guidance.
+
++ AIC: AIC works by penalizing the inclusion of additional variables in a model. The lower the AIC, the better performance of the model. AIC does not include sample size in penalty calculation, and it is optimal in minimizing the mean square error of predictions [@Brewer_2016].
+
++ AICc: AICc is a variant of AIC, which works better for small sample size, especially when `numObs / numParam < 40` [@Burnham_2002].
+
++ Cp: Cp is used for linear models. It is equivalent to AIC when dealing with Gaussian linear model selection.
+
++ IC(1) and IC(3/2): IC(1) and IC(3/2) have 1 and 3/2 as penalty factors respectively, compared to 2 used by AIC. As such, IC(1) turns to return a complex model with more variables that may suffer from overfitting issues.
+
++ BIC and SBC: Both BIC and SBC are variants of Bayesian Information Criterion. The main distinction between BIC/SBC and AIC lies in the magnitude of the penalty imposed: BIC/SBC are more parsimonious when penalizing model complexity, which typically results to a simpler model [@SAS_Institute_2018; @Sawa_1978; @Hurvich_Tsai_1989; @Schwarz_1978; @Judge_1985; @Al-Subaihi_2002].
+
+The precise definitions of these criteria can vary across literature and in the SAS environment. Here, BIC aligns with the definition of the Sawa Bayesion Information Criterion as outlined in  [SAS](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.3/statug/statug_glmselect_syntax07.htm) documentation, while SBC corresponds to the Schwarz Bayesian Information Criterion. According to Richard's [post](https://www.linkedin.com/pulse/aicbic-model-selection-richard-randa/), whereas AIC often favors selecting overly complex models, BIC/SBC prioritize a small models. Consequently, when dealing with a limited sample size, AIC may seem preferable, whereas BIC/SBC tend to perform better with larger sample sizes.
+
++ HQ: HQ is an alternative to AIC, differing primarily in the method of penalty calculation. However, HQ has remained relatively underutilized in practice [@Burnham_2002].
+
++ Rsq: The R-squared (R²) statistic measures the proportion of variations that is explained by the model. It ranges from 0 to 1, with 1 indicating that all of the variability in the response variables is accounted for by the independent variables. As such, R-squared is valuable for communicating the explanatory power of a model. However, R-squared alone is not sufficient for selection because it does not take into account the complexity of the model. Therefore, while R-squared is useful for understanding how well the model fits the data, it should not be the sole criterion for model selection.
+
++ adjRsq: The adjusted R-squared (adj-R²) seeks to overcome the limitation of R-squared in model selection by considering the number of predictors. It serves a similar purpose to information criteria, as both methods compare models by weighing their goodness of fit against the number of parameters. However, information criteria are typically regarded as superior in this context [@Stevens_2016].
+
++ SL: SL stands for Significance Level (P-value), embodying a distinct approach to model selection in contrast to information criteria. The SL method operates by calculating a P-value through specific hypothesis testing. Should this P-value fall below a predefined threshold, such as 0.05, one should favor the alternative hypothesis, indicating that the full model significantly outperforms the reduced model. The effectiveness of this method hinges upon the selection of the P-value threshold, wherein smaller thresholds tend to yield simpler models.
+
+## Multicollinearity {#multicollinearity}
+
+This [blog](https://statisticsbyjim.com/regression/multicollinearity-in-regression-analysis/) by Jim Frost gives an excellent overview of multicollinearity and when it is necessary to remove it.
+
+Simply put, a dataset contains multicollinearity when input predictors are correlated. When multicollinearity occurs, the interpretability of predictors will be badly affected because changes in one input variable lead to changes in other input variables. Therefore, it is hard to individually estimate the relationship between each input variable and the dependent variable.
+
+Multicollinearity can dramatically reduce the precision of the estimated regression coefficients of correlated input variables, making it hard to find the correct model. However, as Jim pointed out, “Multicollinearity affects the coefficients and p-values, but it does not influence the predictions, precision of the predictions, and the goodness-of-fit statistics. If your primary goal is to make predictions, and you don’t need to understand the role of each independent variable, you don’t need to reduce severe multicollinearity.”
+
+In StepReg, [QC Matrix Decomposition](https://towardsdatascience.com/qr-matrix-factorization-15bae43a6b2#:~:text=The%20QR%20matrix%20decomposition%20allows%20one%20to%20express%20a%20matrix,zero%2C%20it%20is%20also%20invertible.) is performed ahead of time to detect and remove input variables causing multicollinearity.
+
+# StepReg output {#stepregoutput}
+
+StepReg provides multiple functions for summarizing the model building results. The function `stepwise()` generates a list of tables that describe the feature selection steps and the final model. To facilitate collaborations, you can redirect the tables into various formats such as "xlsx", "html", "docx", etc. with the function `report()`. Furthermore, you can easily compare the variable selection procedures for multiple selection metrics by visualizing the steps with the function `plot()`. Details see below.
+
+Depending on the number of selected regression strategies and metrics, you can expect to receive at least four tables from `stepwise()`. Below describes the content of each of 4 tables from Quick Demo \@ref(quickdemo).
+
+```{r, echo = FALSE}
+Table_Name <- c("Summary of arguments for model selection",
+                "Summary of variables in dataset",
+                "Summary of selection process under xxx(strategy) with xxx(metric)",
+                "Summary of coefficients for the selected model with xxx(dependent variable) under xxx(strategy) and xxx(metric)")
+
+Table_Description <- c("Arguments used in the stepwise function, either default or user-supplied values.",
+                       "Variable names, types, and classes in dataset.",
+                       "Overview of the variable selection process under specified strategy and metric.",
+                       "Coefficients for the selected models under specified strategy with metric")
+data.frame(Table_Name, Table_Description) %>% 
+  kable(format = "html", align = 'l', escape = F, caption = "Tables generated by StepReg") %>%
+  kable_styling()
+```
+
+You can save the output in different format like "xlsx", "docx", "html", "pptx", and others, facilitating easy sharing. Of note, the suffix will be automatically added to the `report_name`. For instance, the following example generates both "results.xlsx" and "results.docx" reports.
+```{r, eval = FALSE}
+report(res, report_name = "results", format = c("xlsx", "docx"))
+```
+
+# Use cases {#usecases}
+
+Please choose the regression model that best suits the type of response variable. For detailed guidance, see section \@ref(regressioncategories). Below, we present various examples utilizing different models tailored to specific datasets.
+
+## Linear regression with the _mtcars_ dataset
+
+In this section, we'll demonstrate how to perform linear regression analysis using the [mtcars](https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/mtcars.html) dataset, showcasing different scenarios with varying numbers of predictors and dependent variables. We set `type = "linear"` to direct the function to perform linear regression. 
+
+**Description of the `mtcars` dataset**
+
+The `mtcars` is a classic dataset in statistics and is included in the base R installation. It was sourced from the 1974 _Motor Trend_ US magazine, comprising 32 observations on 11 variables. Here's a brief description of the variables included:
+
+1. mpg: miles per gallon (fuel efficiency)
+2. cyl: number of cylinders
+3. disp: displacement (engine size) in cubic inches
+4. hp: gross horsepower
+5. drat: rear axle ratio
+6. wt: weight (in thousands of pounds)
+7. qsec: 1/4 mile time (in seconds)
+8. vs: engine type (0 = V-shaped, 1 = straight)
+9. am: transmission type (0 = automatic, 1 = manual)
+10. gear: number of forward gears
+11. carb: number of carburetors
+
+**Why choose linear regression**
+
+Linear regression is an ideal choice for analyzing the `mtcars` dataset due to its inclusion of continuous variables like "mpg", "hp", or "weight", which can serve as response variables. Furthermore, the dataset exhibits potential linear relationships between the response variable and other variables.
+
+### Example1: single dependent variable ("mpg")
+
+In this example, we employ "forward" strategy with "AIC" as the selection criteria. Additionally, we specify using the `include` argument that "disp", "cyl" must always be included in the model.
+```{r, message = FALSE}
+library(StepReg)
+data(mtcars)
+
 formula <- mpg ~ .
-sBidiSL <- stepwise(formula=formula,
-         data=mtcars,
-         selection="bidirection",
-         select="SL",
-         sle=0.15,
-         sls=0.15)
-sBidiSL
+res1 <- stepwise(formula = formula,
+                 data = mtcars,
+                 type = "linear",
+                 include = c("disp", "cyl"),
+                 strategy = "forward",
+                 metric = "AIC")
+res1
 ```
 
-The output of this time is similar to the last time except that the last column name of 'Process of Selection' is SL.
+To visualize the selection process:
+```{r plot_res1, warning = FALSE}
+plot(res1)
+```
 
-### linear stepwise regression using 'backward' method for variable selection and 'SBC' as criteria for stop rules and without intercept in stepwise regression.
-
-```{r}
-#formula <- mpg ~ . -1
+To exclude the intercept from the model, adjust the formula as follows:
+```{r, eval = FALSE}
 formula <- mpg ~ . + 0
-sBackSBC <- stepwise(formula=formula,
-                     data=mtcars,
-                     selection="backward",
-                     select="SBC")
-sBackSBC
 ```
 
-Note that 0 instead of 1 in table 'Summary of Parameters' and 'Selected Varaibles'.
+To limit the model to a specific subset of predictors, adjust the formula as follows, which will only consider "cyp", "disp", "hp", "wt", "vs", and "am" as the predictors.
+```{r, eval = FALSE}
+formula <- mpg ~ cyl + disp + hp + wt + vs + am + 0
+```
 
-### linear stepwise regression using 'score' method for variable selection, 'AICc' as criteria and we perform multivariable multiple stepwise regression with mpg and dra as dependent variables, besides, we select cyl disp hp wt vs am as independent variables, where wt is included always.
- 
+Another way is to use minus symbol(`"-"`) to exclude some predictors for variable selection. For example, include all variables except "disp", "wt", and intercept.
+
+```{r, eval = FALSE}
+formula <- mpg ~ . - 1 - disp - wt
+```
+
+You can simultaneously provide multiple selection strategies and metrics. For example, the following code snippet employs both "forward" and "backward" strategies using metrics "AIC", "BIC", and "SL". It's worth mentioning that when "SL" is specified, you may also want to set the significance level for entry ("sle") and stay ("sls"), both of which default to 0.15.
+```{r, message = FALSE, warning = FALSE}
+formula <- mpg ~ .
+res2 <- stepwise(formula = formula,
+                 data = mtcars,
+                 type = "linear",
+                 strategy = c("forward", "backward"),
+                 metric = c("AIC", "BIC", "SL"),
+                 sle = 0.05,
+                 sls = 0.05)
+res2
+plot(res2)
+```
+
+### Example2: multivariate regression ("mpg" and "drat")
+
+In this scenario, there are two dependent variables, "mpg" and "drat". The model selection aims to identify the most influential predictors that affect both variables.
 ```{r}
-formula <- cbind(mpg,drat) ~ cyl+disp+hp+wt+vs+am
-stepwise(formula=formula,
-        data=mtcars,
-        include='wt',
-        selection="score",
-        select="AICc")
+formula <- cbind(mpg, drat) ~ .
+res3 <- stepwise(formula = formula,
+                 data = mtcars,
+                 type = "linear",
+                 strategy = "forward",
+                 metric = c("AIC", "HQ"))
+res3
+plot(res3)
 ```
 
-## logistic stepwise regression with data mtcars
+## Logistic regression with the _remission_ dataset
 
-### logistic stepwise regression using 'forward' method for variable selection and 'AIC' as criteria for stop rules
+In this example, we'll showcase logistic regression using the `remission` dataset. By setting `type = "logit"`, we instruct the function to perform logistic regression. 
 
-```{r warning=FALSE}
-formula <- am ~ .
-stepwiseLogit(formula=formula,
-              data=mtcars,
-              selection="forward",
-              select="AIC")
+**Description of the `remission` dataset**
+
+The [remission](https://online.stat.psu.edu/stat501/book/export/html/1011) dataset, obtained from the online course STAT501 at Penn State University, has been integrated into StepReg. It consists of 27 observations across seven variables, including a binary variable named "remiss":
+
+1. remiss: whether leukemia remission occurred, a value of 1 indicates occurrence while 0 means non-occurrence
+2. cell: cellularity of the marrow clot section
+3. smear: smear differential percentage of blasts
+4. infil: percentage of absolute marrow leukemia cell infiltrate
+5. li: percentage labeling index of the bone marrow leukemia cells
+6. blast: the absolute number of blasts in the peripheral blood
+7. temp: the highest temperature before the start of treatment
+
+**Why choose logistic regression**
+
+Logistic regression effectively captures the relationship between predictors and a categorical response variable, offering insights into the probability of being assigned into specific response categories given a set of predictors. It is suitable for analyzing binary outcomes, such as the remission status ("remiss") in the `remission` dataset. 
+
+### Example1: using "forward" strategy
+
+In this example, we employ a "forward" strategy with "AIC" as the selection criteria, while force ensuring that the "cell" variable is included in the model.
+```{r, message = FALSE}
+data(remission)
+
+formula <- remiss ~ .
+res4 <- stepwise(formula = formula,
+                 data = remission,
+                 type = "logit",
+                 include= "cell",
+                 strategy = "forward",
+                 metric = "AIC")
+res4
+plot(res4)
 ```
 
-### logistic stepwise regression using 'score' method for variable selection and 'SL' as criteria and only output the first 3 best model.
+### Example2: using "subset" strategy
 
-```{r warning=FALSE}
-formula <- am ~ .
-stepwiseLogit(formula=formula,
-              data=mtcars,
-              selection="score",
-              select="SL",
-              best=3)
+In this example, we employ a "subset" strategy, utilizing "SBC" as the selection criteria while excluding the intercept. Meanwhile, we set `best_n = 3` to restrict the output to the top 3 models for each number of variables.
+```{r, message = FALSE}
+data(remission)
+
+formula <- remiss ~ . + 0
+res5 <- stepwise(formula = formula,
+                  data = remission,
+                  type = "logit",
+                  strategy = "subset",
+                  metric = "SBC",
+                  best_n = 3)
+res5
+plot(res5)
 ```
 
-## Cox stepwise regression with data lung
+Here, the `0` in the above plot means that there is no intercept in the model.
 
-### cox stepwise regression using 'forward' method for variable selection and 'IC(1)' as criteria for stop rules
+## Cox regression with the `lung` dataset
 
-```{r warning=FALSE}
-lung <- survival::lung
-my.data <- na.omit(lung)
-my.data$status1 <- ifelse(my.data$status==2,1,0)
-data <- my.data
-formula = Surv(time, status1) ~ . - status 
+In this example, we'll demonstrate how to perform Cox regression analysis using the [`lung`](https://stat.ethz.ch/R-manual/R-devel/library/survival/html/lung.html) dataset. By setting `type = "cox"`, we instruct the function to conduct Cox regression.
 
-stepwiseCox(formula=formula,
-  data=my.data,
-  selection="forward",
-  select="IC(1)")
+**Description of the `lung` dataset**
+
+The `lung` dataset, available in the `r CRANpkg("survival")` R package, includes information on survival times for 228 patients with advanced lung cancer. It comprises ten variables, among which the "status" variable codes for censoring status (1 = censored, 2 = dead), and the "time" variable denotes the patient survival time in days. To learn more about the dataset, use `?survival::lung`.
+
+**Why choose Cox regression**
+
+Cox regression, also termed the Cox proportional hazards model, is specifically designed for analyzing survival data, making it well-suited for datasets like `lung` that include information on the time until an event (e.g., death) occurs. This method accommodates censoring and assumes proportional hazards, enhancing its applicability to medical studies involving time-to-event outcomes.
+
+### Example1: using "forward" strategy
+
+In this example, we employ a "forward" strategy with "AICc" as the selection criteria.
+```{r, message = FALSE}
+library(dplyr)
+# Preprocess:
+lung <- survival::lung %>%
+  mutate(sex = factor(sex, levels = c(1, 2))) %>% # make sex as factor
+  na.omit() # get rid of incomplete records
+
+formula  =  Surv(time, status) ~ .
+res6 <- stepwise(formula = formula,
+                 data = lung,
+                 type = "cox",
+                 strategy = "forward",
+                 metric = "AICc")
+res6
+plot(res6)
 ```
 
-### cox stepwise regression using 'score' method for variable selection and 'SL' as criteria and only output the first 3 best model.
+## Poisson regression with the `creditCard` dataset
 
-```{r warning=FALSE}
-formula = Surv(time, status1) ~ . - status 
-stepwiseCox(formula=formula,
-  data=my.data,
-  selection="score",
-  select="SL",
-  best=3)
+In this example, we'll demonstrate how to perform Poisson regression analysis using the [`creditCard`](https://search.r-project.org/CRAN/refmans/AER/html/CreditCard.html) dataset.  We set `type = "poisson"` to direct the function to perform Poisson regression.
+
+**Descprition of the `creditCard` dataset**
+
+The `creditCard` dataset contains credit history information for a sample of applicants for a specific type of credit card, included in the `r CRANpkg("AER")` package. It encompasses 1319 observations across 12 variables, including "reports", "age", "income", among others. The "reports" variable represents the number of major derogatory reports. For detailed information, refer to `?AER::CreditCard`.
+
+**Why choose Poisson regression**
+
+Poisson regression is frequently employed method for analyzing count data, where the response variable represents the occurrences of an event within a defined time or space frame. In the context of the `creditCard` dataset, Poisson regression can model the count of major derogatory reports ("reports"), enabling assessment of predictors' impact on this variable.
+
+### Example1: using "forward" strategy
+
+In this example, we employ a "forward" strategy with "SL" as the selection criteria. We set the significance level for entry to 0.05 (`sle = 0.05`).
+```{r, message = FALSE}
+data(creditCard)
+
+formula  = reports ~ .
+res7 <- stepwise(formula = formula,
+                 data = creditCard,
+                 type = "poisson",
+                 strategy = "forward",
+                 metric = "SL",
+                 sle = 0.05)
+res7
+plot(res7)
 ```
 
+# Interactive app {#shinyapp}
 
-# Session Info
-```{r sessionInfo, echo=FALSE}
+We have developed an interactive Shiny application to simplify model selection tasks for non-programmers. You can access the app through the following URL:
+
+https://junhuili1017.shinyapps.io/StepReg/
+
+You can also access the Shiny app directly from your local machine with the following code:
+
+```{r, eval = FALSE}
+library(StepReg)
+StepRegShinyApp()
+```
+
+Here is the user interface.
+
+![](src/StepReg_shiny_UI_description_File.png)
+
+![](src/StepReg_shiny_UI_description_Analyze.png)
+
+# Session info
+
+```{r sessionInfo, echo = FALSE}
 sessionInfo()
 ```
