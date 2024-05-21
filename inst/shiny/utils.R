@@ -2,10 +2,10 @@
 require("shiny") || stop("unable to load shiny")
 require("shinyjs") || stop("unable to load shinyjs")
 require("StepReg") || stop("unable to load StepReg")
-if(packageVersion("StepReg") < "1.5.0") {
-  stop("Need to wait until package:StepReg 1.5.0 is installed!")
-}
-require("gridExtra") || stop("unable to load gridExtra")
+require("survival") || stop("unable to load survival")
+require("MASS") || stop("unable to load MASS")
+require("cowplot") || stop("unable to load cowplot")
+require("stringr") || stop("unable to load stringr")
 require("DT") || stop("unable to load DT")
 require("shinythemes") || stop("unable to load shinythemes")
 require("shinycssloaders") || stop("unable to laod shinycssloaders")
@@ -14,9 +14,10 @@ require("dplyr") || stop("unable to load dplyr")
 require("summarytools") || stop("unable to load summarytools")
 require("ggcorrplot") || stop("unable to load ggcorrplot")
 require("tidyr") || stop("unable to load tidyr")
-require("GGally") || stop("unable to load GGally")
-require("shinycssloaders")
-
+#require("GGally") || stop("unable to load GGally")
+require("ggrepel") || stop("unable to load ggrepel")
+require("purrr") || stop("unable to load purrr")
+require("rmarkdown") || stop("unable to load rmarkdown")
 
 createPlot <- function(plot_type_value, var_plot_value, data_value) {
   plot_type <- switch(
@@ -97,13 +98,13 @@ createPlot <- function(plot_type_value, var_plot_value, data_value) {
           facet_wrap(~ var, scales = "free") +
           theme_bw()
       })
-    },
-    "Pairs plot" = {
-      # Create a pairs plot
-      data_value %>% 
-        select(all_of(var_plot_value)) %>% 
-        ggpairs
     }
+    # "Pairs plot" = {
+    #   # Create a pairs plot
+    #   data_value %>% 
+    #     select(all_of(var_plot_value)) %>% 
+    #     ggpairs
+    # }
   )
   return(plot_type)
 }

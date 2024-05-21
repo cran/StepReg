@@ -4,7 +4,7 @@
 # @author Kai Hu, Junhui Li
 validateUtils <- function(formula,
                           data,
-                          type = c("linear", "logit", "poisson", "cox", "Gamma"),
+                          type = c("linear", "logit", "poisson", "cox", "gamma", "negbin"),
                           include = NULL,
                           strategy = c("forward", "backward", "bidirectional", "subset"),
                           metric = c("AIC", "AICc", "BIC", "CP", "HQ", "HQc", "Rsq", "adjRsq", "SL", "SBC", "IC(3/2)", "IC(1)"),
@@ -62,7 +62,7 @@ validateUtils <- function(formula,
 	linear_metric <- c("AIC", "AICc", "BIC", "CP", "HQ", "HQc", "Rsq", "adjRsq", "SL", "SBC", "IC(3/2)", "IC(1)")
 	glm_metric <- c("SL", "AIC", "AICc", "SBC", "HQ", "HQc", "IC(3/2)", "IC(1)")
 	#poisson_metric <- c("SL", "AIC", "AICc", "SBC", "HQ", "HQc", "IC(3/2)", "IC(1)")
-	#Gamma_metric <- c("SL", "AIC", "AICc", "SBC", "HQ", "HQc", "IC(3/2)", "IC(1)")
+	#gamma_metric <- c("SL", "AIC", "AICc", "SBC", "HQ", "HQc", "IC(3/2)", "IC(1)")
 	cox_metric <- c("SL", "AIC", "AICc", "SBC", "HQ", "HQc", "IC(3/2)", "IC(1)")
 	
 	if(type == "linear") {
@@ -90,20 +90,21 @@ validateUtils <- function(formula,
 	  if(any(metric == "CP") & sigma_value == 0) {
 	    stop("metric = 'CP' is not allowed when Estimate of pure error variance from fitting the full model(sigma_value) is 0")
 	  }
-	}else if(type == "logit" | type == "poisson" | type == "Gamma") {
+	}else if(type == "logit" | type == "poisson" | type == "gamma") {
 		if(any(!metric %in% glm_metric)) {
 			stop("for type ",type,": 'metric' should come from the c('", paste0(glm_metric, collapse = "','"),"').")
 		}
-	  if(type == 'logit') {
-	    type_glm <- "binomial"
-	  }else {
-	    type_glm <- type
-	  }
+	  type_glm <- switch(type,
+	                     "logit" = "binomial",
+	                     "poisson" = "poisson",
+	                     "gamma" = "Gamma"
+	  )
+	                     
 	  # check if Y separates X completely, if so, stop
 	  # ref: https://stats.oarc.ucla.edu/other/mult-pkg/faq/general/faqwhat-is-complete-or-quasi-complete-separation-in-logistic-regression-and-what-are-some-strategies-to-deal-with-the-issue/
 	  tryCatch(                
 	    expr = {                      
-	      glm(formula, data = data, family = type_glm)
+	      glm(formula, data = data, weights = weight, family = type_glm)
 	    },
 	    error = function(e) {          
 	      print("There was an error message.")
@@ -118,6 +119,10 @@ validateUtils <- function(formula,
 		if(any(!metric %in% cox_metric)) {
 			stop("for type 'cox': 'metric' should come from the c('", paste0(cox_metric, collapse = "','"),"').")
 		}
+	}else if(type == 'negbin') {
+	  if(any(!metric %in% glm_metric)) {
+	    stop("for type 'negbin': 'metric' should come from the c('", paste0(glm_metric, collapse = "','"),"').")
+	  }
 	}
 	## check 'tolerance'
 	if(!is.numeric(tolerance)) {

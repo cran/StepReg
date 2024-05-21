@@ -7,9 +7,9 @@
 \method{print}{StepReg}(x, ...)
 }
 \arguments{
-\item{x}{each dataframe from outputlist}
+\item{x}{StepReg object}
 
-\item{...}{further paramters}
+\item{...}{further parameters}
 }
 \value{
 formatted dataframe

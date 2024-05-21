@@ -7,7 +7,7 @@
 stepwise(
   formula,
   data,
-  type = c("linear", "logit", "cox", "poisson", "Gamma"),
+  type = c("linear", "logit", "cox", "poisson", "gamma", "negbin"),
   include = NULL,
   strategy = c("forward", "backward", "bidirection", "subset"),
   metric = c("AIC", "AICc", "BIC", "CP", "HQ", "Rsq", "adjRsq", "SL", "SBC", "IC(3/2)",
@@ -28,7 +28,7 @@ stepwise(
 
 \item{data}{(data.frame) A dataset consisting of predictor variable(s) and response variable(s).}
 
-\item{type}{(character) The stepwise regression type. Choose from 'linear', 'logit', 'poisson', 'cox', and 'Gamma'. Default is 'linear'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}}
+\item{type}{(character) The stepwise regression type. Choose from 'linear', 'logit', 'poisson', 'cox', 'gamma' and 'negbin'. Default is 'linear'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}}
 
 \item{include}{(NULL|character) A character vector specifying predictor variables that will always stay in the model. A subset of the predictors in the dataset.}
 
@@ -42,7 +42,7 @@ stepwise(
 
 \item{test_method_linear}{(character) Test method for multivariate linear regression analysis, choose from 'Pillai', 'Wilks', 'Hotelling-Lawley', 'Roy'. Default is 'Pillai'. For univariate regression, 'F-test' will be used.}
 
-\item{test_method_glm}{(character) Test method for logit, Poisson, or Gamma regression analysis, choose from 'Rao', 'LRT'. Default is 'Rao'. Only "Rao" is available for strategy = 'subset'.}
+\item{test_method_glm}{(character) Test method for logit, Poisson, Gamma, and negative binomial regression analysis, choose from 'Rao', 'LRT'. Default is 'Rao'. Only "Rao" is available for strategy = 'subset'.}
 
 \item{test_method_cox}{(character) Test method for cox regression analysis, choose from 'efron', 'breslow', 'exact'. Default is 'efron'.}
 
@@ -60,7 +60,7 @@ A list containing multiple tables will be returned.
 \item Summary of arguments for model selection: Arguments used in the stepwise function, either default or user-supplied values.
 \item Summary of variables in dataset: Variable names, types, and classes in dataset.
 \item Summary of selection process under xxx(strategy) with xxx(metric): Overview of the variable selection process under specified strategy and metric.
-\item Summary of coefficients for the selected model with xxx(dependent variable) under xxx(strategy) and xxx(metric): Coefficients for the selected models under specified strategy with metric.
+\item Summary of coefficients for the selected model with xxx(dependent variable) under xxx(strategy) and xxx(metric): Coefficients for the selected models under specified strategy with metric. Please note that this table will not be generated for the strategy 'subset' when using the metric 'SL'.
 }
 }
 \description{

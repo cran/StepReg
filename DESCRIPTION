@@ -1,5 +1,5 @@
 Package: StepReg
-Version: 1.5.0
+Version: 1.5.1
 Title: Stepwise Regression Analysis
 Authors@R: c(
     person("Junhui", "Li", , "junhui.li11@umassmed.edu", role = c("cre"),
@@ -16,20 +16,20 @@ Authors@R: c(
     person("Wenxin", "Liu", , role = c("aut")),
     person("Lihua", "Julie Zhu", , role = c("aut"))
   )
-Date: 2024-03-17
-Description: The stepwise regression analysis is a statistical technique used to identify a subset of predictor variables essential for constructing predictive models. This package performs stepwise regression analysis across various regression models such as linear, logistic, Cox proportional hazards, Poisson, and gamma regression. It incorporates diverse stepwise regression algorithms like forward selection, backward elimination, and bidirectional elimination alongside the best subset method. Additionally, it offers a wide range of selection criteria, including Akaike Information Criterion (AIC), corrected AIC (AICc), Sawa Bayesian Information Criterion (BIC), Schwarz Bayesian Information Criterion (SBC), Significant Levels (SL), among others. Moreover, it facilitates the concurrent selection of multiple methods and criteria for variable selection. For user-friendly exploration and analysis, StepReg provides an intuitive R Shiny app.
+Date: 2024-05-16
+Description: The stepwise regression analysis is a statistical technique used to identify a subset of predictor variables essential for constructing predictive models. This package performs stepwise regression analysis across various regression models such as linear, logistic, Cox proportional hazards, Poisson, Gamma, and negative binomial regression. It incorporates diverse stepwise regression algorithms like forward selection, backward elimination, and bidirectional elimination alongside the best subset method. Additionally, it offers a wide range of selection criteria, including Akaike Information Criterion (AIC), Sawa Bayesian Information Criterion (BIC), and Significance Levels (SL). We validated the output accuracy of StepReg using public datasets within the SAS software environment. To facilitate efficient model comparison and selection, StepReg allows for multiple strategies and selection metrics to be executed in a single function call. Moreover, StepReg integrates a Shiny application for interactive regression analysis, broadening its accessibility.
 License: MIT + file LICENSE
+BugReports: https://github.com/JunhuiLi1017/StepReg/issues
 VignetteBuilder: knitr
 Suggests: knitr, testthat, BiocStyle, kableExtra
-Imports: dplyr, ggplot2, ggrepel, purrr, stringr, survival, flextable,
-        xlsx, shiny, cowplot, rlang, GGally, ggcorrplot, tidyr,
-        summarytools, shinythemes, rmarkdown, DT, shinycssloaders,
-        shinyjs
+Imports: dplyr, ggplot2, ggrepel, MASS, purrr, stringr, survival,
+        flextable, cowplot, shiny, ggcorrplot, tidyr, summarytools,
+        shinythemes, rmarkdown, DT, shinycssloaders, shinyjs
 Encoding: UTF-8
 RoxygenNote: 7.3.1
 NeedsCompilation: no
 Repository: CRAN
-Packaged: 2024-03-21 19:12:19 UTC; lij11
+Packaged: 2024-05-16 22:29:41 UTC; lij11
 Author: Junhui Li [cre] (<https://orcid.org/0000-0003-3973-1700>),
   Junhui Li [aut] (<https://orcid.org/0000-0003-3973-1700>),
   Kai Hu [aut],
@@ -42,4 +42,4 @@ Author: Junhui Li [cre] (<https://orcid.org/0000-0003-3973-1700>),
   Wenxin Liu [aut],
   Lihua Julie Zhu [aut]
 Maintainer: Junhui Li <junhui.li11@umassmed.edu>
-Date/Publication: 2024-03-21 21:40:06 UTC
+Date/Publication: 2024-05-21 15:50:15 UTC

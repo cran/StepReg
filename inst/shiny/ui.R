@@ -11,6 +11,19 @@ $(document).ready(function() {
 ui <- tagList(
   useShinyjs(),
   tags$script(HTML(js)),
+  tags$head(
+    tags$style(HTML("
+      /* this will affect all the pre elements */
+      pre {
+        color: red;
+        background-color: #5ef4fb;
+      }
+      /* this will affect only the pre elements under the class myclass */
+      .textOutput pre {
+        color: black;
+        background-color: white;
+      }"))
+  ),
   navbarPage(
     title = tags$a(href = "https://cran.r-project.org/web/packages/StepReg/index.html", "StepReg"),
     theme = shinythemes::shinytheme("flatly"),
@@ -22,24 +35,37 @@ ui <- tagList(
   
       # Sidebar layout with input and output definitions ----
       sidebarLayout(
-        
         # Sidebar panel for inputs ----
         sidebarPanel(
           selectInput(
             "example_dataset",
-            "Select an example dataset",
+            label = tags$span(
+              "Select an example dataset", 
+              tags$i(
+                class = "glyphicon glyphicon-question-sign centered-icon", 
+                style = "color:#0072B2;",
+                title = paste(c(
+                  "Recommended Regression Type and Dependent Variable for Each Dataset (Demo Purposes)",
+                  "------------------------------------------------------",
+                  "Dataset\t|\tType\t\t|\tResponse",
+                  "------------------------------------------------------",
+                  "mtcars\t|\tlinear\t|\tmpg",
+                  "remission\t|\tlogit\t\t|\tremiss",
+                  "lung\t\t|\tcox\t\t|\ttime and status",
+                  "creditCard\t|\tpoisson\t|\treports",
+                  "------------------------------------------------------"), collapse = "\n"
+                )
+              )
+            ),
             choices = c(
               "",
-              "base::mtcars", 
-              "StepReg::remission", 
-              "survival::lung",
-              "StepReg::creditCard"),
-            selected = NULL
+              "mtcars", 
+              "remission", 
+              "lung",
+              "creditCard")
           ),
-          # Horizontal line ----
-          tags$hr(),
-          br(),
-          # Input: Select a file ----
+          
+            # Input: Select a file ----
           fileInput(
             "upload_file", 
             "Or upload your data",
@@ -48,9 +74,7 @@ ui <- tagList(
                        "text/comma-separated-values,text/plain",
                        ".csv")),
           
-          # Horizontal line ----
-          tags$hr(),
-          
+
           # Input: Checkbox if file has header 
           checkboxInput("header", "Header", TRUE),
           
@@ -67,11 +91,12 @@ ui <- tagList(
           radioButtons("quote", "Quote",
                        choices = c(None = "",
                                    "Double Quote" = '"',
-                                   "Single Quote" = "'"),
-                       selected = ''),
-          
-          # Horizontal line ----
-          tags$hr()
+                                   "Single Quote" = "'")),
+          uiOutput("colname_in_numeric"),
+          uiOutput("colname_in_factor"),
+          uiOutput("colname_in_integer"),
+          uiOutput("colname_in_character"),
+          actionButton("change_class", "Change class")
         ),
         
         # Main panel for displaying outputs ----
@@ -87,7 +112,9 @@ ui <- tagList(
             ), # Data dalam tabel
             tabPanel(
               "Summary",
-              withSpinner(verbatimTextOutput("summary"))
+              div(class="textOutput",
+                  withSpinner(verbatimTextOutput("summary"))
+                  )
             ),
             tabPanel(
               title = "Plot",
@@ -101,18 +128,28 @@ ui <- tagList(
                                             "Correlation plot",
                                             "Density plot",
                                             "Dot plot",
-                                            "Pairs plot",
+                                            #"Pairs plot",
                                             "Histogram",
                                             "QQ plot",
                                             "Scatter and Line plot"),
-                                selected = "Pairs plot"),
+                                selected = "Correlation plot"),
                     
                     #h5("select variables for the Plot:"),
                     selectInput("var_plot", 
                                 "Select variables for the Plot:", 
                                 choices = "", 
                                 multiple = TRUE),
-                    actionButton("make_plot", "Make plot")
+                    tags$div(
+                      style = "display: flex; justify-content: space-between;",
+                      actionButton("make_plot", 
+                                   "Run", 
+                                   icon = icon("chart-line"), 
+                                   style = "width: 80px; font-size: 10px;"),
+                      downloadButton("downloadPlot", 
+                                     "Save", 
+                                     icon = icon("download"),
+                                     style = "width: 80px; font-size: 10px;")
+                    )
                   ),
                   mainPanel(
                     withSpinner(plotOutput("Plot"))
@@ -133,7 +170,7 @@ ui <- tagList(
       #   regression process."),
       sidebarLayout(
         sidebarPanel(
-          # Select type (linear, logit, cox, poisson, or gamma)
+          # Select type (linear, logit, cox, poisson, gamma, or negbin)
           selectInput(
             "type",
             "Regression type:",
@@ -141,39 +178,37 @@ ui <- tagList(
                         "logit",
                         "cox",
                         "poisson",
-                        "Gamma"),
-            selected = ""
+                        "gamma",
+                        "negbin")
           ),
           # Select dependent variable
           conditionalPanel(
             condition = "input.type === 'cox'",
-            selectInput("status", "Status variable:", choices = NULL, selected = NULL),
-            selectInput("time", "Time Variable:", choices = NULL, selected = NULL)
+            selectInput("status", "Status variable:", choices = NULL),
+            selectInput("time", "Time Variable:", choices = NULL)
           ),
           
           conditionalPanel(
             condition = "input.type === 'linear'",
-            selectInput("dependent_linear", "Dependent variable:", choices = NULL, multiple = TRUE, selected = NULL)
+            selectInput("dependent_linear", "Dependent variable:", choices = NULL, multiple = TRUE)
           ),
           
           conditionalPanel(
-            condition = "input.type === 'logit' || input.type === 'poisson' || input.type === 'Gamma'",
-            selectInput("dependent_glm", "Dependent variable:", choices = NULL, selected = NULL)
+            condition = "input.type === 'logit' || input.type === 'poisson' || input.type === 'gamma' || input.type === 'negbin'",
+            selectInput("dependent_glm", "Dependent variable:", choices = NULL)
           ),
           
           selectInput(
             "independent",
             "Independent Variables:",
             choices = NULL,
-            multiple = TRUE,
-            selected = NULL
+            multiple = TRUE
           ),
           selectInput(
             "include", 
             "Include Variables:",
             choices = NULL,
-            multiple = TRUE,
-            selected = NULL
+            multiple = TRUE
           ),
           conditionalPanel(
             condition = "input.type !== 'cox'",
@@ -192,7 +227,6 @@ ui <- tagList(
                         "backward",
                         "bidirection", 
                         "subset"),
-            selected = NULL,
             multiple = TRUE
           ),
           
@@ -213,7 +247,6 @@ ui <- tagList(
                           "SL",
                           "Rsq",
                           "adjRsq"),
-              selected = NULL,
               multiple = TRUE
             )
           ),
@@ -227,7 +260,6 @@ ui <- tagList(
                           "AICc",
                           "HQ",
                           "SL"),
-              selected = NULL,
               multiple = TRUE
             )
           ),
@@ -244,12 +276,11 @@ ui <- tagList(
                           "IC(3/2)",
                           "SBC",
                           "SL"),
-              selected = NULL,
               multiple = TRUE
             )
           ),
           
-          # Display sliderInput for significant level only when SL is selected
+          # Display sliderInput for significance level only when SL is selected
           conditionalPanel(
             condition = "input.type === 'linear' && input.metric_multivariate_linear.indexOf('SL') != -1",
             selectInput(
@@ -264,7 +295,7 @@ ui <- tagList(
           ),
           
           conditionalPanel(
-            condition = "input.type === 'logit' || input.type === 'Gamma' || input.type === 'poisson'",
+            condition = "input.type === 'logit' || input.type === 'gamma' || input.type === 'poisson' || input.type === 'negbin'",
             selectInput(
               "glm_test", 
               label = "Test Method",
@@ -286,12 +317,27 @@ ui <- tagList(
             )
           ),
           
-          # Display sliderInput for significant level only when SL is selected
+          # Display sliderInput for significance level only when SL is selected
           conditionalPanel(
             condition = "input.metric_univariate_linear.indexOf('SL') != -1 && (input.strategy.indexOf('forward') != -1 || input.strategy.indexOf('bidirection') != -1) && input.type === 'linear'",
             sliderInput(
               "sle", 
-              label = "significant level for entry",
+              label = tags$span(
+                "significance level for entry", 
+                tags$i(
+                  class = "glyphicon glyphicon-question-sign centered-icon", 
+                  style = "color:#0072B2;",
+                  title = paste(c("Cut-off for 'SL' metric under forward and bidirection strategy. Depending on the type of regression, different tests will be employed to compute the corresponding P-values.",
+                                "------------------------------------------------------",
+                                "Type\t\t\t\t|\t\t\t\tTest",
+                                "------------------------------------------------------",
+                                "linear(univariate)\t|\tF test",
+                                "linear(multivariate)\t|\tApprox F test",
+                                "logit/poission/gamma\t|\tRao or LRT Chi-squared",
+                                "cox\t\t\t\t|\tWald Chi-squared",
+                                "------------------------------------------------------"), collapse = "\n")
+                )
+              ),
               min = 0, 
               max = 1,
               value = 0.05
@@ -302,7 +348,22 @@ ui <- tagList(
             condition = "input.metric_univariate_linear.indexOf('SL') != -1 && (input.strategy.indexOf('backward') != -1 || input.strategy.indexOf('bidirection') != -1) && input.type === 'linear'",
             sliderInput(
               "sls", 
-              label = "significant level for stay", 
+              label = tags$span(
+                "significance level for stay", 
+                tags$i(
+                  class = "glyphicon glyphicon-question-sign centered-icon", 
+                  style = "color:#0072B2;",
+                  title = paste(c("Cut-off for 'SL' metric under backward and bidirection strategy. Depending on the type of regression, different tests will be employed to compute the corresponding P-values.",
+                                  "------------------------------------------------------",
+                                  "Type\t\t\t\t|\t\t\t\tTest",
+                                  "------------------------------------------------------",
+                                  "linear(univariate)\t|\tF test",
+                                  "linear(multivariate)\t|\tApprox F test",
+                                  "logit/poission/gamma\t|\tWald Chi-squared",
+                                  "cox\t\t\t\t|\tWald Chi-squared",
+                                  "------------------------------------------------------"), collapse = "\n")
+                )
+              ),
               min = 0, 
               max = 1, 
               value = 0.05
@@ -313,7 +374,22 @@ ui <- tagList(
             condition = "input.metric_multivariate_linear.indexOf('SL') != -1 && (input.strategy.indexOf('forward') != -1 || input.strategy.indexOf('bidirection') != -1) && input.type === 'linear'",
             sliderInput(
               "sle", 
-              label = "significant level for entry",
+              label = tags$span(
+                "significance level for entry", 
+                tags$i(
+                  class = "glyphicon glyphicon-question-sign centered-icon", 
+                  style = "color:#0072B2;",
+                  title = paste(c("Cut-off for 'SL' metric under forward and bidirection strategy.. Depending on the type of regression, different tests will be employed to compute the corresponding P-values.",
+                                  "------------------------------------------------------",
+                                  "Type\t\t\t\t|\t\t\t\tTest",
+                                  "------------------------------------------------------",
+                                  "linear(univariate)\t|\tF test",
+                                  "linear(multivariate)\t|\tApprox F test",
+                                  "logit/poission/gamma\t|\tRao or LRT Chi-squared",
+                                  "cox\t\t\t\t|\tWald Chi-squared",
+                                  "------------------------------------------------------"), collapse = "\n")
+                )
+              ),
               min = 0, 
               max = 1,
               value = 0.05
@@ -324,7 +400,22 @@ ui <- tagList(
             condition = "input.metric_multivariate_linear.indexOf('SL') != -1 && (input.strategy.indexOf('backward') != -1 || input.strategy.indexOf('bidirection') != -1) && input.type === 'linear'",
             sliderInput(
               "sls", 
-              label = "significant level for stay", 
+              label = tags$span(
+                "significance level for stay", 
+                tags$i(
+                  class = "glyphicon glyphicon-question-sign centered-icon", 
+                  style = "color:#0072B2;",
+                  title = paste(c("Cut-off for 'SL' metric under backward and bidirection strategy. Depending on the type of regression, different tests will be employed to compute the corresponding P-values.",
+                                  "------------------------------------------------------",
+                                  "Type\t\t\t\t|\t\t\t\tTest",
+                                  "------------------------------------------------------",
+                                  "linear(univariate)\t|\tF test",
+                                  "linear(multivariate)\t|\tApprox F test",
+                                  "logit/poission/gamma\t|\tWald Chi-squared",
+                                  "cox\t\t\t\t|\tWald Chi-squared",
+                                  "------------------------------------------------------"), collapse = "\n")
+                )
+              ), 
               min = 0, 
               max = 1, 
               value = 0.05)
@@ -334,7 +425,22 @@ ui <- tagList(
             condition = "input.metric_glm_cox.indexOf('SL') != -1 && (input.strategy.indexOf('forward') != -1 || input.strategy.indexOf('bidirection') != -1) && input.type !== 'linear'",
             sliderInput(
               "sle", 
-              label = "significant level for entry",
+              label = tags$span(
+                "significance level for entry", 
+                tags$i(
+                  class = "glyphicon glyphicon-question-sign centered-icon", 
+                  style = "color:#0072B2;",
+                  title = paste(c("Cut-off for 'SL' metric under forward and bidirection strategy.. Depending on the type of regression, different tests will be employed to compute the corresponding P-values.",
+                                  "------------------------------------------------------",
+                                  "Type\t\t\t\t|\t\t\t\tTest",
+                                  "------------------------------------------------------",
+                                  "linear(univariate)\t|\tF test",
+                                  "linear(multivariate)\t|\tApprox F test",
+                                  "logit/poission/gamma\t|\tRao or LRT Chi-squared",
+                                  "cox\t\t\t\t|\tWald Chi-squared",
+                                  "------------------------------------------------------"), collapse = "\n")
+                )
+              ),
               min = 0, 
               max = 1,
               value = 0.05)
@@ -344,7 +450,22 @@ ui <- tagList(
             condition = "input.metric_glm_cox.indexOf('SL') != -1 && (input.strategy.indexOf('backward') != -1 || input.strategy.indexOf('bidirection') != -1) && input.type !== 'linear'",
             sliderInput(
               "sls", 
-              label = "significant level for stay", 
+              label = tags$span(
+                "significance level for stay", 
+                tags$i(
+                  class = "glyphicon glyphicon-question-sign centered-icon", 
+                  style = "color:#0072B2;",
+                  title = paste(c("Cut-off for 'SL' metric under backward and bidirection strategy. Depending on the type of regression, different tests will be employed to compute the corresponding P-values.",
+                                  "------------------------------------------------------",
+                                  "Type\t\t\t\t|\t\t\t\tTest",
+                                  "------------------------------------------------------",
+                                  "linear(univariate)\t|\tF test",
+                                  "linear(multivariate)\t|\tApprox F test",
+                                  "logit/poission/gamma\t|\tWald Chi-squared",
+                                  "cox\t\t\t\t|\tWald Chi-squared",
+                                  "------------------------------------------------------"), collapse = "\n")
+                )
+              ),
               min = 0, 
               max = 1, 
               value = 0.05)
@@ -356,7 +477,7 @@ ui <- tagList(
                          icon = icon("chart-line"), 
                          style = "width: 130px; font-size: 12px;"),
             downloadButton("download", 
-                           "Download", 
+                           "Report", 
                            icon = icon("download"),
                            style = "width: 130px; font-size: 12px;")
           )
@@ -370,15 +491,62 @@ ui <- tagList(
                 condition = "input.run_analysis",
                 htmlOutput("selectionStatText")
               ),
-              withSpinner(verbatimTextOutput("modelSelection"))
+              div(class="textOutput",
+                  withSpinner(verbatimTextOutput("modelSelection"))
+                  )
             ),
+            
             tabPanel(
-              "Visualization",
+              title = "Visualization",
+              fluidPage(
+                fluidRow(
+                  column(
+                    width = 12,
+                    sidebarPanel(
+                      selectInput("strategy_plot",
+                                  "Stepwise Strategy:",
+                                  choices = c("")),
+                      selectInput("relative_height",
+                                  label = tags$span(
+                                    "Relative height of plots", 
+                                    tags$i(
+                                      class = "glyphicon glyphicon-question-sign centered-icon", 
+                                      style = "color:#0072B2;",
+                                      title = paste(c(
+                                        "Adjust the height of plot B relative to plot A"), collapse = "\n"
+                                      )
+                                    )
+                                  ),
+                                  choices = c(seq(0.2,1,0.2),seq(1.5,4,0.5)), 
+                                  selected = 1),
+                      downloadButton("download_process_plot",
+                                     "Save",
+                                     icon = icon("download"),
+                                     style = "width: 80px; font-size: 10px;")
+                      )
+                   )
+                ),
+                fluidRow(
+                  column(width = 12,
+                         mainPanel(
+                           conditionalPanel(
+                             condition = "input.run_analysis",
+                             htmlOutput("selectionPlotText")
+                           ),
+                           withSpinner(plotOutput("detail_plot"))
+                         )
+                  )
+                )
+              )
+            ),
+            
+            tabPanel(
+              "Model Vote",
               conditionalPanel(
                 condition = "input.run_analysis",
-                htmlOutput("selectionPlotText")
+                htmlOutput("modelVoteText")
               ),
-              withSpinner(plotOutput("selectionPlot"))
+              withSpinner(DT::dataTableOutput("modelVote"))
             )
           )
         )
@@ -390,7 +558,7 @@ ui <- tagList(
         "Citation",
         tags$p("If you think 'StepReg' R package is helpful to your research, please cite:"),
         tags$ul(
-          tags$li("Junhui Li (2024). StepReg: Stepwise Regression Analysis. R package version 1.5.0, https://CRAN.R-project.org/package=StepReg")
+          tags$li("Junhui Li (2024). StepReg: Stepwise Regression Analysis. R package version 1.5.1, https://CRAN.R-project.org/package=StepReg")
         )
       )
     )

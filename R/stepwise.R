@@ -6,7 +6,7 @@
 #' 
 #' @param data (data.frame) A dataset consisting of predictor variable(s) and response variable(s).
 #' 
-#' @param type (character) The stepwise regression type. Choose from 'linear', 'logit', 'poisson', 'cox', and 'Gamma'. Default is 'linear'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}
+#' @param type (character) The stepwise regression type. Choose from 'linear', 'logit', 'poisson', 'cox', 'gamma' and 'negbin'. Default is 'linear'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}
 #' 
 #' @param include (NULL|character) A character vector specifying predictor variables that will always stay in the model. A subset of the predictors in the dataset.
 #' 
@@ -24,15 +24,13 @@
 #' 
 #' @param test_method_linear (character) Test method for multivariate linear regression analysis, choose from 'Pillai', 'Wilks', 'Hotelling-Lawley', 'Roy'. Default is 'Pillai'. For univariate regression, 'F-test' will be used. 
 #' 
-#' @param test_method_glm (character) Test method for logit, Poisson, or Gamma regression analysis, choose from 'Rao', 'LRT'. Default is 'Rao'. Only "Rao" is available for strategy = 'subset'.
+#' @param test_method_glm (character) Test method for logit, Poisson, Gamma, and negative binomial regression analysis, choose from 'Rao', 'LRT'. Default is 'Rao'. Only "Rao" is available for strategy = 'subset'.
 #' 
 #' @param test_method_cox (character) Test method for cox regression analysis, choose from 'efron', 'breslow', 'exact'. Default is 'efron'.
 #' 
 #' @param best_n (numeric(integer)) The number of models to be retained in the process output. Default is 3, indicating that only the top 3 best models with the same number of variables are displayed. If all models are displayed, set it to Inf.
 #'  
 #' @param num_digits (numeric(integer)) The number of digits to keep when rounding the results. Default is 6.
-#' 
-# @param report_name (NULL|character) The output report name with extented format, '.html', 'pdf', '.docx', '.pptx', '.xlsx' and '.rtf' are supported. If NULL, do not output report file. Default is NULL.
 #' 
 #' @references
 #' 
@@ -75,9 +73,9 @@
 #' \item Summary of arguments for model selection: Arguments used in the stepwise function, either default or user-supplied values.
 #' \item Summary of variables in dataset: Variable names, types, and classes in dataset.
 #' \item Summary of selection process under xxx(strategy) with xxx(metric): Overview of the variable selection process under specified strategy and metric.
-#' \item Summary of coefficients for the selected model with xxx(dependent variable) under xxx(strategy) and xxx(metric): Coefficients for the selected models under specified strategy with metric.
+#' \item Summary of coefficients for the selected model with xxx(dependent variable) under xxx(strategy) and xxx(metric): Coefficients for the selected models under specified strategy with metric. Please note that this table will not be generated for the strategy 'subset' when using the metric 'SL'.
 #' }
-
+#' 
 #' @examples
 #' ## perform multivariate linear stepwise regression with 'bidirection' 
 #' ## strategy and 'AIC' stop rule, excluding intercept.
@@ -111,20 +109,18 @@
 #'          sls=0.05)
 #' @keywords stepwise regression
 #' 
-#' @import survival
+#' @importFrom survival coxph
 #' @importFrom stringr str_replace
 #' @importFrom utils combn
 #' @importFrom dplyr %>% mutate_if mutate
-#' @importFrom rlang arg_match
 #' @importFrom stats anova coef glm lm logLik pf reformulate sigma terms deviance df.residual formula model.frame
-#' 
-#' @param num_digits (numeric(integer)) The number of digits to keep when rounding the results. Default is 6.
+#' @importFrom MASS glm.nb
 #' 
 #' @export
 
 stepwise <- function(formula,
                      data,
-                     type = c("linear", "logit", "cox", "poisson", "Gamma"),
+                     type = c("linear", "logit", "cox", "poisson", "gamma", "negbin"),
                      include = NULL,
                      strategy = c("forward", "backward", "bidirection", "subset"),
                      metric = c("AIC", "AICc", "BIC", "CP", "HQ", "Rsq", "adjRsq", "SL", "SBC", "IC(3/2)", "IC(1)"),
@@ -137,12 +133,10 @@ stepwise <- function(formula,
                      weight = NULL,
                      best_n = 3,
                      num_digits = 6) {
-  ## validate input:
-  ## check required parameters
-  ## place match.arg() in the main function because validationUtils.R can't return type even with <<-, and type represents all values in c().
+
   type <- match.arg(type)
-  strategy <- arg_match(strategy, c("forward", "backward", "bidirection", "subset") ,multiple = TRUE)
-  metric <- arg_match(metric, c("AIC", "AICc", "BIC", "CP", "HQ", "Rsq", "adjRsq", "SL", "SBC", "IC(3/2)", "IC(1)") ,multiple = TRUE)
+  strategy <- match_multiple_args(strategy, c("forward", "backward", "bidirection", "subset"))
+  metric <- match_multiple_args(metric, c("AIC", "AICc", "BIC", "CP", "HQ", "Rsq", "adjRsq", "SL", "SBC", "IC(3/2)", "IC(1)"))
   
   test_method_linear <- match.arg(test_method_linear)
   test_method_glm <- match.arg(test_method_glm)
@@ -178,46 +172,21 @@ stepwise <- function(formula,
   result$'Summary of variables in dataset' <- table2_class_table
   
   ## table3
-  table3_process_table_metric <- list()
-  x_final_model_metric <- list()
-  for(stra in strategy){
-    for(met in metric) {
-      if(stra == "subset") {
-        table3_process_table <- getSubsetWrapper(data, type, met, x_name, y_name, intercept, include, weight = weight, best_n, test_method, sigma_value)
-        x_final_model <- getXNameSelected(table3_process_table,met)
-        table3_process_table[,met] <- as.numeric(table3_process_table[,met])
-      }else{
-        out_final_stepwise <- getStepwiseWrapper(data, type = type, stra, met, sle, sls, weight = weight, x_name, y_name, intercept, include, test_method, sigma_value)
-        table3_process_table <- out_final_stepwise$process_table
-        remove_col <- NULL
-        if(stra == "forward") {
-          remove_col <- "Remove_effect"
-        } else if(stra == "backward") {
-          remove_col <- "Enter_effect"
-        }
-        table3_process_table <- table3_process_table[,!colnames(table3_process_table) %in% remove_col]
-        if(all(table3_process_table[,"Number_effect"] == table3_process_table[,"Number_parms"])){
-          table3_process_table <- table3_process_table[,!colnames(table3_process_table) %in% "Number_effect"]
-        }
-        x_in_model <- out_final_stepwise$x_in_model
-        x_final_model <- c(include, x_in_model)
-      }
-      #table3_process_table[,met] <- table3_process_table[,met] %>% as.numeric() %>% round(num_digits) %>% as.character()
-      table3_process_table[,met] <- table3_process_table[,met] %>% as.numeric()
-      result[[paste0("Summary of selection process under ",stra," with ",met,collapse="")]] <- table3_process_table %>% mutate_if(is.numeric, round, num_digits) %>% mutate_if(is.numeric,as.character) # to keep digits as we expected, convert numeric to character for html output.
-      x_final_model_metric[[stra]][[met]] <- x_final_model
-    }
-    ##table4
-    table4_coef_model_metric <- list()
-    table4_coef_model_metric[[stra]] <- getTable4CoefModel(type = type, intercept, include, x_final_model_metric[[stra]] , y_name, n_y, data, weight, test_method_cox)
-    for(met in metric){
-      table4_coef_model <- table4_coef_model_metric[[stra]][[met]]
-      for(i in names(table4_coef_model)) {
-        #colnames(table4_coef_model[[i]]) %>% str_replace(" ", "_") -> colnames(table4_coef_model[[i]])
-        result[[paste0("Summary of coefficients for the selected model with ", i, " under ",stra," and ",met,sep=" ")]] <- table4_coef_model[[i]] %>% mutate_if(is.numeric, round, num_digits) %>% mutate_if(is.numeric,as.character)
-      }
-    }
+  table3_list <- getTable3ProcessSummary(data, type, strategy, metric, sle, sls, weight, x_name, y_name, intercept, include, best_n, test_method, sigma_value, num_digits)
+  table3 <- table3_list$table3
+  vote_df <- table3_list$vote_df
+  pic_df <- table3_list$pic_df
+  final_variable <- table3_list$final_variable
+  result <- append(result,table3)
+  
+  table4 <- getTable4CoefModel(type = type, strategy, metric, intercept, include, final_variable, y_name, n_y, data, weight, test_method_cox, num_digits)
+  result <- append(result,table4)
+  
+  if(!is.null(vote_df)) {
+    colnames(vote_df) <- c("model", "combination")
   }
-  class(result) <- c("StepReg", "list", strategy)
+  result[['Vote_df']] <- vote_df
+  result[['Detail_selection_summary']] <-  pic_df
+  class(result) <- c("StepReg", "list", strategy, type)
   return(result)
 }

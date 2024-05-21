@@ -4,7 +4,7 @@
 #' regression analysis. In Step 1, users can upload their dataset, configure 
 #' settings such as header, separator, and quotes, and select variables for 
 #' distribution plots. In Step 2, users can choose the regression type (linear, 
-#' logit, cox, poisson, or gamma), select dependent and independent variables, 
+#' logit, cox, poisson, gamma, or negbin), select dependent and independent variables, 
 #' specify stepwise strategy (forward, backward, bidirectional, or subset), and 
 #' set various metrics for model selection. The app dynamically adjusts input 
 #' options based on the chosen regression type. Additionally, users can specify 
@@ -16,11 +16,11 @@
 #' @rawNamespace import(shiny, except=c(dataTableOutput, renderDataTable))
 #' @importFrom shinyjs disable enable
 #' @importFrom DT dataTableOutput datatable renderDataTable
-#' @importFrom cowplot plot_grid
 #' @importFrom summarytools dfSummary
 #' @importFrom ggcorrplot ggcorrplot
+#' @importFrom cowplot plot_grid
 #' @importFrom tidyr gather
-#' @importFrom GGally ggpairs
+# @importFrom GGally ggpairs
 #' @importFrom rmarkdown render
 #' @importFrom shinythemes shinytheme
 #' @importFrom shinycssloaders withSpinner
@@ -31,5 +31,5 @@
 #' @export
 #' 
 StepRegShinyApp <- function() {
-  runApp(appDir = system.file('shiny', package='StepReg'))
+  runApp(appDir = system.file('shiny', package = 'StepReg'))
 }

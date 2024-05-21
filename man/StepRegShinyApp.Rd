@@ -11,7 +11,7 @@ StepRegShinyApp is a Shiny application designed for performing stepwise
 regression analysis. In Step 1, users can upload their dataset, configure 
 settings such as header, separator, and quotes, and select variables for 
 distribution plots. In Step 2, users can choose the regression type (linear, 
-logit, cox, poisson, or gamma), select dependent and independent variables, 
+logit, cox, poisson, gamma, or negbin), select dependent and independent variables, 
 specify stepwise strategy (forward, backward, bidirectional, or subset), and 
 set various metrics for model selection. The app dynamically adjusts input 
 options based on the chosen regression type. Additionally, users can specify 
