@@ -216,7 +216,9 @@ getInitialSubSet <- function(data, type, metric, y_name, intercept, include, wei
                              "logit"   = glm(reformulate(intercept, y_name), data = data, weights = weight, family = "binomial"),
                              "poisson" = glm(reformulate(intercept, y_name), data = data, weights = weight, family = "poisson"),
                              "gamma"   = glm(reformulate(intercept, y_name), data = data, weights = weight, family = "Gamma"),
-                             "negbin"  = glm.nb(reformulate(intercept, y_name), data = data, weights = weight)
+                             "negbin"  = glm.nb(reformulate(intercept, y_name), data = data, weights = weight),
+                             "linear"  = lm(reformulate(intercept, y_name), data = data, weights = weight)
+                             
         )
         f_pic_vec <- getAnovaStat(add_or_remove = "add", include = include, fit_reduced = fit_reduce, fit_full = x_fit, type = type, test_method = test_method)
         pic_set <- f_pic_vec[1]
@@ -231,6 +233,7 @@ getInitialSubSet <- function(data, type, metric, y_name, intercept, include, wei
 
 getFinalSubSet <- function(data, type, metric, x_notin_model, initial_process_table, y_name, include, weight, intercept, best_n = Inf, test_method, sigma_value) {
 	process_table <- initial_process_table
+	#nv=1
 	for (nv in 1:length(x_notin_model)) {
 		com_table <- as.data.frame(combn(x_notin_model, nv))
 		n_test <- ncol(com_table)
@@ -253,7 +256,8 @@ getFinalSubSet <- function(data, type, metric, x_notin_model, initial_process_ta
 		                         "logit"   = glm(reformulate(intercept, y_name), data = data, weights = weight, family = "binomial"),
 		                         "poisson" = glm(reformulate(intercept, y_name), data = data, weights = weight, family = "poisson"),
 		                         "gamma"   = glm(reformulate(intercept, y_name), data = data, weights = weight, family = "Gamma"),
-		                         "negbin"  = glm.nb(reformulate(intercept, y_name), data = data, weights = weight)
+		                         "negbin"  = glm.nb(reformulate(intercept, y_name), data = data, weights = weight),
+		                         "linear"  = lm(reformulate(intercept, y_name), data = data, weights = weight)
 		    )
 		    f_pic_vec <- sapply(x_fit_list, function(x) {getAnovaStat(add_or_remove = "add", include = include, fit_reduced = fit_reduce, fit_full = x, type = type, test_method = test_method)})
 		    pic_set <- f_pic_vec[1, ]

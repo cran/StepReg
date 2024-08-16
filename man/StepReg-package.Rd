@@ -10,12 +10,19 @@
 
 The stepwise regression analysis is a statistical technique used to identify a subset of predictor variables essential for constructing predictive models. This package performs stepwise regression analysis across various regression models such as linear, logistic, Cox proportional hazards, Poisson, Gamma, and negative binomial regression. It incorporates diverse stepwise regression algorithms like forward selection, backward elimination, and bidirectional elimination alongside the best subset method. Additionally, it offers a wide range of selection criteria, including Akaike Information Criterion (AIC), Sawa Bayesian Information Criterion (BIC), and Significance Levels (SL). We validated the output accuracy of StepReg using public datasets within the SAS software environment. To facilitate efficient model comparison and selection, StepReg allows for multiple strategies and selection metrics to be executed in a single function call. Moreover, StepReg integrates a Shiny application for interactive regression analysis, broadening its accessibility.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item Report bugs at \url{https://github.com/JunhuiLi1017/StepReg/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Junhui Li \email{junhui.li11@umassmed.edu} (\href{https://orcid.org/0000-0003-3973-1700}{ORCID})
 
 Authors:
 \itemize{
-  \item Junhui Li \email{junhui.li11@umassmed.edu} (\href{https://orcid.org/0000-0003-3973-1700}{ORCID})
+  \item Junhui Li \email{junhui.li11@umassmed.edu}
   \item Kai Hu \email{kai.hu@umassmed.edu}
   \item Xiaohuan Lu
   \item Wenxin Liu

@@ -3,7 +3,7 @@ source("utils.R")
 js <- "
 $(document).ready(function() {
     $('.navbar .container-fluid .navbar-nav .dropdown .dropdown-menu').prepend(
-        '<li><a href=\"https://mccbbioinfo.github.io/tutorials/StepReg\" target=\"_blank\">Tutorial</a></li>',
+        '<li><a href=\"https://cran.r-project.org/web/packages/StepReg/vignettes/StepReg.html\" target=\"_blank\">Tutorial</a></li>',
         '<li><a href=\"https://github.com/JunhuiLi1017/StepReg/issues/new\" target=\"_blank\">Report Bug</a></li>');
 });
 "

@@ -15,17 +15,17 @@ bibliography: bibliography.bib
 fontsize: 11pt
 nocite: '@*'
 link-citations: true
+vignette: |
+  %\VignetteIndexEntry{StepReg}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteDepends{StepReg, BiocStyle, kableExtra}
 output:
   BiocStyle::html_document:
     toc_float: true
   BiocStyle::pdf_document: default
 abstract: |
   The StepReg package, developed for exploratory model building tasks, offers support across diverse scenarios. It facilitates model construction for various response variable types, including continuous (linear regression), binary (logistic regression), and time-to-event (Cox regression), among others. StepReg encompasses all commonly used model selection strategies, including forward selection, backward elimination, bidirectional elimination, and best subsets. Notably, it offers flexibility in selection metrics, accommodating both information criteria (AIC, BIC, etc.) and significance level cutoffs. This vignettes provide numerous examples showcasing the effective utilization of StepReg for model development in diverse contexts. Furthermore, it delves into considerations for selecting appropriate strategies and metrics, empowering users to make informed decisions throughout the modeling process.
-vignette: |
-  %\VignetteIndexEntry{StepReg}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
-  %\VignetteDepends{StepReg, BiocStyle, kableExtra}
 ---
 ```{r include=FALSE}
 knitr::opts_chunk$set(comment = NA)
