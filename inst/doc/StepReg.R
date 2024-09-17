@@ -90,7 +90,7 @@ Formula_in_Linear <- c("linear",
                        "$n\\ln\\left(\\frac{|\\text{SSE}|}{n}\\right) + 2pq\\ln(\\ln(n))$ <br>[@Hannan_Quinn_1979; @McQuarrie_Tsai_1998; @Hurvich_Tsai_1989]",
                        "$n\\ln\\left(\\frac{|\\text{SSE}|}{n}\\right) + p$ <br>[@Nelder_Wedderburn_1972; @Smith_Spiegelhalter_1980] not available for MMR",
                        "$n\\ln\\left(\\frac{|\\text{SSE}|}{n}\\right) + \\frac{3}{2}p$ <br>[@Smith_Spiegelhalter_1980] <br>not available for MMR",
-                       "$n\\ln\\left(\\frac{|\\text{SSE}|}{n}\\right) + p \\ln(n)$ <br>[@Hurvich_Tsai_1989; @Schwarz_1978; @Judge_1985; @Al-Subaihi_2002] <br>not available for MMR",
+                       "$n\\ln\\left(\\frac{|\\text{SSE}|}{n}\\right) + pq \\ln(n)$ <br>[@Hurvich_Tsai_1989; @Schwarz_1978; @Judge_1985; @Al-Subaihi_2002] <br>not available for MMR",
                        "$\\textit{F test}$ for UMR and $\\textit{Approximate F test}$ for MMR",
                        "$1 - \\frac{SSE}{SST}$ <br>not available for MMR",
                        "$1 - \\frac{(n-1)(1-R^2)}{n-p}$ <br>[@Darlington_1968; @Judge_1985] <br>not available for MMR")
@@ -181,11 +181,11 @@ cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1, rel_heights = c(2, 1)
 cowplot::plot_grid(plotlist = plot_list$backward, ncol = 1, rel_heights = c(2, 1))
 
 ## -----------------------------------------------------------------------------
-formula <- cbind(mpg, drat) ~ .
+formula <- cbind(mpg, drat) ~ . + 0
 res3 <- stepwise(formula = formula,
                  data = mtcars,
                  type = "linear",
-                 strategy = "forward",
+                 strategy = "bidirection",
                  metric = c("AIC", "HQ"))
 res3
 plot(res3)

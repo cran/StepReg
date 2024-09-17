@@ -32,9 +32,9 @@ Authors:
 Other contributors:
 \itemize{
   \item Kun Cheng [contributor]
-  \item Sushmita Nayak [contributor]
+  \item Sushmita N Nayak [contributor]
   \item Cesar Bautista Sotelo [contributor]
-  \item Michael Lodato [contributor]
+  \item Michael A Lodato [contributor]
   \item Robert H Brown [contributor]
 }
 

@@ -617,7 +617,11 @@ getCandStepModel <- function(add_or_remove, data, type, metric, weight, y_name, 
       }
     } else {
       if(add_or_remove == "remove" & length(x_test) == 1 & intercept == "0") {
-        pic_set <- Inf
+        if(metric == 'Rsq' | metric == 'adjRsq'){
+          pic_set <- 0
+        } else {
+          pic_set <- Inf
+        }
         names(pic_set) <- x_test
       }else{
         pic_set <- sapply(x_fit_list, function(x) {getModelFitStat(metric, x, type, sigma_value)})
@@ -690,7 +694,7 @@ checkEnterOrRemove <- function(add_or_remove, best_candidate_model, type, metric
   }else{
     indicator <- pic <= as.numeric(process_table[nrow(process_table), 6])
   }
-  if(indicator == TRUE & type == "linear" & (metric != "Rsq"|metric != "adjRsq")) {
+  if(indicator == TRUE & type == "linear" & (metric != "Rsq" & metric != "adjRsq")) {
     if(best_candidate_model$rank != 0) {
       BREAK <- getGoodnessFit(best_candidate_model, y_name, metric)
     }
@@ -759,7 +763,7 @@ getFinalStepModel <- function(add_or_remove, data, type, strategy, metric, sle, 
     # enter remove     
     #       x1(stop here)
     # x1
-    if(nrow(process_table)>1) {
+    if(nrow(process_table) > 1) {
       last2_step <- process_table[nrow(process_table) -1 , ]
       last1_step <- process_table[nrow(process_table), ]
       if(last2_step[, 2] != "" & last2_step[, 2] == last1_step[, 3]) {
@@ -813,33 +817,45 @@ getStepwiseWrapper <- function(data, type, strategy, metric, sle, sls, weight, x
   
   if(type == "cox") {
     if(strategy == "backward"){
-      selected <- rep("YES",nrow(pic_df_init))
+      Selection <- rep("Remove",nrow(pic_df_init))
     } else {
       pic_df_init <- pic_df_init[-1,]
       out_final_stepwise$pic_df$step <- as.numeric(out_final_stepwise$pic_df$step) - 1
       if(nrow(pic_df_init) > 0){
-        selected <- rep("YES",nrow(pic_df_init))
+        Selection <- rep("Entry",nrow(pic_df_init))
         pic_df_init$step <- pic_df_init$step - 1
       } else {
-        selected <- NULL
+        Selection <- NULL
       }
     }
   } else {
-    selected <- rep("YES",nrow(pic_df_init)) 
+    if(strategy == "backward"){
+      Selection <- rep("Remove",nrow(pic_df_init))
+    } else {
+      Selection <- rep("Entry",nrow(pic_df_init))
+    }
   }
   for (i in out_final_stepwise$process_table$Step) {
     sub_process_table <- out_final_stepwise$process_table[out_final_stepwise$process_table$Step %in% i,]
     sub_pic_df <- out_final_stepwise$pic_df[out_final_stepwise$pic_df$step %in% i,]
-    
-    sub_pic_df$value[sub_pic_df$variable %in% sub_process_table[,c(2,3)][!sub_process_table[,c(2,3)] %in% ""]] <- "YES"
-    sub_pic_df$value[!sub_pic_df$variable %in% sub_process_table[,c(2,3)][!sub_process_table[,c(2,3)] %in% ""]] <- "NO"
-    selected <- append(selected,sub_pic_df$value)
+    if(nrow(sub_pic_df) > 0){
+      sub_var <- sub_process_table[,c(2,3)][!sub_process_table[,c(2,3)] %in% ""]
+      if(colnames(sub_var) == "EffectEntered"){
+        selected_index <- "Entry"
+      } else if(colnames(sub_var) == "EffectRemoved") {
+        selected_index <- "Remove"
+      }
+      
+      sub_pic_df$value[sub_pic_df$variable %in% sub_var] <- selected_index
+      sub_pic_df$value[!sub_pic_df$variable %in% sub_var] <- "No"
+      Selection <- append(Selection,sub_pic_df$value)
+    }
   }
   
   pic_df <- rbind(pic_df_init,out_final_stepwise$pic_df)
   pic_df$value <- as.numeric(pic_df$value)
   pic_df$step <- as.numeric(pic_df$step)
-  pic_df$selected <- selected
+  pic_df$Selection <- Selection
 
   out_final_stepwise$pic_df <- pic_df
   return(out_final_stepwise)

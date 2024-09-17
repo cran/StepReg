@@ -36,6 +36,8 @@
 
 plot.StepReg <- function(x, num_digits = 6, ...) {
   y <- x$Detail_selection_summary
+  t1 <- x$`Summary of arguments for model selection`
+  test_method <- t1[t1$Parameter %in% "test method",2]
   process_list <- x[which(str_starts(names(x), "Summary of selection process under"))]
   strategy_vec <- class(x)[!class(x) %in% c("StepReg","list","linear","logit","cox","gamma","negbin","poisson")]
   plot_list <- list()
@@ -76,14 +78,13 @@ plot.StepReg <- function(x, num_digits = 6, ...) {
       plot_data <- plot_data %>%
         group_by(.data$Step, .data$Metric) %>%
         filter(ifelse(.data$Metric == "SL", .data$MetricValue == max(.data$MetricValue), .data$MetricValue == min(.data$MetricValue)))
-      
       p1 <- plotSubsetDetail(plot_data)
     }
     
     ## make a dual y-axis with log10 transformed for 'SL' if 'SL' is selected
     if(n != 'subset') {
       if("SL" %in% plot_data$Metric) {
-        plot_data[plot_data$Metric == "SL",]$MetricValue <- detail_selection[detail_selection$metric == "SL" & detail_selection$selected == "YES","value"]
+        plot_data[plot_data$Metric == "SL",]$MetricValue <- detail_selection[detail_selection$metric == "SL" & detail_selection$Selection %in% c("Entry","Remove"),"value"]
         plot_data$MetricValue[plot_data$MetricValue %in% Inf] <- max(plot_data$MetricValue[!plot_data$MetricValue %in% Inf]) * 1.1
         a <- range(log10(plot_data[plot_data$Metric == "SL", ]$MetricValue))
         b <- range(plot_data[plot_data$Metric != "SL", ]$MetricValue)
@@ -93,16 +94,16 @@ plot.StepReg <- function(x, num_digits = 6, ...) {
         p2 <- plotStepwiseSummarySingleY(plot_data)
       }
     } else {
-      p2 <- plotSubsetSummary(plot_data)
+      p2 <- plotSubsetSummary(plot_data, test_method)
     }
     p2 <- p2 +
       scale_x_continuous(breaks = plot_data$Step) + 
-      labs(title ="Selection process") + 
+      labs(title ="Selection overview") + 
       theme_light()
     
     #p3 <- cowplot::plot_grid(p1, p2, ncol=1, rel_heights = c(1, 0.75))
     plot_list[[n]]["detail"] <- list(p1)
-    plot_list[[n]]["summary"] <- list(p2)
+    plot_list[[n]]["overview"] <- list(p2)
   }
   return(plot_list)
 }
@@ -117,7 +118,7 @@ plotStepwiseSummaryDualY <- function(x, df, a, b, n){
       scale_y_continuous(
         labels = function(x) sprintf("%.1e", 10^(x * diff(a) + a[1])),
         breaks = (pretty(log10(df$MetricValue)) - a[1])/diff(a), 
-        name = "SL") + 
+        name = "SL (p value)") + 
       geom_line(aes(y = (log10(.data$MetricValue) - a[1])/diff(a), color = .data$Metric))
   } else {
     p2 <- ggplot(df, aes(x = .data$Step, group = .data$Metric)) +
@@ -128,20 +129,20 @@ plotStepwiseSummaryDualY <- function(x, df, a, b, n){
       scale_y_continuous(
         labels = function(x) sprintf("%.1e", 10^(x * diff(a) + a[1])),
         breaks = (pretty(log10(df$MetricValue)) - a[1])/diff(a), 
-        name = "SL",
-        sec.axis = sec_axis(~(diff(b) * . + b[1]), name = "Information Criteria")) + 
+        name = "SL (p value)",
+        sec.axis = sec_axis(~(diff(b) * . + b[1]), name = paste0(unique(df$Metric)[!unique(df$Metric) == "SL"],collapse=" / "))) + 
       geom_line(aes(y = ifelse(.data$Metric == "SL", (log10(.data$MetricValue) - a[1])/diff(a), (.data$MetricValue - b[1])/diff(b)), color = .data$Metric))
   }
   if(n == "forward") {
     sle <- x[[1]][which(x[[1]][,1] %in% "significance level for entry (sle)"), 2]
     p2 <- p2 + 
       geom_hline(yintercept=(log10(as.numeric(sle)) - a[1])/diff(a), linetype="dashed", color = "gray") + 
-      geom_text(aes(0,(log10(as.numeric(sle)) - a[1])/diff(a), label = paste0("sle=",sle), vjust = -1), color = "gray")
+      geom_text(aes(1.5,(log10(as.numeric(sle)) - a[1])/diff(a), label = paste0("sle=",sle), vjust = -1), color = "gray")
   } else if (n == "backward") {
     sls <- x[[1]][which(x[[1]][,1] %in% "significance level for stay (sls)"), 2]
     p2 <- p2 + 
       geom_hline(yintercept=(log10(as.numeric(sls)) - a[1])/diff(a), linetype="dotdash", color = "gray") + 
-      geom_text(aes(max(as.numeric(.data$Step)), (log10(as.numeric(sls)) - a[1])/diff(a), label = paste0("sls=",sls), vjust = -1), color = "gray")
+      geom_text(aes(max(as.numeric(.data$Step)) - 0.5, (log10(as.numeric(sls)) - a[1])/diff(a), label = paste0("sls=",sls), vjust = -1), color = "gray")
   } else {
     sle <- x[[1]][which(x[[1]][,1] %in% "significance level for entry (sle)"), 2]
     sls <- x[[1]][which(x[[1]][,1] %in% "significance level for stay (sls)"), 2]
@@ -149,13 +150,17 @@ plotStepwiseSummaryDualY <- function(x, df, a, b, n){
       geom_hline(yintercept=(log10(as.numeric(sle)) - a[1])/diff(a), linetype="dashed", color = "gray") + 
       geom_text(aes(1.5,(log10(as.numeric(sle)) - a[1])/diff(a), label = paste0("sle=",sle), vjust = -1), color = "gray") + 
       geom_hline(yintercept=(log10(as.numeric(sls)) - a[1])/diff(a), linetype="dotdash", color = "gray") + 
-      geom_text(aes(max(as.numeric(.data$Step)), (log10(as.numeric(sls)) - a[1])/diff(a), label = paste0("sls=",sls), vjust = -1), color = "gray")
+      geom_text(aes(max(as.numeric(.data$Step)) - 0.5, (log10(as.numeric(sls)) - a[1])/diff(a), label = paste0("sls=",sls), vjust = -1), color = "gray")
   }
-  p2 <- p2 + xlab("step")
+  p2 <- p2 + xlab("Step")
   return(p2)
 }
 
 plotStepwiseSummarySingleY <- function(df){
+  metricValue <- unique(df$Metric)
+  if("SL" %in% metricValue){
+    metricValue[which(metricValue %in% "SL")] <- "SL (p value)"
+  }
   p2 <- ggplot(data = df) + 
     aes(x = .data$Step,
         y = .data$MetricValue, 
@@ -166,10 +171,15 @@ plotStepwiseSummarySingleY <- function(df){
     geom_label_repel(label.size = 0.05,
                      aes(color = .data$Metric),
                      show.legend = FALSE) + 
-    xlab("step")
+    xlab("Step") +
+    ylab(paste0(metricValue,collapse=" / "))
 }
 
-plotSubsetSummary <- function(df) {
+plotSubsetSummary <- function(df, test_method) {
+  metricValue <- unique(df$Metric)
+  if("SL" %in% metricValue){
+    metricValue[metricValue %in% "SL"] <- paste0("SL (",test_method," statistics)")
+  }
   p2 <- ggplot(data = df) + 
     aes(x = .data$Step,
         y = .data$MetricValue, 
@@ -177,7 +187,8 @@ plotSubsetSummary <- function(df) {
         group = .data$Metric) + 
     geom_point(aes(color = .data$Metric)) + 
     geom_line(aes(linetype = .data$Metric, color = .data$Metric)) +
-    xlab("Variable Number")
+    xlab("Variable number") +
+    ylab(paste0(metricValue,collapse=" / "))
   return(p2)
 }
 
@@ -185,44 +196,46 @@ plotStepwiseDetail <- function(df, num_digits) {
   p1 <- ggplot(df, 
                aes(x = .data$step,
                    y = .data$variable)) +
-    geom_tile(aes(fill = .data$selected), width = 0.99, height = 0.95, color = "black") +
+    geom_tile(aes(fill = .data$Selection), width = 0.99, height = 0.95, color = "black") +
     geom_text(aes(label = round(.data$value, num_digits)),
               color = "black",
               size = 2) +
-    scale_fill_manual(values = c("YES" = "palegreen2", "NO" = "gray80")) +
+    scale_fill_manual(values = c("Entry" = "palegreen2", "Remove" = "tan3","No" = "gray80")) +
     theme_light() + 
     scale_x_continuous(breaks = unique(df$step)) + 
     theme(axis.text.y = element_text(size = 8),
           strip.text = element_text(color = "black")) +  # Adjust text color in facet labels
     facet_wrap(~ .data$metric, ncol=1) + 
     theme(strip.background = element_rect(colour = "black", fill = "gray80")) +
-    ggtitle("Metric values at each step")
+    ggtitle("Selection details") + 
+    ylab("Predictors") + 
+    xlab("Step")
   return(p1)
 }
 
 plotSubsetDetail <- function(plot_data) {
   #-------------------------
   #subset works for SL in logit(need to test)
-  
   variable_list <- lapply(strsplit(plot_data$Variable, " "), function(x) x[x != ""])
   tile_df <- expand.grid(Variable = variable_list[[length(variable_list)]], Step = plot_data$Step)
   tile_df$Metric <- rep(plot_data$Metric, each = length(variable_list[[length(variable_list)]]))
-  tile_df$Selected <- mapply(function(metric, step, variable) {
+  tile_df$Selection <- mapply(function(metric, step, variable) {
     df2_1 <- plot_data[plot_data$Metric == metric, ]
     df2_2 <- df2_1[df2_1$Step == step, ]
     any(variable %in% strsplit(df2_2$Variable, " ")[[1]])
   }, tile_df$Metric, tile_df$Step, tile_df$Variable)
-  tile_df$Selected <- ifelse(tile_df$Selected, "YES", "NO")
+  tile_df$Selection <- ifelse(tile_df$Selection, "Entry", "No")
   
-  p1 <- ggplot(tile_df, aes(x = .data$Step, y = .data$Variable, fill = .data$Selected)) +
+  p1 <- ggplot(tile_df, aes(x = .data$Step, y = .data$Variable, fill = .data$Selection)) +
     geom_tile(width = 0.99, height = 0.95, color = "black") +
-    scale_fill_manual(values = c("YES" = "palegreen2", "NO" = "gray80")) +
-    labs(x = "step", y = "variable", title = "Variable selection in each step") +
+    scale_fill_manual(values = c("Entry" = "palegreen2", "No" = "gray80")) +
+    labs(x = "Step", y = "Predictors", title = "Selection details") +
     scale_x_continuous(breaks = plot_data$Step) + 
-    xlab("Variable Number") +
+    xlab("Variable number") +
     facet_wrap(~ .data$Metric, ncol=1) + 
     theme(strip.background = element_rect(colour = "black", fill = "gray80")) +
-    ggtitle("Best subset model under each variable number")
+    #ggtitle("Best subset model under each variable number")
+    ggtitle("Selection details")
 }
 
 
