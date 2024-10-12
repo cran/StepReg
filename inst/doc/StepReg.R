@@ -68,7 +68,7 @@ Meanings <- c(
 kable_styling(kable(data.frame(Statistic,Meanings),format = "html", align='l', escape = F, caption = 'Statistics in selection metric'))
 
 ## ----echo = FALSE-------------------------------------------------------------
-Abbreviation <- c("", "AIC", "AICc", "BIC", "Cp", "HQ", "IC(1)", "IC(3/2)", "SBC", "SL", "Rsq", "adjRsq")
+Abbreviation <- c("", "AIC", "AICc", "BIC", "Cp", "HQ", "IC(1)", "IC(3/2)", "SBC", "SL", "adjRsq")
 Definition <- c("",
                 "Akaike’s Information Criterion",
                 "Corrected Akaike’s Information Criterion",
@@ -79,7 +79,6 @@ Definition <- c("",
                 "Information Criterion with Penalty Coefficient Set to 3/2",
                 "Schwarz Bayesian Information Criterion",
                 "Significance Level (pvalue)",
-                "R-square statistic",
                 "Adjusted R-square statistic")
 
 Formula_in_Linear <- c("linear",
@@ -92,8 +91,7 @@ Formula_in_Linear <- c("linear",
                        "$n\\ln\\left(\\frac{|\\text{SSE}|}{n}\\right) + \\frac{3}{2}p$ <br>[@Smith_Spiegelhalter_1980] <br>not available for MMR",
                        "$n\\ln\\left(\\frac{|\\text{SSE}|}{n}\\right) + pq \\ln(n)$ <br>[@Hurvich_Tsai_1989; @Schwarz_1978; @Judge_1985; @Al-Subaihi_2002] <br>not available for MMR",
                        "$\\textit{F test}$ for UMR and $\\textit{Approximate F test}$ for MMR",
-                       "$1 - \\frac{SSE}{SST}$ <br>not available for MMR",
-                       "$1 - \\frac{(n-1)(1-R^2)}{n-p}$ <br>[@Darlington_1968; @Judge_1985] <br>not available for MMR")
+                       "$1 - \\frac{(n-1)(1-R^2)}{n-p}$, <br> where $R^2=1 - \\frac{SSE}{SST}$ <br>[@Darlington_1968; @Judge_1985] <br>not available for MMR")
 
 Formula_in_Logit_Cox_Poisson_Gamma <- c("logit, cox, poisson and gamma",
                                         "$-2\\text{LL} + 2p$ <br>[@Darlington_1968; @Judge_1985]",
@@ -105,7 +103,6 @@ Formula_in_Logit_Cox_Poisson_Gamma <- c("logit, cox, poisson and gamma",
                                         "$-2\\text{LL} + \\frac{3}{2}p$ <br>[@Smith_Spiegelhalter_1980]",
                                         "$-2\\text{LL} + p\\ln(n)$ <br>[@Schwarz_1978; @Judge_1985]",
                                         "Forward: LRT and Rao Chi-square test (logit, poisson, gamma); LRT (cox); <br><br>Backward: Wald test",
-                                        "not available",
                                         "not available")
 df <- data.frame(Abbreviation, Definition, Formula_in_Linear, Formula_in_Logit_Cox_Poisson_Gamma)
 colnames(df) <- c("Abbreviation","Definition","Formula","")

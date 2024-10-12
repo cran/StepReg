@@ -7,7 +7,7 @@ validateUtils <- function(formula,
                           type = c("linear", "logit", "poisson", "cox", "gamma", "negbin"),
                           include = NULL,
                           strategy = c("forward", "backward", "bidirectional", "subset"),
-                          metric = c("AIC", "AICc", "BIC", "CP", "HQ", "HQc", "Rsq", "adjRsq", "SL", "SBC", "IC(3/2)", "IC(1)"),
+                          metric = c("AIC", "AICc", "BIC", "CP", "HQ", "HQc", "adjRsq", "SL", "SBC", "IC(3/2)", "IC(1)"),
                           sle = 0.15,
                           sls = 0.15,
                           sigma_value,
@@ -59,7 +59,7 @@ validateUtils <- function(formula,
 	}
 	
 	## check 'metric' and 'test_method' according to 'type'
-	linear_metric <- c("AIC", "AICc", "BIC", "CP", "HQ", "HQc", "Rsq", "adjRsq", "SL", "SBC", "IC(3/2)", "IC(1)")
+	linear_metric <- c("AIC", "AICc", "BIC", "CP", "HQ", "HQc", "adjRsq", "SL", "SBC", "IC(3/2)", "IC(1)")
 	glm_metric <- c("SL", "AIC", "AICc", "SBC", "HQ", "HQc", "IC(3/2)", "IC(1)")
 	#poisson_metric <- c("SL", "AIC", "AICc", "SBC", "HQ", "HQc", "IC(3/2)", "IC(1)")
 	#gamma_metric <- c("SL", "AIC", "AICc", "SBC", "HQ", "HQc", "IC(3/2)", "IC(1)")
@@ -80,8 +80,8 @@ validateUtils <- function(formula,
 	    }
 	  }
 	  if(n_y > 1) {
-	    if(any(metric %in% c("BIC", "CP", "HQc", "IC(1)", "IC(3/2)", "Rsq", "adjRsq"))) {
-	      stop("The 'metric' can not be 'BIC', 'CP', 'HQc', 'IC(1)', 'IC(3/2)', 'Rsq' or 'adjRsq' when using multivariate multiple regression!")
+	    if(any(metric %in% c("BIC", "CP", "HQc", "IC(1)", "IC(3/2)", "adjRsq"))) {
+	      stop("The 'metric' can not be 'BIC', 'CP', 'HQc', 'IC(1)', 'IC(3/2)', or 'adjRsq' when using multivariate multiple regression!")
 	    }
 	  }
 		# if(any(strategy == "subset") & any(metric == "SL")) {

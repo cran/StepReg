@@ -121,7 +121,7 @@ getTestMethod <- function(data, model_raw, type, metric, n_y, test_method_linear
 #
 # Fit Model Statistics with least square or likelihood method to return an information criteria value 
 #
-# @param metric Information criteria, including AIC, AICc, BIC, CP, HQ, HQc, Rsq, adjRsq and SBC
+# @param metric Information criteria, including AIC, AICc, BIC, CP, HQ, HQc, adjRsq and SBC
 # 
 # @param fit Object of linear model or general linear model
 # 
@@ -129,7 +129,7 @@ getTestMethod <- function(data, model_raw, type, metric, n_y, test_method_linear
 # 
 # @param sigma_value Sigma value for calculation of 'BIC' and 'CP'
 
-getModelFitStat <- function(metric = c("AIC", "AICc", "BIC", "CP", "HQ", "HQc", "Rsq", "adjRsq", "SBC", "IC(3/2)", "IC(1)"), fit, type = c("linear", "logit", "poisson", "cox", "gamma", "negbin"), sigma_value) {
+getModelFitStat <- function(metric = c("AIC", "AICc", "BIC", "CP", "HQ", "HQc", "adjRsq", "SBC", "IC(3/2)", "IC(1)"), fit, type = c("linear", "logit", "poisson", "cox", "gamma", "negbin"), sigma_value) {
 	# "LeastSquare" is for linear; "Likelihood" is for cox and logit; cox and logit are essentially the same except for sample size calculation.
 	if (type == "linear") {
 		resMatrix <- as.matrix(fit$residuals)
@@ -160,9 +160,9 @@ getModelFitStat <- function(metric = c("AIC", "AICc", "BIC", "CP", "HQ", "HQc", 
 		  PIC <- n*log(SSE/n) + 1.5*p*nY + nY*(nY + 1) + n
 		}else if(metric == "BIC") {
 			PIC <- n*log(SSE/n) + 2*(2 + p)*(n*sigma_value/SSE) - 2*(n*sigma_value/SSE)*(n*sigma_value/SSE)
-		}else if(metric == "Rsq") {
+		#}#else if(metric == "Rsq") {
 			#PIC <- 1 - (SSE/SST)
-			PIC <- summary(fit)$r.squared
+			#PIC <- summary(fit)$r.squared
 		}else if(metric == "adjRsq") {
 			#PIC <- 1 - (SSE/SST)*(n - 1)/(n - p)
 			PIC <- summary(fit)$adj.r.squared
@@ -267,7 +267,7 @@ getFinalSubSet <- function(data, type, metric, x_notin_model, initial_process_ta
 		}
 		sub_process_table[, 2] <- pic_set
 		
-		if (metric %in% c("SL", "Rsq", "adjRsq")) {
+		if (metric %in% c("SL", "adjRsq")) {
 		  # "Rsq" and "adjRsq" are for type "linear"; "SL" is for type "logit" and "cox"
 		  decreasing = TRUE
 		} else{
@@ -285,7 +285,7 @@ getFinalSubSet <- function(data, type, metric, x_notin_model, initial_process_ta
 }
 
 getXNameSelected <- function(process_table, metric) {
-	if (metric %in% c("SL", "Rsq", "adjRsq")) {
+	if (metric %in% c("SL", "adjRsq")) {
 		# "Rsq" and "adjRsq" are for type "linear"; "SL" is for type "logit" and "cox"
 		x_name_selected <- unlist(strsplit(process_table[which.max(as.numeric(process_table[, metric])), 3], " "))
 	} else{
@@ -496,7 +496,7 @@ getInitStepModelStat <- function(fit_intercept, fit_fm, type, strategy, metric, 
           if(intercept == '1') {
             pic <- getModelFitStat(metric, fit_fm, type, sigma_value)
           }else{
-            if(metric %in% c("Rsq", "adjRsq") & type == "linear") {
+            if(metric %in% c("adjRsq") & type == "linear") {
               pic <- 0
             }else{
               pic <- Inf
@@ -507,7 +507,7 @@ getInitStepModelStat <- function(fit_intercept, fit_fm, type, strategy, metric, 
         if(intercept == '1') {
           pic <- getModelFitStat(metric, fit_fm, type, sigma_value)
         }else{
-          if(metric %in% c("Rsq", "adjRsq") & type == "linear") {
+          if(metric %in% c("adjRsq") & type == "linear") {
             pic <- 0
           }else{
             pic <- Inf
@@ -617,7 +617,7 @@ getCandStepModel <- function(add_or_remove, data, type, metric, weight, y_name, 
       }
     } else {
       if(add_or_remove == "remove" & length(x_test) == 1 & intercept == "0") {
-        if(metric == 'Rsq' | metric == 'adjRsq'){
+        if(metric == 'adjRsq'){
           pic_set <- 0
         } else {
           pic_set <- Inf
@@ -627,7 +627,7 @@ getCandStepModel <- function(add_or_remove, data, type, metric, weight, y_name, 
         pic_set <- sapply(x_fit_list, function(x) {getModelFitStat(metric, x, type, sigma_value)})
       }
     }
-    if(metric == "Rsq" | metric == "adjRsq" | (metric == "SL" & add_or_remove == "remove")) {
+    if(metric == "adjRsq" | (metric == "SL" & add_or_remove == "remove")) {
       pic <- max(pic_set)
       minmax_var <- names(which.max(pic_set))
       best_candidate_model <- x_fit_list[[minmax_var]]
@@ -674,7 +674,7 @@ getGoodnessFit <- function(best_candidate_model, y_name, metric) {
       }
     }
   }
-  if(is.nan(pval) == TRUE & (metric != 'Rsq' | metric != 'adjRsq')) {
+  if(is.nan(pval) == TRUE & (metric != 'adjRsq')) {
     BREAK <- TRUE
   }else{
     BREAK <- FALSE
@@ -689,12 +689,12 @@ checkEnterOrRemove <- function(add_or_remove, best_candidate_model, type, metric
     }else{
       indicator <- pic < sle
     }
-  }else if(metric == 'Rsq' | metric == 'adjRsq') {
+  }else if(metric == 'adjRsq') {
     indicator <- pic > as.numeric(process_table[nrow(process_table), 6])
   }else{
     indicator <- pic <= as.numeric(process_table[nrow(process_table), 6])
   }
-  if(indicator == TRUE & type == "linear" & (metric != "Rsq" & metric != "adjRsq")) {
+  if(indicator == TRUE & type == "linear" & (metric != "adjRsq")) {
     if(best_candidate_model$rank != 0) {
       BREAK <- getGoodnessFit(best_candidate_model, y_name, metric)
     }

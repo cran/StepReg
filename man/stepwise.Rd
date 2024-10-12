@@ -10,8 +10,7 @@ stepwise(
   type = c("linear", "logit", "cox", "poisson", "gamma", "negbin"),
   include = NULL,
   strategy = c("forward", "backward", "bidirection", "subset"),
-  metric = c("AIC", "AICc", "BIC", "CP", "HQ", "Rsq", "adjRsq", "SL", "SBC", "IC(3/2)",
-    "IC(1)"),
+  metric = c("AIC", "AICc", "BIC", "CP", "HQ", "adjRsq", "SL", "SBC", "IC(3/2)", "IC(1)"),
   sle = 0.15,
   sls = 0.15,
   test_method_linear = c("Pillai", "Wilks", "Hotelling-Lawley", "Roy"),
@@ -34,7 +33,7 @@ stepwise(
 
 \item{strategy}{(character) The model selection strategy. Choose from 'forward', 'backward', 'bidirectional' and 'subset'. Default is 'forward'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}}
 
-\item{metric}{(character) The model selection criterion (model fit score). Used for the evaluation of the predictive performance of an intermediate model. Choose from 'AIC', 'AICc', 'BIC', 'CP', 'HQ', 'Rsq', 'adjRsq', 'SL', 'SBC', 'IC(3/2)', 'IC(1)'. Default is 'AIC'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}}
+\item{metric}{(character) The model selection criterion (model fit score). Used for the evaluation of the predictive performance of an intermediate model. Choose from 'AIC', 'AICc', 'BIC', 'CP', 'HQ', 'adjRsq', 'SL', 'SBC', 'IC(3/2)', 'IC(1)'. Default is 'AIC'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}}
 
 \item{sle}{(numeric) Significance Level to Enter. It is the statistical significance level that a predictor variable must meet to be included in the model. E.g. if 'sle = 0.05', a predictor with a P-value less than 0.05 will 'enter' the model. Default is 0.15.}
 
