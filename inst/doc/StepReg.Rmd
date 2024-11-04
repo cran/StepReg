@@ -445,7 +445,7 @@ plot(res6)
 
 ## Poisson regression with the `creditCard` dataset
 
-In this example, we'll demonstrate how to perform Poisson regression analysis using the [`creditCard`](https://search.r-project.org/CRAN/refmans/AER/html/CreditCard.html) dataset.  We set `type = "poisson"` to direct the function to perform Poisson regression.
+In this example, we'll demonstrate how to perform Poisson regression analysis using the [`creditCard`](https://search.r-project.org/CRAN/refmans/AER/html/CreditCard.html) dataset. We set `type = "poisson"` to direct the function to perform Poisson regression.
 
 **Descprition of the `creditCard` dataset**
 

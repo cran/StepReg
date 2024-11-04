@@ -418,42 +418,45 @@ getAnovaStat <- function(add_or_remove = "add", intercept, include, fit_reduced,
   if(type != "linear" & add_or_remove == "remove") { #wald test for logit and cox with add_or_remove = "remove"
     stat_table <- coef(summary(fit_full))
     stat_table[, stattype] <- stat_table[, stattype]^2
+    coef_name <- rownames(stat_table)
     ptype <- colnames(stat_table)[colnames(stat_table) %in% ptype]
-    
     xlevels <- fit_full$xlevels
-    if(length(xlevels) > 0) {
-      #xlevels <- xlevels[which(!names(xlevels) %in% include)]
-      factor_min_name <- vector( "character", length(xlevels))
-      names(factor_min_name) <- names(xlevels)
-      for(i in 1:length(xlevels)) {
-        sub_levels_pos <- which(rownames(stat_table) %in% paste0(names(xlevels)[i], xlevels[[i]]))
-        xvec <- stat_table[sub_levels_pos, ptype]
-        names(xvec) <- rownames(stat_table)[sub_levels_pos]
-        factor_min_name[i] <- names(xvec)[xvec %in% min(xvec, na.rm = TRUE)]
-      }
-      x_name <- sort(getXname(fit_full))
-      names(x_name) <- x_name
-      x_name <- x_name[!x_name %in% include]
-      
-      select_x <- c(x_name[!names(x_name) %in% names(factor_min_name)], factor_min_name)
-      stat_table <- stat_table[rownames(stat_table) %in% c(select_x), ]
-      if(!is.matrix(stat_table)) {
-        stat_table <- matrix(stat_table, nrow = 1, byrow = FALSE)
-        colnames(stat_table) <- colnames(coef(summary(fit_full)))
-      }
-      rownames(stat_table) <- names(select_x)
-    }
-    if(intercept == "1" & length(xlevels) == 0) {
-      if(nrow(stat_table) ==2 ) {
+    
+    if(intercept == "1") { # remove intercept for scanning all other variables' p value
+      if(nrow(stat_table) == 2) {
         stat_table <- stat_table[-1, , drop = FALSE]
       } else {
         stat_table <- stat_table[-1,]
       }
     }
+    if(length(xlevels) == 0) {
+      stat_table <- as.data.frame(stat_table)
+      stat_table$Var <- rownames(stat_table)
+    } else {
+      coef_name_levels <- unlist(lapply(names(xlevels), function(i) {
+        paste(i,xlevels[[i]],sep="")
+      }))
+      names(coef_name_levels) <- rep(names(xlevels),sapply(xlevels,length))
+      #coef_name_include <- c(coef_name_levels[names(coef_name_levels) %in% include], include)
+      #stat_table_no_include <- stat_table[which(!coef_name %in% coef_name_include), , drop = FALSE]
+      #coef_name_parent <- sapply(rownames(stat_table_no_include), function(i){
+      coef_name_parent <- sapply(rownames(stat_table), function(i) {
+        if(i %in% coef_name_levels) {
+          names(coef_name_levels)[coef_name_levels %in% i]
+        } else {
+          i
+        }
+      })
+      stat_table <- as.data.frame(stat_table)
+      stat_table$Var <- coef_name_parent
+    }
+    
     pic_set <- stat_table[, ptype]
-    names(pic_set) <- rownames(stat_table)
+    #names(pic_set) <- rownames(stat_table)
+    names(pic_set) <- stat_table$Var
     statistics <- stat_table[, stattype]
-    names(statistics) <- rownames(stat_table)
+    #names(statistics) <- rownames(stat_table)
+    names(statistics) <- stat_table$Var
     #maxPVar <- rownames(stat_table)[which.max(pic_set)]
     pic <- list(pic_set[!names(pic_set) %in% include])
     statistics <- list(statistics[!names(statistics) %in% include])
