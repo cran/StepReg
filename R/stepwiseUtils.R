@@ -53,19 +53,19 @@ getModel <- function(data, type, intercept, x_name, y_name, weight, method = c("
 	if(type == 'linear') {
 		## cannot perform multivariate multiple regression in glm() function
 		#lm_raw <- glm(formula_raw, data = data, weights = weights, family = "gaussian")
-		model_raw <- lm(formula_raw, data = data, weights = weight)
+		model_raw <- do.call("lm", list(formula_raw, data = quote(data), weights = weight))
 	}else if(type == "logit") {
-		model_raw <- glm(formula_raw, data = data, weights = weight, family = "binomial")
+		model_raw <- do.call("glm", list(formula_raw, data = quote(data), weights = weight, family = "binomial"))
 	}else if(type == "poisson") {
-	  model_raw <- glm(formula_raw, data = data, weights = weight, family = "poisson")
+	  model_raw <- do.call("glm", list(formula_raw, data = quote(data), weights = weight, family = "poisson"))
 	}else if(type == "gamma") {
-	  model_raw <- glm(formula_raw, data = data, weights = weight, family = "Gamma")
+	  model_raw <- do.call("glm", list(formula_raw, data = quote(data), weights = weight, family = "Gamma"))
 	}else if(type == 'cox') {
 	  ## "method" is only used for cox regression
 	  method <- match.arg(method)
-		model_raw <- coxph(formula_raw, data = data, weights = weight, method = method)
+		model_raw <- do.call("coxph", list(formula_raw, data = quote(data), weights = weight, method = method))
 	}else if(type == "negbin") {
-	  model_raw <- glm.nb(formula_raw, data = data, weights = weight)
+	  model_raw <- do.call("glm.nb", list(formula_raw, data = quote(data), weights = weight))
 	}
 	return(model_raw)
 }
@@ -226,20 +226,20 @@ getInitialSubSet <- function(data, type, metric, y_name, intercept, include, wei
     }else{
       pic_set <- getModelFitStat(metric, x_fit, type, sigma_value)
     }
-    initial_process_table[1, 1:3] <- c(as.numeric(intercept) + length(include), pic_set, paste(intercept, include, sep = " "))
+    initial_process_table[1, 1:3] <- c(as.numeric(intercept) + length(include), pic_set, paste(c(intercept, include), collapse = " "))
   }
   return(initial_process_table)
 }
 
 getFinalSubSet <- function(data, type, metric, x_notin_model, initial_process_table, y_name, include, weight, intercept, best_n = Inf, test_method, sigma_value) {
 	process_table <- initial_process_table
-	#nv=1
+	#nv=8
 	for (nv in 1:length(x_notin_model)) {
 		com_table <- as.data.frame(combn(x_notin_model, nv))
 		n_test <- ncol(com_table)
 		com_var <- apply(com_table, 2, paste, collapse = " ")
 		sub_process_table <- matrix(rep(c(nv + length(include) + as.numeric(intercept), NA), each = n_test), n_test, 2)
-		com_var_df <- cbind(paste(intercept, include, sep = " "), data.frame(com_var))
+		com_var_df <- cbind(paste(c(intercept, include), collapse = " "), data.frame(com_var))
 		com_var_set <- apply(com_var_df, 1, paste, collapse = " ")
 		sub_process_table <- data.frame(sub_process_table, c(com_var_set))
 		colnames(sub_process_table) <- c("NumberOfVariables", metric, "VariablesInModel")
@@ -316,25 +316,29 @@ formatTable <- function(tbl, tbl_name = "Test") {
 	return(tbl_list)
 }
 
-getTable1SummaryOfParameters <- function(data, type, x_name, y_name, merged_multico_x, 
+getTable1SummaryOfParameters <- function(formula, data, type, x_name, y_name, merged_multico_x, 
 																				 merged_include, strategy, metric, sle, sls, 
 																				 test_method, tolerance, intercept) {
 	# generate: table1: Summary of Parameters
 	table_1_summary_of_parameters <- data.frame(
-		Parameter = c("included variable", 
-									"strategy", 
-									"metric", 
-									"significance level for entry (sle)", 
-									"significance level for stay (sls)", 
-									"test method", 
-									"tolerance of multicollinearity", 
-									"multicollinearity variable", 
-									"intercept"), 
-		Value = c(merged_include, 
+	  Parameter = c("initial formula",
+	                "regression type",
+	                "selection strategy", 
+	                "stepwise metric", 
+	                "significance level for entry (sle)", 
+	                "significance level for stay (sls)",
+	                "included variable",
+	                "test method", 
+	                "tolerance of multicollinearity", 
+	                "multicollinearity variable", 
+	                "intercept"),
+		Value = c(deparse(formula),
+		          type,
 		          paste0(strategy, collapse=" & "), 
 							paste0(metric, collapse=" & "), 
 							sle, 
 							sls, 
+							merged_include, 
 							test_method, 
 							tolerance, 
 							merged_multico_x, 
@@ -342,21 +346,24 @@ getTable1SummaryOfParameters <- function(data, type, x_name, y_name, merged_mult
 	)
 	if(type == 'cox') {
 	  # "intercept" is not relevant
-	  table_1_summary_of_parameters <- table_1_summary_of_parameters[-9, ]
+	  table_1_summary_of_parameters <- table_1_summary_of_parameters[-nrow(table_1_summary_of_parameters), ]
 	}
 	# get rid of unrelevant variables from table 1:
+	nrow_sls <- which(table_1_summary_of_parameters$Parameter %in% "significance level for stay (sls)")
+	nrow_sle <- which(table_1_summary_of_parameters$Parameter %in% "significance level for entry (sle)")
+	nrow_test_method <- which(table_1_summary_of_parameters$Parameter %in% "test method")
 	if(any(metric %in% "SL")) {
 	  if(any(strategy == "bidirection") | (any(strategy == "forward") & any(strategy == "backward"))) {
 	    table_1_summary_of_parameters <- table_1_summary_of_parameters
 	  }else if(any(strategy == "forward") & (!any(strategy == "bidirection") & !any(strategy == "backward"))) {
-	    table_1_summary_of_parameters <- table_1_summary_of_parameters[-5, ]
+	    table_1_summary_of_parameters <- table_1_summary_of_parameters[-nrow_sls, ]
 	  }else if(any(strategy == "backward") & (!any(strategy == "bidirection") & !any(strategy == "forward"))) {
-	    table_1_summary_of_parameters <- table_1_summary_of_parameters[-4, ]
+	    table_1_summary_of_parameters <- table_1_summary_of_parameters[-nrow_sle, ]
 	  }else{
-	    table_1_summary_of_parameters <- table_1_summary_of_parameters[-c(4:5), ]
+	    table_1_summary_of_parameters <- table_1_summary_of_parameters[-c(nrow_sle,nrow_sls), ]
 	  }
 	}else if(!any(metric %in% "SL") & type != 'cox') {
-		table_1_summary_of_parameters <- table_1_summary_of_parameters[-c(4:6), ]
+		table_1_summary_of_parameters <- table_1_summary_of_parameters[-c(nrow_sls,nrow_sle,nrow_test_method), ]
 	}
 	return(table_1_summary_of_parameters)
 }
@@ -367,10 +374,10 @@ getTable2TypeOfVariables <- function(model) {
   
   class_var <- attr(model$terms, "dataClasses")
   class_table <- matrix(c(names(class_var), class_var), ncol=2)
-  table2_class_table <- cbind(NA, class_table)
-  table2_class_table[class_table[, 1] %in% y_name, 1] <- "Dependent"
-  table2_class_table[!class_table[, 1] %in% y_name, 1] <- "Independent"
-  colnames(table2_class_table) <- c("Variable_type", "Variable_name", "Variable_class")
+  table2_class_table <- cbind(class_table,NA)
+  table2_class_table[class_table[, 1] %in% y_name, 3] <- "Dependent"
+  table2_class_table[!class_table[, 1] %in% y_name, 3] <- "Independent"
+  colnames(table2_class_table) <- c("Variable_name", "Variable_class", "Variable_type")
   rownames(table2_class_table) <- NULL
   return(as.data.frame(table2_class_table))
 }
@@ -757,7 +764,7 @@ getFinalStepModel <- function(add_or_remove, data, type, strategy, metric, sle, 
     if(!is.null(pic_set)) {
       pic_df <- rbind(pic_df,data.frame(strategy, metric, step = process_table[nrow(process_table),1], "variable" = names(pic_set), "value" = pic_set))
     }
-    
+    rownames(pic_df) <- NULL
     # stop stepwise infinite loops
     # enter remove
     # x1
@@ -841,7 +848,7 @@ getStepwiseWrapper <- function(data, type, strategy, metric, sle, sls, weight, x
   for (i in out_final_stepwise$process_table$Step) {
     sub_process_table <- out_final_stepwise$process_table[out_final_stepwise$process_table$Step %in% i,]
     sub_pic_df <- out_final_stepwise$pic_df[out_final_stepwise$pic_df$step %in% i,]
-    if(nrow(sub_pic_df) > 0){
+    if(!is.null(sub_pic_df) && nrow(sub_pic_df) > 0){
       sub_var <- sub_process_table[,c(2,3)][!sub_process_table[,c(2,3)] %in% ""]
       if(colnames(sub_var) == "EffectEntered"){
         selected_index <- "Entry"
@@ -865,38 +872,38 @@ getStepwiseWrapper <- function(data, type, strategy, metric, sle, sls, weight, x
 }
 
 getTable3ProcessSummary <- function(data, type, strategy, metric, sle, sls, weight, x_name, y_name, intercept, include, best_n, test_method, sigma_value, num_digits) {
-  table3_process_table_metric <- list()
+  overview_table_metric <- list()
   x_final_model_metric <- list()
-  pic_df <- NULL
+  details <- list()
   vote_df <- NULL
-  table3 <- list()
+  overview <- list()
   
   for(stra in strategy) {
     for(met in metric) {
       if(stra == "subset") {
-        table3_process_table <- getSubsetWrapper(data, type = type, met, x_name, y_name, intercept, include, weight = weight, best_n, test_method, sigma_value)
+        overview_table <- getSubsetWrapper(data, type = type, met, x_name, y_name, intercept, include, weight = weight, best_n, test_method, sigma_value)
         if(met != "SL"){
-          x_final_model <- getXNameSelected(table3_process_table,met)
+          x_final_model <- getXNameSelected(overview_table,met)
         }
       } else {
         out_final_stepwise <- getStepwiseWrapper(data, type = type, stra, met, sle, sls, weight = weight, x_name, y_name, intercept, include, test_method, sigma_value)
-        pic_df <- rbind(pic_df, out_final_stepwise$pic_df)
-        table3_process_table <- out_final_stepwise$process_table
+        details[[stra]][[met]] <- out_final_stepwise$pic_df
+        overview_table <- out_final_stepwise$process_table
         remove_col <- NULL
         if(stra == "forward") {
           remove_col <- "EffectRemoved"
         } else if(stra == "backward") {
           remove_col <- "EffectEntered"
         }
-        table3_process_table <- table3_process_table[,!colnames(table3_process_table) %in% remove_col]
-        if(all(table3_process_table[,"NumberEffect"] == table3_process_table[,"NumberParams"])) {
-          table3_process_table <- table3_process_table[,!colnames(table3_process_table) %in% "NumberEffect"]
+        overview_table <- overview_table[,!colnames(overview_table) %in% remove_col]
+        if(all(overview_table[,"NumberEffect"] == overview_table[,"NumberParams"])) {
+          overview_table <- overview_table[,!colnames(overview_table) %in% "NumberEffect"]
         }
         x_final_model <- c(intercept, include, out_final_stepwise$x_in_model)
       }
-      #table3_process_table[,met] <- table3_process_table[,met] %>% as.numeric() %>% round(num_digits) %>% as.character()
-      table3_process_table[,met] <- table3_process_table[,met] %>% as.numeric()
-      table3[[paste0("Summary of selection process under ",stra," with ",met,collapse="")]] <- table3_process_table %>% mutate_if(is.numeric, round, num_digits) %>% mutate_if(is.numeric,as.character) # to keep digits as we expected, convert numeric to character for html output.
+      #overview_table[,met] <- overview_table[,met] %>% as.numeric() %>% round(num_digits) %>% as.character()
+      overview_table[,met] <- overview_table[,met] %>% as.numeric()
+      overview[[stra]][[met]] <- overview_table %>% mutate_if(is.numeric, round, num_digits) %>% mutate_if(is.numeric,as.character) # to keep digits as we expected, convert numeric to character for html output.
       
       if(!(stra == "subset" & met == "SL")) {
         x_final_model_metric[[stra]][[met]] <- x_final_model
@@ -904,65 +911,20 @@ getTable3ProcessSummary <- function(data, type, strategy, metric, sle, sls, weig
       }
     }
   }
-  return(list('final_variable' = x_final_model_metric, 'vote_df' = vote_df, 'table3' = table3, "pic_df" = pic_df))
+  if(!is.null(vote_df)) {
+    colnames(vote_df) <- c("model", "strategy:metric")
+  }
+  return(list('final_variable' = x_final_model_metric, 'voted_model' = vote_df, 'overview' = overview, "details" = details))
 }
 
-getTable4CoefModel <- function(type = type, strategy, metric, intercept, include, x_final_model_metric, y_name, n_y, data, weight, test_method_cox, num_digits) {
-  table4_coef_model_metric <- list()
-  table4 <- list()
-  for(stra in strategy) {
-    table4_coef_model_metric[[stra]] <- getCoefModel(type = type, intercept, include, x_final_model_metric[[stra]], y_name, n_y, data, weight, test_method_cox)
-    for(met in metric) {
-      if(!(stra == "subset" & met == "SL")) {
-        table4_coef_model <- table4_coef_model_metric[[stra]][[met]]
-        for(i in names(table4_coef_model)) {
-          table4[[paste0("Summary of coefficients for the selected model with ", i, " under ",stra," and ",met,sep=" ")]] <- table4_coef_model[[i]] %>% mutate_if(is.numeric, round, num_digits) %>% mutate_if(is.numeric,as.character)
-        }
-      }
+getTable4ModelCall <- function(type, intercept, include, x_final_model_metric, y_name, n_y, data, weight, test_method, num_digits) {
+  table4_model_call <- list()
+  for(stra in names(x_final_model_metric)) {
+    x_final_model_strategy <- x_final_model_metric[[stra]]
+    for(met in names(x_final_model_strategy)) {
+      x_in_model <- x_final_model_strategy[[met]]
+      table4_model_call[[stra]][[met]] <- getModel(data, type, intercept = NULL, x_name = c(x_in_model), y_name, weight = weight,  method = test_method)
     }
   }
-  return(table4)
+  return(table4_model_call)
 }
-
-# not called:
-# getTable4FinalVariable <- function(all_x_in_model) {
-#   variables <- as.data.frame(t(data.frame(all_x_in_model)))
-#   colnames(variables) <- paste0("variable", 1:ncol(variables))
-#   rownames(variables) <- c("x in model")
-#   #table4 <- formatTable(variables, tbl_name = "Table 4. Selected Varaibles")
-#   table4 <- variables
-#   return(table4)
-# }
-
-getCoefModel <- function(type, intercept, include, x_in_model_metric, y_name, n_y, data, weight, test_method) {
-  table4 <- list()
-  for(met in names(x_in_model_metric)) {
-    x_in_model <- x_in_model_metric[[met]]
-    if(is.null(c(include, x_in_model))) {
-      summary_model <- NULL
-    }else{
-      summary_model <- summary(getModel(data, type, intercept = intercept, x_name = c(x_in_model), y_name, weight = weight,  method = test_method))
-      summary_model_list <- list()
-      if (n_y>1) {
-        for(i in names(summary_model)) {
-          subsummary_model <- summary_model[[i]]$coefficients
-          col_name <- colnames(subsummary_model)
-          subsummary_model <- data.frame(rownames(subsummary_model), subsummary_model)
-          colnames(subsummary_model) <- c("Variable", col_name)
-          summary_model_list[i] <- list(subsummary_model)
-        }
-      } else {
-        subsummary_model <- summary_model$coefficients
-        col_name <- colnames(subsummary_model)
-        subsummary_model <- data.frame(rownames(subsummary_model), subsummary_model)
-        colnames(subsummary_model) <- c("Variable", col_name)
-        summary_model_list <- list(subsummary_model)
-        names(summary_model_list) <- y_name
-      }
-    }
-    table4[met] <- list(summary_model_list)
-  }
-  #table4 <- formatTable(summary_model_list, tbl_name = "Table 5. Summary of Model for")
-  return(table4)
-}
-

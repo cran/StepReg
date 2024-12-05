@@ -16,7 +16,6 @@ require("ggcorrplot") || stop("unable to load ggcorrplot")
 require("tidyr") || stop("unable to load tidyr")
 #require("GGally") || stop("unable to load GGally")
 require("ggrepel") || stop("unable to load ggrepel")
-require("purrr") || stop("unable to load purrr")
 require("rmarkdown") || stop("unable to load rmarkdown")
 
 createPlot <- function(plot_type_value, var_plot_value, data_value) {

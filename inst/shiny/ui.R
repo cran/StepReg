@@ -245,7 +245,6 @@ ui <- tagList(
                           "IC(3/2)",
                           "SBC",
                           "SL",
-                          "Rsq",
                           "adjRsq"),
               multiple = TRUE
             )
@@ -558,7 +557,7 @@ ui <- tagList(
         "Citation",
         tags$p("If you think 'StepReg' R package is helpful to your research, please cite:"),
         tags$ul(
-          tags$li("Junhui Li (2024). StepReg: Stepwise Regression Analysis. R package version 1.5.1, https://CRAN.R-project.org/package=StepReg")
+          tags$li("Junhui Li (2024). StepReg: Stepwise Regression Analysis. R package version 1.5.6, https://CRAN.R-project.org/package=StepReg")
         )
       )
     )

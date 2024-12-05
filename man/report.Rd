@@ -24,7 +24,7 @@ formula <- mpg ~ . + 0
 x <- stepwise(formula = formula,
               data = mtcars,
               type = "linear",
-              strategy = "bidirection",
+              strategy = c("bidirection","subset"),
               metric = c("AIC", "BIC"))
 report(x,report_name = "report", format = c("html","docx"))
 }

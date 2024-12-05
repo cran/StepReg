@@ -26,25 +26,35 @@
 #' x <- stepwise(formula = formula,
 #'               data = mtcars,
 #'               type = "linear",
-#'               strategy = "bidirection",
+#'               strategy = c("bidirection","subset"),
 #'               metric = c("AIC", "BIC"))
 #' report(x,report_name = "report", format = c("html","docx"))
 #' }
 
 report <- function(x, report_name, format = c('html', 'docx', 'rtf', 'pptx')) {
   format <- match.arg(format, several.ok = TRUE)
+  results <- list()
+  for (j in c("arguments","variables")) {
+    if(j == "arguments") {
+      j_name <- "Parameters and Values"
+    } else if(j == "variables"){
+      j_name <- "Variables and Class"
+    }
+    results[j_name] <- list(process_table(x[[j]]))
+  }
+  
+  overview_list <- x$overview
+  for(i in names(overview_list)){
+    overview_sub_list <- overview_list[[i]]
+    for(j in names(overview_sub_list)){
+      results[paste("Selection Overview: ",paste(i,j,sep="-"))] <- list(process_table(overview_sub_list[[j]]))
+    }
+  }
+  results["Model Vote"] <- list(process_table(vote(x)))
+  names(results) <- paste("Table", paste(1:length(results),names(results)),sep="")
   
   if(!is.null(report_name)) {
     if (any(c('html', 'docx', 'rtf', 'pptx') %in% format)) {
-      results <- list()
-      for (j in seq_along(x)) {
-        tb <- x[[j]] %>% 
-          as.data.frame() %>%
-          flextable() %>% 
-          autofit() %>% 
-          align(align = "center", part = "all")
-        results[names(x)[j]] <- list(tb)
-      }
       for (i in format) {
         if (i %in% 'html') {
           save_as_html(values = results,
@@ -80,4 +90,12 @@ report <- function(x, report_name, format = c('html', 'docx', 'rtf', 'pptx')) {
       }
     }
   }
+}
+
+process_table <- function(data) {
+  data %>% 
+    as.data.frame() %>%
+    flextable() %>%
+    autofit() %>%
+    align(align = "center", part = "all")
 }

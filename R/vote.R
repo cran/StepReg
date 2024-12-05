@@ -29,7 +29,7 @@
 #' @export
 #' 
 vote <- function(x, ...){
-  vote_df <- x[[which(names(x) %in% c("Vote_df"))]]
+  vote_df <- x[["voted_model"]]
   uniq_model <- unique(vote_df[,1])
   vote_mat <- matrix("",length(uniq_model),nrow(vote_df))
   colnames(vote_mat) <- vote_df[,2]

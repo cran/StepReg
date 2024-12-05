@@ -8,8 +8,6 @@
 #' 
 #' @param type (character) The stepwise regression type. Choose from 'linear', 'logit', 'poisson', 'cox', 'gamma' and 'negbin'. Default is 'linear'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}
 #' 
-#' @param include (NULL|character) A character vector specifying predictor variables that will always stay in the model. A subset of the predictors in the dataset.
-#' 
 #' @param strategy (character) The model selection strategy. Choose from 'forward', 'backward', 'bidirectional' and 'subset'. Default is 'forward'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}
 #' 
 #' @param metric (character) The model selection criterion (model fit score). Used for the evaluation of the predictive performance of an intermediate model. Choose from 'AIC', 'AICc', 'BIC', 'CP', 'HQ', 'adjRsq', 'SL', 'SBC', 'IC(3/2)', 'IC(1)'. Default is 'AIC'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}
@@ -17,6 +15,8 @@
 #' @param sle (numeric) Significance Level to Enter. It is the statistical significance level that a predictor variable must meet to be included in the model. E.g. if 'sle = 0.05', a predictor with a P-value less than 0.05 will 'enter' the model. Default is 0.15.
 #' 
 #' @param sls (numeric) Significance Level to Stay. Similar to 'sle', 'sls' is the statistical significance level that a predictor variable must meet to 'stay' in the model. E.g. if 'sls = 0.1', a predictor that was previously included in the model but whose P-value is now greater than 0.1 will be removed.
+#' 
+#' @param include (NULL|character) A character vector specifying predictor variables that will always stay in the model. A subset of the predictors in the dataset.
 #' 
 #' @param tolerance (numeric)  A statistical measure used to assess multicollinearity in a multiple regression model. It is calculated as the proportion of the variance in a predictor variable that is not accounted for by the other predictor variables in the model. Default is 1e-07.
 #' 
@@ -68,13 +68,7 @@
 #' 
 #' @author Junhui Li, Kai Hu, Xiaohuan Lu
 #' 
-#' @return A list containing multiple tables will be returned.
-#' \itemize{
-#' \item Summary of arguments for model selection: Arguments used in the stepwise function, either default or user-supplied values.
-#' \item Summary of variables in dataset: Variable names, types, and classes in dataset.
-#' \item Summary of selection process under xxx(strategy) with xxx(metric): Overview of the variable selection process under specified strategy and metric.
-#' \item Summary of coefficients for the selected model with xxx(dependent variable) under xxx(strategy) and xxx(metric): Coefficients for the selected models under specified strategy with metric. Please note that this table will not be generated for the strategy 'subset' when using the metric 'SL'.
-#' }
+#' @return A list of multiple models, each with its associated strategy and metric, will be returned.
 #' 
 #' @examples
 #' ## perform multivariate linear stepwise regression with 'bidirection' 
@@ -121,11 +115,11 @@
 stepwise <- function(formula,
                      data,
                      type = c("linear", "logit", "cox", "poisson", "gamma", "negbin"),
-                     include = NULL,
                      strategy = c("forward", "backward", "bidirection", "subset"),
                      metric = c("AIC", "AICc", "BIC", "CP", "HQ", "adjRsq", "SL", "SBC", "IC(3/2)", "IC(1)"),
                      sle = 0.15,
                      sls = 0.15,
+                     include = NULL,
                      test_method_linear = c("Pillai", "Wilks", "Hotelling-Lawley", "Roy"),
                      test_method_glm = c("Rao", "LRT"),
                      test_method_cox = c("efron", "breslow", "exact"),
@@ -164,29 +158,23 @@ stepwise <- function(formula,
   
   result <- list()
   ## table1
-  table1_para_value <- getTable1SummaryOfParameters(data, type, x_name_orig, y_name, merged_multico_x, merged_include, strategy, metric, sle, sls, test_method, tolerance, intercept)
-  result$'Summary of arguments for model selection' <- table1_para_value
+  table1_para_value <- getTable1SummaryOfParameters(formula, data, type, x_name_orig, y_name, merged_multico_x, merged_include, strategy, metric, sle, sls, test_method, tolerance, intercept)
+  result$arguments <- table1_para_value
   
   ## table2
   table2_class_table <- getTable2TypeOfVariables(model_raw)
-  result$'Summary of variables in dataset' <- table2_class_table
+  result$variables <- table2_class_table
   
   ## table3
-  table3_list <- getTable3ProcessSummary(data, type, strategy, metric, sle, sls, weight, x_name, y_name, intercept, include, best_n, test_method, sigma_value, num_digits)
-  table3 <- table3_list$table3
-  vote_df <- table3_list$vote_df
-  pic_df <- table3_list$pic_df
-  final_variable <- table3_list$final_variable
-  result <- append(result,table3)
+  table3_process <- getTable3ProcessSummary(data, type, strategy, metric, sle, sls, weight, x_name, y_name, intercept, include, best_n, test_method, sigma_value, num_digits)
+  x_final_model_metric <- table3_process$final_variable
+  result <- append(result,table3_process[which(names(table3_process) != "final_variable")])
   
-  table4 <- getTable4CoefModel(type = type, strategy, metric, intercept, include, final_variable, y_name, n_y, data, weight, test_method_cox, num_digits)
-  result <- append(result,table4)
   
-  if(!is.null(vote_df)) {
-    colnames(vote_df) <- c("model", "combination")
-  }
-  result[['Vote_df']] <- vote_df
-  result[['Detail_selection_summary']] <-  pic_df
-  class(result) <- c("StepReg", "list", strategy, type)
+  table4_model <- getTable4ModelCall(type, intercept, include, x_final_model_metric, y_name, n_y, data, weight, test_method, num_digits)
+  result <- append(result,table4_model)
+  
+  class(result) <- c("StepReg","list")
+  attr(result, "nonhidden") <- strategy
   return(result)
 }

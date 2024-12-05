@@ -4,10 +4,20 @@
 \alias{plot.StepReg}
 \title{Plots from a StepReg object}
 \usage{
-\method{plot}{StepReg}(x, num_digits = 6, ...)
+\method{plot}{StepReg}(
+  x,
+  strategy = attr(x, "nonhidden"),
+  process = c("overview", "details"),
+  num_digits = 6,
+  ...
+)
 }
 \arguments{
 \item{x}{StepReg object}
+
+\item{strategy}{Select which strategy to be displayed, default is the first name of StepReg object.}
+
+\item{process}{Select which process of stepwise regression to be displayed from 'details' and 'overview', default is 'overview'.}
 
 \item{num_digits}{The number of digits to keep when rounding the results. 
 Default is 6.}
@@ -28,8 +38,9 @@ formula <- mpg ~ .
 x <- stepwise(formula = formula,
               data = mtcars,
               type = "linear",
-              strategy = c("forward","bidirection","backward"),
+              strategy = c("forward","bidirection","subset"),
               metric = c("AIC","BIC","SL"))
 plot(x)
+plot(x, strategy = "forward", process = "overview")
 }
 }

@@ -3,6 +3,8 @@ title: "StepReg report"
 output: html_document
 date: today
 params:
+  modelParameters: NA
+  modelVariables: NA
   modelSelection: NA
   selectionPlot: NA
   modelVote: NA
@@ -23,9 +25,11 @@ library(flextable)
 **Statistics of Variable Selection:**
 
 ```{r comment = NA}
+qflextable(params$modelParameters)
+qflextable(params$modelVariables)
 params$modelSelection
-nmetric <- length(unlist(str_split(params$modelSelection[[1]][3,2], "&")))
-strategies <- length(unlist(str_split(params$modelSelection[[1]][2,2], "&")))
+strategies <- length(params$modelSelection)
+nmetric <- length(params$modelSelection[[1]])
 ```
 
 ### Visualization
@@ -43,5 +47,5 @@ for(i in names(params$selectionPlot)) {
 **Model Selection by Vote Across All Combinations of Strategy and Metric:**
 
 ```{r comment = NA}
-flextable(params$modelVote)
+qflextable(params$modelVote)
 ```

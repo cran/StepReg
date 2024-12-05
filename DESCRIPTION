@@ -1,5 +1,5 @@
 Package: StepReg
-Version: 1.5.5
+Version: 1.5.6
 Title: Stepwise Regression Analysis
 Authors@R: c(
     person("Junhui", "Li", , "junhui.li11@umassmed.edu", role = c("cre"),
@@ -15,20 +15,20 @@ Authors@R: c(
     person("Wenxin", "Liu", , role = c("aut")),
     person("Lihua", "Julie Zhu", , role = c("aut"))
   )
-Date: 2024-10-29
+Date: 2024-11-07
 Description: The stepwise regression analysis is a statistical technique used to identify a subset of predictor variables essential for constructing predictive models. This package performs stepwise regression analysis across various regression models such as linear, logistic, Cox proportional hazards, Poisson, Gamma, and negative binomial regression. It incorporates diverse stepwise regression algorithms like forward selection, backward elimination, and bidirectional elimination alongside the best subset method. Additionally, it offers a wide range of selection criteria, including Akaike Information Criterion (AIC), Sawa Bayesian Information Criterion (BIC), and Significance Levels (SL). We validated the output accuracy of StepReg using public datasets within the SAS software environment. To facilitate efficient model comparison and selection, StepReg allows for multiple strategies and selection metrics to be executed in a single function call. Moreover, StepReg integrates a Shiny application for interactive regression analysis, broadening its accessibility.
 License: MIT + file LICENSE
 BugReports: https://github.com/JunhuiLi1017/StepReg/issues
 VignetteBuilder: knitr
 Suggests: knitr, testthat, BiocStyle, kableExtra
-Imports: dplyr, ggplot2, ggrepel, MASS, purrr, stringr, survival,
-        flextable, cowplot, shiny, ggcorrplot, tidyr, summarytools,
-        shinythemes, rmarkdown, DT, shinycssloaders, shinyjs
+Imports: dplyr, ggplot2, ggrepel, MASS, stringr, survival, flextable,
+        cowplot, shiny, ggcorrplot, tidyr, summarytools, shinythemes,
+        rmarkdown, DT, shinycssloaders, shinyjs
 Encoding: UTF-8
 RoxygenNote: 7.3.2
 NeedsCompilation: no
 Repository: CRAN
-Packaged: 2024-10-29 17:48:49 UTC; lij11
+Packaged: 2024-12-04 17:55:51 UTC; lij11
 Author: Junhui Li [cre] (<https://orcid.org/0000-0003-3973-1700>),
   Junhui Li [aut],
   Kai Hu [aut],
@@ -41,4 +41,4 @@ Author: Junhui Li [cre] (<https://orcid.org/0000-0003-3973-1700>),
   Wenxin Liu [aut],
   Lihua Julie Zhu [aut]
 Maintainer: Junhui Li <junhui.li11@umassmed.edu>
-Date/Publication: 2024-11-04 20:40:05 UTC
+Date/Publication: 2024-12-05 08:30:19 UTC

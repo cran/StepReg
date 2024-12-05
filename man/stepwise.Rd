@@ -8,11 +8,11 @@ stepwise(
   formula,
   data,
   type = c("linear", "logit", "cox", "poisson", "gamma", "negbin"),
-  include = NULL,
   strategy = c("forward", "backward", "bidirection", "subset"),
   metric = c("AIC", "AICc", "BIC", "CP", "HQ", "adjRsq", "SL", "SBC", "IC(3/2)", "IC(1)"),
   sle = 0.15,
   sls = 0.15,
+  include = NULL,
   test_method_linear = c("Pillai", "Wilks", "Hotelling-Lawley", "Roy"),
   test_method_glm = c("Rao", "LRT"),
   test_method_cox = c("efron", "breslow", "exact"),
@@ -29,8 +29,6 @@ stepwise(
 
 \item{type}{(character) The stepwise regression type. Choose from 'linear', 'logit', 'poisson', 'cox', 'gamma' and 'negbin'. Default is 'linear'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}}
 
-\item{include}{(NULL|character) A character vector specifying predictor variables that will always stay in the model. A subset of the predictors in the dataset.}
-
 \item{strategy}{(character) The model selection strategy. Choose from 'forward', 'backward', 'bidirectional' and 'subset'. Default is 'forward'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}}
 
 \item{metric}{(character) The model selection criterion (model fit score). Used for the evaluation of the predictive performance of an intermediate model. Choose from 'AIC', 'AICc', 'BIC', 'CP', 'HQ', 'adjRsq', 'SL', 'SBC', 'IC(3/2)', 'IC(1)'. Default is 'AIC'. More information, see \href{https://CRAN.R-project.org/package=StepReg/vignettes/StepReg.html}{StepReg_vignettes}}
@@ -38,6 +36,8 @@ stepwise(
 \item{sle}{(numeric) Significance Level to Enter. It is the statistical significance level that a predictor variable must meet to be included in the model. E.g. if 'sle = 0.05', a predictor with a P-value less than 0.05 will 'enter' the model. Default is 0.15.}
 
 \item{sls}{(numeric) Significance Level to Stay. Similar to 'sle', 'sls' is the statistical significance level that a predictor variable must meet to 'stay' in the model. E.g. if 'sls = 0.1', a predictor that was previously included in the model but whose P-value is now greater than 0.1 will be removed.}
+
+\item{include}{(NULL|character) A character vector specifying predictor variables that will always stay in the model. A subset of the predictors in the dataset.}
 
 \item{test_method_linear}{(character) Test method for multivariate linear regression analysis, choose from 'Pillai', 'Wilks', 'Hotelling-Lawley', 'Roy'. Default is 'Pillai'. For univariate regression, 'F-test' will be used.}
 
@@ -54,13 +54,7 @@ stepwise(
 \item{num_digits}{(numeric(integer)) The number of digits to keep when rounding the results. Default is 6.}
 }
 \value{
-A list containing multiple tables will be returned.
-\itemize{
-\item Summary of arguments for model selection: Arguments used in the stepwise function, either default or user-supplied values.
-\item Summary of variables in dataset: Variable names, types, and classes in dataset.
-\item Summary of selection process under xxx(strategy) with xxx(metric): Overview of the variable selection process under specified strategy and metric.
-\item Summary of coefficients for the selected model with xxx(dependent variable) under xxx(strategy) and xxx(metric): Coefficients for the selected models under specified strategy with metric. Please note that this table will not be generated for the strategy 'subset' when using the metric 'SL'.
-}
+A list of multiple models, each with its associated strategy and metric, will be returned.
 }
 \description{
 Select optimal model using various stepwise regression strategies, e.g., Forward Selection, Backward Elimination, Bidirectional Elimination; meanwhile, it also supports Best Subset method. Four types of models are currently implemented: linear regression, logistic regression, Cox regression, Poisson, and Gamma regression. For selection criteria, a.k.a, stop rule, users can choose from AIC, AICc, BIC, HQ, Significant Level, and more.

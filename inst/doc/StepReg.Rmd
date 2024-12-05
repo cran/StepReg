@@ -42,7 +42,6 @@ StepReg simplifies model selection tasks by providing a unified programming inte
 The following example selects an optimal linear regression model with the `mtcars` dataset.
 ```{r, message = FALSE}
 library(StepReg)
-
 data(mtcars)
 formula <- mpg ~ .
 res <- stepwise(formula = formula,
@@ -57,17 +56,24 @@ Breakdown of the parameters:
 + `formula`: specifies the dependent and independent variables
 + `type`: specifies the regression category, depending on your data, choose from "linear", "logit", "cox", etc.
 + `include`: specifies the variables that must be in the final model
-+ `strategy`: specifies the model selection strategy, choose from "forward", "backward", "bidirection", "subset"
++ `strategy`: specifies the stepwise strategy, choose from "forward", "backward", "bidirection", "subset"
 + `metric`: specifies the model fit evaluation metric, choose one or more from "AIC", "AICc", "BIC", "SL", etc.
 
-The output consists of multiple tables, which can be viewed with:
+The output consists of final model, which can be viewed using:
 ```{r, message = FALSE}
 res
 ```
 
+You can further explore the results with generic functions such as `summary()`, `coeff()`, and others. For example:
+```{r, message = FALSE}
+summary(res$bidirection$AIC)
+```
+
+
 You can also visualize the variable selection procedures with:
 ```{r, message = FALSE}
-plot(res)
+plot(res, strategy = "bidirection", process = "overview")
+plot(res, strategy = "bidirection", process = "details")
 ```
 
 The `(+)1` refers to original model with intercept being added, `(+)` indicates variables being added to the model while `(-)` means variables being removed from the model.
@@ -212,8 +218,6 @@ The precise definitions of these criteria can vary across literature and in the 
 
 + HQ: HQ is an alternative to AIC, differing primarily in the method of penalty calculation. However, HQ has remained relatively underutilized in practice [@Burnham_2002].
 
-+ Rsq: The R-squared (R²) statistic measures the proportion of variations that is explained by the model. It ranges from 0 to 1, with 1 indicating that all of the variability in the response variables is accounted for by the independent variables. As such, R-squared is valuable for communicating the explanatory power of a model. However, R-squared alone is not sufficient for selection because it does not take into account the complexity of the model. Therefore, while R-squared is useful for understanding how well the model fits the data, it should not be the sole criterion for model selection.
-
 + adjRsq: The adjusted R-squared (adj-R²) seeks to overcome the limitation of R-squared in model selection by considering the number of predictors. It serves a similar purpose to information criteria, as both methods compare models by weighing their goodness of fit against the number of parameters. However, information criteria are typically regarded as superior in this context [@Stevens_2016].
 
 + SL: SL stands for Significance Level (P-value), embodying a distinct approach to model selection in contrast to information criteria. The SL method operates by calculating a P-value through specific hypothesis testing. Should this P-value fall below a predefined threshold, such as 0.05, one should favor the alternative hypothesis, indicating that the full model significantly outperforms the reduced model. The effectiveness of this method hinges upon the selection of the P-value threshold, wherein smaller thresholds tend to yield simpler models.
@@ -230,26 +234,11 @@ In StepReg, [QC Matrix Decomposition](https://towardsdatascience.com/qr-matrix-f
 
 # StepReg output {#stepregoutput}
 
-StepReg provides multiple functions for summarizing the model building results. The function `stepwise()` generates a list of tables that describe the feature selection steps and the final model. To facilitate collaborations, you can redirect the tables into various formats such as "xlsx", "html", "docx", etc. with the function `report()`. Furthermore, you can easily compare the variable selection procedures for multiple selection metrics by visualizing the steps with the function `plot()`. Details see below.
+StepReg provides multiple functions for summarizing the model building results. The function `stepwise()` generates a list of data frame that describe the feature selection steps and the final model. To facilitate collaborations, you can redirect the data frame into various formats such as "xlsx", "html", "docx", etc. with the function `report()`. Furthermore, you can easily compare the variable selection procedures for multiple selection metrics by visualizing the steps with the function `plot()`. Details see below.
 
-Depending on the number of selected regression strategies and metrics, you can expect to receive at least four tables from `stepwise()`. Below describes the content of each of 4 tables from Quick Demo \@ref(quickdemo).
+Depending on the number of selected regression strategies and metrics, you can expect to receive optimal models from `stepwise()`. more functions like `summary()`, `coeff()`, `residuals()`, `fitted()` can be employed to each elements of the output. 
 
-```{r, echo = FALSE}
-Table_Name <- c("Summary of arguments for model selection",
-                "Summary of variables in dataset",
-                "Summary of selection process under xxx(strategy) with xxx(metric)",
-                "Summary of coefficients for the selected model with xxx(dependent variable) under xxx(strategy) and xxx(metric)")
-
-Table_Description <- c("Arguments used in the stepwise function, either default or user-supplied values.",
-                       "Variable names, types, and classes in dataset.",
-                       "Overview of the variable selection process under specified strategy and metric.",
-                       "Coefficients for the selected models under specified strategy with metric. Please note that this table will not be generated for the strategy 'subset' when using the metric 'SL'.")
-data.frame(Table_Name, Table_Description) %>% 
-  kable(format = "html", align = 'l', escape = F, caption = "Tables generated by StepReg") %>%
-  kable_styling()
-```
-
-You can save the output in different format like "xlsx", "docx", "html", "pptx", and others, facilitating easy sharing. Of note, the suffix will be automatically added to the `report_name`. For instance, the following example generates both "results.xlsx" and "results.docx" reports.
+You can save the stepwise arguments, variables class, stepwise process overview/details, and voted models in different format like "xlsx", "docx", "html", "pptx", and others, facilitating easy sharing. Of note, the suffix will be automatically added to the `report_name`. For instance, the following example generates both "results.xlsx" and "results.docx" reports.
 ```{r, eval = FALSE}
 report(res, report_name = "results", format = c("xlsx", "docx"))
 ```
@@ -284,9 +273,8 @@ Linear regression is an ideal choice for analyzing the `mtcars` dataset due to i
 
 ### Example1: single dependent variable ("mpg")
 
-In this example, we employ "forward" strategy with "AIC" as the selection criteria. Additionally, we specify using the `include` argument that "disp", "cyl" must always be included in the model.
+In this example, we employ "forward" strategy with "AIC" as the selection criteria. Additionally, we specify using the `include` argument that "disp", "cyl" always be included in the model.
 ```{r, message = FALSE}
-library(StepReg)
 data(mtcars)
 
 formula <- mpg ~ .
@@ -301,13 +289,19 @@ res1
 
 To visualize the selection process:
 ```{r plot_res1, warning = FALSE}
-plot_list <- plot(res1)
+plot_list <- list()
+plot_list[["forward"]][["details"]] <- plot(res1, process = "details")
+plot_list[["forward"]][["overview"]] <- plot(res1, process = "overview")
 cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1)
 ```
 
 To exclude the intercept from the model, adjust the formula as follows:
 ```{r, eval = FALSE}
 formula <- mpg ~ . + 0
+```
+
+```{r, eval = FALSE}
+formula <- mpg ~ . - 1
 ```
 
 To limit the model to a specific subset of predictors, adjust the formula as follows, which will only consider "cyp", "disp", "hp", "wt", "vs", and "am" as the predictors.
@@ -335,7 +329,18 @@ res2
 ```
 
 ```{r, message = FALSE, warning = FALSE, fig.width=9, fig.height=12}
-plot_list <- plot(res2)
+plot_list <- setNames(
+  lapply(c("forward", "backward"),function(i){
+    setNames(
+      lapply(c("details","overview"),function(j){
+        plot(res2,strategy=i,process=j)
+    }),
+    c("details","overview")
+    )
+  }),
+  c("forward", "backward")
+)
+
 cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1, rel_heights = c(2, 1))
 cowplot::plot_grid(plotlist = plot_list$backward, ncol = 1, rel_heights = c(2, 1))
 ```
@@ -351,7 +356,20 @@ res3 <- stepwise(formula = formula,
                  strategy = "bidirection",
                  metric = c("AIC", "HQ"))
 res3
-plot(res3)
+
+plot_list <- setNames(
+  lapply(c("bidirection"),function(i){
+    setNames(
+      lapply(c("details","overview"),function(j){
+        plot(res3,strategy=i,process=j)
+    }),
+    c("details","overview")
+    )
+  }),
+  c("bidirection")
+)
+
+cowplot::plot_grid(plotlist = plot_list$bidirection, ncol = 1, rel_heights = c(2, 1))
 ```
 
 ## Logistic regression with the _remission_ dataset
@@ -388,7 +406,19 @@ res4 <- stepwise(formula = formula,
                  strategy = "forward",
                  metric = "AIC")
 res4
-plot(res4)
+
+plot_list <- setNames(
+  lapply(c("forward"),function(i){
+    setNames(
+      lapply(c("details","overview"),function(j){
+        plot(res4,strategy=i,process=j)
+    }),
+    c("details","overview")
+    )
+  }),
+  c("forward")
+)
+cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1, rel_heights = c(2, 1))
 ```
 
 ### Example2: using "subset" strategy
@@ -405,7 +435,19 @@ res5 <- stepwise(formula = formula,
                   metric = "SBC",
                   best_n = 3)
 res5
-plot(res5)
+
+plot_list <- setNames(
+  lapply(c("subset"),function(i){
+    setNames(
+      lapply(c("details","overview"),function(j){
+        plot(res5,strategy=i,process=j)
+    }),
+    c("details","overview")
+    )
+  }),
+  c("subset")
+)
+cowplot::plot_grid(plotlist = plot_list$subset, ncol = 1, rel_heights = c(2, 1))
 ```
 
 Here, the `0` in the above plot means that there is no intercept in the model.
@@ -440,7 +482,19 @@ res6 <- stepwise(formula = formula,
                  strategy = "forward",
                  metric = "AICc")
 res6
-plot(res6)
+
+plot_list <- setNames(
+  lapply(c("forward"),function(i){
+    setNames(
+      lapply(c("details","overview"),function(j){
+        plot(res6,strategy=i,process=j)
+    }),
+    c("details","overview")
+    )
+  }),
+  c("forward")
+)
+cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1, rel_heights = c(2, 1))
 ```
 
 ## Poisson regression with the `creditCard` dataset
@@ -468,10 +522,23 @@ res7 <- stepwise(formula = formula,
                  strategy = "forward",
                  metric = "SL",
                  sle = 0.05)
-res7
-plot(res7)
+summary(res7$forward$SL)
 ```
 
+```{r, message = FALSE}
+plot_list <- setNames(
+  lapply(c("forward"),function(i){
+    setNames(
+      lapply(c("details","overview"),function(j){
+        plot(res7,strategy=i,process=j)
+      }),
+      c("details","overview")
+    )
+  }),
+  c("forward")
+)
+cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1, rel_heights = c(2, 1))
+```
 # Interactive app {#shinyapp}
 
 We have developed an interactive Shiny application to simplify model selection tasks for non-programmers. You can access the app through the following URL:

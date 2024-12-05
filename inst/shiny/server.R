@@ -247,24 +247,42 @@ server <- function(input, output, session) {
       formula = formula,
       data = df$data,
       type = input$type,
-      include = input$include,
       strategy = input$strategy,
       metric = metric,
       sle = input$sle,
       sls = input$sls,
+      include = input$include,
       test_method_linear = input$Approx_F,
       test_method_glm = input$glm_test,
       test_method_cox = input$cox_test
     )
-    process_plot <- plot(res)
+    summary_list <- setNames(
+      lapply(attr(res, "nonhidden"), function(i) {
+        lapply(res[[i]], summary)
+      }),
+      attr(res, "nonhidden")
+    )
     
+    
+    process_plot <- setNames(
+      lapply(attr(res,"nonhidden"),function(i){
+        setNames(
+          lapply(c("details","overview"),function(j){
+            plot(res,strategy=i,process=j)
+          }),
+          c("details","overview")
+        )
+      }),
+      attr(res,"nonhidden")
+    )
+
     if(all(input$strategy %in% 'subset') & all(metric %in% 'SL')) {
-      results <- list(res, process_plot)
+      model_vote <- NULL
     } else {
       model_vote <- vote(res)
-      results <- list(res, process_plot, model_vote)
     }
-
+    results <- list(summary_list, process_plot, model_vote,res$arguments,res$variables)
+    
     enable("download")
     enable("download_process_plot")
     results
@@ -376,7 +394,9 @@ server <- function(input, output, session) {
       tempReport <- file.path(tempdir(), "report.Rmd")
       file.copy(system.file('shiny/report.Rmd', package='StepReg'), tempReport, overwrite = TRUE)
       # Set up parameters to pass to Rmd document
-      params <- list(modelSelection = stepwiseModel()[[1]], 
+      params <- list(modelParameters = stepwiseModel()[[4]],
+                     modelVariables = stepwiseModel()[[5]],
+                     modelSelection = stepwiseModel()[[1]], 
                      selectionPlot = stepwiseModel()[[2]],
                      modelVote = stepwiseModel()[[3]],
                      relValue = input$relative_height)

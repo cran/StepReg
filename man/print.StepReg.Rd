@@ -12,7 +12,7 @@
 \item{...}{further parameters}
 }
 \value{
-formatted dataframe
+only print some dataframe
 }
 \description{
 print.StepReg prints to console the from an object of class StepReg
