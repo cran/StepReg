@@ -1,4 +1,4 @@
-d9f410827b0d04992e3a4583fad789b8 *DESCRIPTION
+f4fedddc849b798d9d760bb32b657ac6 *DESCRIPTION
 a55b3cdd200ffcaf68422f8b3ddc0dc3 *LICENSE
 9f8cd12202f8c7aea0f4679f8364b188 *NAMESPACE
 85d990b95fe24ad8911ed7077e7b0cb5 *R/CreditCard.R
@@ -10,7 +10,7 @@ f68dfc42a488c569bdd93aae4b6e919a *R/print.StepReg.R
 efa999809c9aab1e7bfba65639b082a3 *R/remission.R
 44049d9555b6ef9a775ff6193852461e *R/report.R
 67acff9f1994d79ca43a36d80c6f72fd *R/stepwise.R
-d4ba1041396beddbe1856103e82320f7 *R/stepwiseUtils.R
+122f9fadf38e092f4ae4c303e89a86b2 *R/stepwiseUtils.R
 66813bca1ef8422ba2d76316e7621921 *R/tobacco.R
 e067f20566f731111a9ec83d639c9e08 *R/validateUtils.R
 9312f31c1d230c951276cdfd715d7b4a *R/vote.R
@@ -21,10 +21,10 @@ a3f3ca70db67eba16828cfe537bbe178 *data/creditCard.RData
 996d8ec14f925d63c3ad8457c2cb39ce *data/tobacco.RData
 e24fd6691b4d86c84f2eb601a95e5d13 *inst/doc/StepReg.R
 952a3f905a4785037e214191ec6b1880 *inst/doc/StepReg.Rmd
-defa2de07a3c38ba066591d4436ac745 *inst/doc/StepReg.html
+2627d898ccd04f3475551361e4d60d50 *inst/doc/StepReg.html
 4402a1d6a224c75423b8e5859540b723 *inst/extdata/res_v1_5_0.rds
 66f46392e069d7513ef0ca0e0e038c63 *inst/shiny/report.Rmd
-3ae5f85758cf6a5a9ab051787409da0d *inst/shiny/rsconnect/shinyapps.io/junhuili1017/shiny.dcf
+2d5d15a0f9a5a280c90285cb89bf50a7 *inst/shiny/rsconnect/shinyapps.io/junhuili1017/shiny.dcf
 5bf7043b57a30d183339f521ab843246 *inst/shiny/server.R
 8bab1aebf0ac43a8810dd6535af98134 *inst/shiny/ui.R
 c61e1bed8f63f697e364bdd7b891fd04 *inst/shiny/utils.R

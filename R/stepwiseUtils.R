@@ -332,7 +332,7 @@ getTable1SummaryOfParameters <- function(formula, data, type, x_name, y_name, me
 	                "tolerance of multicollinearity", 
 	                "multicollinearity variable", 
 	                "intercept"),
-		Value = c(deparse(formula),
+		Value = c(paste0(deparse(formula), collapse = ""),
 		          type,
 		          paste0(strategy, collapse=" & "), 
 							paste0(metric, collapse=" & "), 
