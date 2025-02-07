@@ -14,11 +14,11 @@ validateUtils <- function(formula,
                           test_method_linear = c("Pillai", "Wilks", "Hotelling-Lawley", "Roy"),
                           test_method_glm = c("Rao", "LRT"),
                           test_method_cox = c("efron", "breslow", "exact"),
-													tolerance = 10e-7,
-													weight = NULL,
+                          tolerance = 10e-7,
+                          weight = NULL,
                           best_n = Inf,
-													n_y,
-													num_digits = 6) {
+                          n_y,
+                          num_digits = 6) {
 	## check required parameters
 	if(missing(data)) { 
 		stop("'data' parameter is missing.") 
@@ -104,7 +104,11 @@ validateUtils <- function(formula,
 	  # ref: https://stats.oarc.ucla.edu/other/mult-pkg/faq/general/faqwhat-is-complete-or-quasi-complete-separation-in-logistic-regression-and-what-are-some-strategies-to-deal-with-the-issue/
 	  tryCatch(                
 	    expr = {                      
-	      glm(formula, data = data, weights = weight, family = type_glm)
+	      if (is.null(weight)) {
+	        glm(formula, data = data, weights = NULL, family = type_glm)
+	      } else {
+	        glm(formula, data = data, weights = weight, family = type_glm)
+	      }
 	    },
 	    error = function(e) {          
 	      print("There was an error message.")

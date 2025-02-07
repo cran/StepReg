@@ -1,5 +1,5 @@
 Package: StepReg
-Version: 1.5.7
+Version: 1.5.8
 Title: Stepwise Regression Analysis
 Authors@R: c(
     person("Junhui", "Li", , "junhui.li11@umassmed.edu", role = c("cre"),
@@ -11,12 +11,11 @@ Authors@R: c(
     person("Sushmita", "N Nayak", , role = c("ctb")),
     person("Cesar", "Bautista Sotelo", , role = c("ctb")),
     person("Michael", "A Lodato", , role = c("ctb")),
-    person("Robert", "H Brown", , role = c("ctb")),
     person("Wenxin", "Liu", , role = c("aut")),
     person("Lihua", "Julie Zhu", , role = c("aut"))
   )
-Date: 2025-01-10
-Description: The stepwise regression analysis is a statistical technique used to identify a subset of predictor variables essential for constructing predictive models. This package performs stepwise regression analysis across various regression models such as linear, logistic, Cox proportional hazards, Poisson, Gamma, and negative binomial regression. It incorporates diverse stepwise regression algorithms like forward selection, backward elimination, and bidirectional elimination alongside the best subset method. Additionally, it offers a wide range of selection criteria, including Akaike Information Criterion (AIC), Sawa Bayesian Information Criterion (BIC), and Significance Levels (SL). We validated the output accuracy of StepReg using public datasets within the SAS software environment. To facilitate efficient model comparison and selection, StepReg allows for multiple strategies and selection metrics to be executed in a single function call. Moreover, StepReg integrates a Shiny application for interactive regression analysis, broadening its accessibility.
+Date: 2025-02-07
+Description: Stepwise regression is a statistical technique used for model selection. This package streamlines stepwise regression analysis by supporting multiple regression types, incorporating popular selection strategies, and offering essential metrics. It enables users to apply multiple selection strategies and metrics in a single function call, visualize variable selection processes, and export results in various formats. However, StepReg should not be used for statistical inference unless the variable selection process is explicitly accounted for, as it can compromise the validity of the results. This limitation does not apply when StepReg is used for prediction purposes. We validated StepReg's accuracy using public datasets within the SAS software environment. Additionally, StepReg features an interactive Shiny application to enhance usability and accessibility.
 License: MIT + file LICENSE
 BugReports: https://github.com/JunhuiLi1017/StepReg/issues
 VignetteBuilder: knitr
@@ -28,7 +27,7 @@ Encoding: UTF-8
 RoxygenNote: 7.3.2
 NeedsCompilation: no
 Repository: CRAN
-Packaged: 2025-01-22 04:49:26 UTC; lij11
+Packaged: 2025-02-07 15:52:10 UTC; lij11
 Author: Junhui Li [cre] (<https://orcid.org/0000-0003-3973-1700>),
   Junhui Li [aut],
   Kai Hu [aut],
@@ -37,8 +36,7 @@ Author: Junhui Li [cre] (<https://orcid.org/0000-0003-3973-1700>),
   Sushmita N Nayak [ctb],
   Cesar Bautista Sotelo [ctb],
   Michael A Lodato [ctb],
-  Robert H Brown [ctb],
   Wenxin Liu [aut],
   Lihua Julie Zhu [aut]
 Maintainer: Junhui Li <junhui.li11@umassmed.edu>
-Date/Publication: 2025-01-22 08:10:09 UTC
+Date/Publication: 2025-02-07 17:40:02 UTC

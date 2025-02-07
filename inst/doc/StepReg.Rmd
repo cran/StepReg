@@ -25,7 +25,7 @@ output:
     toc_float: true
   BiocStyle::pdf_document: default
 abstract: |
-  The StepReg package, developed for exploratory model building tasks, offers support across diverse scenarios. It facilitates model construction for various response variable types, including continuous (linear regression), binary (logistic regression), and time-to-event (Cox regression), among others. StepReg encompasses all commonly used model selection strategies, including forward selection, backward elimination, bidirectional elimination, and best subsets. Notably, it offers flexibility in selection metrics, accommodating both information criteria (AIC, BIC, etc.) and significance level cutoffs. This vignettes provide numerous examples showcasing the effective utilization of StepReg for model development in diverse contexts. Furthermore, it delves into considerations for selecting appropriate strategies and metrics, empowering users to make informed decisions throughout the modeling process.
+  The StepReg package, developed for exploratory model building tasks, offers support across diverse scenarios. It facilitates model construction for various response variable types, including continuous (linear regression), binary (logistic regression), and time-to-event (Cox regression), among others. StepReg encompasses all commonly used model selection strategies, including forward selection, backward elimination, bidirectional elimination, and best subsets. Notably, it offers flexibility in selection metrics, accommodating both information criteria (AIC, BIC, etc.) and significance level cutoffs. While StepReg is a powerful tool for model development, it is important to emphasize that the final models should not be used for statistical inference. The models generated should only be employed for exploratory or predictive purposes.  This vignette provides numerous examples showcasing the effective utilization of StepReg for model development in diverse contexts. Furthermore, it delves into considerations for selecting appropriate strategies and metrics, empowering users to make informed decisions throughout the modeling process.
 ---
 ```{r include=FALSE}
 knitr::opts_chunk$set(comment = NA)
@@ -33,9 +33,13 @@ knitr::opts_chunk$set(comment = NA)
 
 # Introduction
 
-Model selection is the process of choosing the most relevant features from a set of candidate variables. This procedure is crucial because it ensures that the final model is both accurate and interpretable while being computationally efficient and avoiding overfitting. Stepwise regression algorithms iteratively add or remove features from the model based on certain criteria (e.g., significance level or P-value, information criteria like AIC or BIC, etc.). The process continues until no further improvements can be made according to the chosen criterion. At the end of the stepwise procedure, you'll have a final model that includes the selected features and their coefficients.
+Model selection is the process of identifying the most relevant features from a set of candidate variables. This step is critical for building models that are accurate, interpretable, and computationally efficient while avoiding overfitting. Stepwise regression algorithms automate this process by iteratively adding or removing features based on predefined criteria, such as statistical significance (e.g., p-values), information criteria (e.g., AIC or BIC), or other performance metrics. The procedure continues until no further improvements can be made according to the chosen criterion, resulting in a final model that includes the selected features and their corresponding coefficients.
+
+However, it is important to note that stepwise regression should never be used for statistical inference unless the variable selection process is explicitly accounted for. Without proper adjustments, the selection process invalidates statistical inference, such as p-values and confidence intervals, due to issues like multiple testing and data dredging. This limitation does not apply when stepwise regression is used for prediction, as the primary goal in predictive modeling is to maximize accuracy rather than draw causal conclusions.
 
 StepReg simplifies model selection tasks by providing a unified programming interface. It currently supports model buildings for five distinct response variable types (section \@ref(regressioncategories)), four model selection strategies (section \@ref(modelselectionstrategies)) including the best subsets algorithm, and a variety of selection metrics (section \@ref(selectionmetrics)). Moreover, StepReg detects and addresses the multicollinearity issues if they exist (section \@ref(multicollinearity)). The output of StepReg includes multiple tables summarizing the final model and the variable selection procedures. Additionally, StepReg offers a plot function to visualize the selection steps (section \@ref(stepregoutput)). For demonstration, the vignettes include four use cases covering distinct regression scenarios (section \@ref(usecases)). Non-programmers can access the tool through the iterative Shiny app detailed in section \@ref(shinyapp).
+
+By combining flexibility, robustness, and ease of use, StepReg is a powerful tool for predictive modeling tasks, particularly when the goal is to identify an optimal set of features for accurate predictions. However, users should exercise caution and avoid using StepReg for statistical inference unless the variable selection process is properly accounted for.
 
 # Quick demo {#quickdemo}
 
@@ -68,7 +72,6 @@ You can further explore the results with generic functions such as `summary()`, 
 ```{r, message = FALSE}
 summary(res$bidirection$AIC)
 ```
-
 
 You can also visualize the variable selection procedures with:
 ```{r, message = FALSE}
@@ -234,18 +237,19 @@ In StepReg, [QC Matrix Decomposition](https://towardsdatascience.com/qr-matrix-f
 
 # StepReg output {#stepregoutput}
 
-StepReg provides multiple functions for summarizing the model building results. The function `stepwise()` generates a list of data frame that describe the feature selection steps and the final model. To facilitate collaborations, you can redirect the data frame into various formats such as "xlsx", "html", "docx", etc. with the function `report()`. Furthermore, you can easily compare the variable selection procedures for multiple selection metrics by visualizing the steps with the function `plot()`. Details see below.
+StepReg offers a suite of functions to summarize and visualize model-building results. The core function, `stepwise()`, generates a list of data frames detailing the feature selection process and the final model. These results can be exported into various formats—such as "xlsx", "html", or "docx"—using the `report()` function, making it easy to share and collaborate. Additionally, the `plot()` function allows you to visualize and compare variable selection procedures across multiple strategies and metrics, providing further insights into the model-building process.
 
-Depending on the number of selected regression strategies and metrics, you can expect to receive optimal models from `stepwise()`. more functions like `summary()`, `coeff()`, `residuals()`, `fitted()` can be employed to each elements of the output. 
+The `stepwise()` function produces optimal models based on the chosen regression strategies and metrics. You can further analyze these models using standard functions like `summary()`, `coeff()`, `residuals()`, and `fitted()`, which are applicable to each element of the output.
 
-You can save the stepwise arguments, variables class, stepwise process overview/details, and voted models in different format like "xlsx", "docx", "html", "pptx", and others, facilitating easy sharing. Of note, the suffix will be automatically added to the `report_name`. For instance, the following example generates both "results.xlsx" and "results.docx" reports.
+StepReg enables to explore the arguments used in `stepwise()`, variable calsses, overviews and detailed process of model selection, and voted models. The `report()` function can export these results into multiple formats including "xlsx", "docx", "html", and "pptx" for enhanced usability. For example, running `report()` with the name "results" will generate both "results.xlsx" and "results.docx" files.
+
 ```{r, eval = FALSE}
 report(res, report_name = "results", format = c("xlsx", "docx"))
 ```
 
 # Use cases {#usecases}
 
-Please choose the regression model that best suits the type of response variable. For detailed guidance, see section \@ref(regressioncategories). Below, we present various examples utilizing different models tailored to specific datasets.
+Below, we present various examples illustrating the application of different models tailored to specific datasets. Please note that stepwise regression should never be used for statistical inference unless the variable selection process is properly accounted for, as it can invalidate the results. However, this issue does not arise when stepwise regression is used for prediction. It is essential to select the regression model that best suits the type of response variable. For detailed guidance, refer to section @ref(regressioncategories).
 
 ## Linear regression with the _mtcars_ dataset
 
