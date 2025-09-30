@@ -2,18 +2,53 @@
 % Please edit documentation in R/print.StepReg.R
 \name{print.StepReg}
 \alias{print.StepReg}
-\title{Prints from a StepReg object}
+\title{Print Stepwise Regression Results}
 \usage{
 \method{print}{StepReg}(x, ...)
 }
 \arguments{
-\item{x}{StepReg object}
+\item{x}{A StepReg object containing the results of stepwise regression analysis.}
 
-\item{...}{further parameters}
+\item{...}{Additional arguments passed to the print method (currently not used).}
 }
 \value{
-only print some dataframe
+Invisibly returns the printed object. The function displays:
+  \itemize{
+    \item Final model fit statistics for each strategy and metric combination
+  }
 }
 \description{
-print.StepReg prints to console the from an object of class StepReg
+Displays the final model fit statistics from a StepReg object. This function provides
+a concise summary of the selected model's performance metrics.
+}
+\details{
+The print method provides a focused view of the final model's performance,
+showing the selected variables and their corresponding fit statistics. This is useful
+for quickly assessing the model's quality without the detailed step-by-step selection
+process (which can be viewed using \code{\link{stepwise}}).
+}
+\examples{
+\dontrun{
+# Load example data
+data(mtcars)
+
+# Run stepwise regression
+formula <- mpg ~ .
+result <- stepwise(
+  formula = formula,
+  data = mtcars,
+  type = "linear",
+  strategy = "forward",
+  metric = "AIC"
+)
+
+# Print final model statistics
+result
+}
+
+}
+\seealso{
+\code{\link{stepwise}} for creating StepReg objects
+
+\code{\link{plot.StepReg}} for visualization of results
 }

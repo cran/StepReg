@@ -20,7 +20,7 @@ summary(res$bidirection$AIC)
 
 ## ----message = FALSE----------------------------------------------------------
 plot(res, strategy = "bidirection", process = "overview")
-plot(res, strategy = "bidirection", process = "details")
+plot(res, strategy = "bidirection", process = "detail")
 
 ## ----eval = FALSE-------------------------------------------------------------
 # report(res, report_name = "path_to/demo_res", format = "html")
@@ -122,23 +122,51 @@ kable(df, format = "html", align = "l",
   column_spec(4, width = "0.4in")
 
 ## ----eval = FALSE-------------------------------------------------------------
-# report(res, report_name = "results", format = c("xlsx", "docx"))
+# formula  =  Surv(time, status) ~ . + strata(inst)
+
+## ----eval = FALSE-------------------------------------------------------------
+# mtcars$am <- as.factor(mtcars$am)
+# formula <- mpg ~ am + cyl:am + wt:am + disp:am + hp:am + qsec:am + vs:am + gear:am + carb:am
+
+## ----eval = FALSE-------------------------------------------------------------
+# formula <- cbind(mpg, drat) ~ .
+
+## ----echo = FALSE-------------------------------------------------------------
+Syntax <- c("`y ~ x1 + x2`", "`y ~ .`", "`y ~ . - x1`", "`y ~ x1 * x2`", "`y ~ x1:x2`", "`cbind(y1, y2) ~ .`", "`y ~ . + 0` or `y ~ . - 1`", "`Surv(time, status) ~ . + strata(strata_var)`")
+Description <- c("Multiple predictors", "All variables in dataset", "All variables except x1", "Main effects and interaction", "Continuous-nested-within-class effects", "Multiple response variables", "No intercept", "Cox regression with strata")
+Example <- c("`mpg ~ cyl + wt`", "`mpg ~ .`", "`mpg ~ . - disp`", "`mpg ~ cyl * am`", "`mpg ~ cyl:am`", "`cbind(mpg, drat) ~ .`", "`mpg ~ . + 0`", "`Surv(time, status) ~ age + sex + strata(inst)`")
+
+df <- data.frame(Syntax, Description, Example)
+kable(df, format = "html", caption = 'Formula syntax supported by StepReg') %>% kable_styling()
+
+## ----eval = FALSE-------------------------------------------------------------
+# report(res, report_name = "results", format = c("html", "docx"))
 
 ## ----message = FALSE----------------------------------------------------------
 data(mtcars)
+## make sure the categorical variable is a factor variable
+mtcars$am <- as.factor(mtcars$am)
+str(mtcars)
 
-formula <- mpg ~ .
+formula <- mpg ~ am + cyl:am + disp:am + am:hp + drat:am + wt:am + qsec:am + vs:am + gear:am + carb:am
 res1 <- stepwise(formula = formula,
                  data = mtcars,
                  type = "linear",
-                 include = c("disp", "cyl"),
+                 include = c("cyl:am", "am"),
                  strategy = "forward",
-                 metric = "AIC")
+                 metric = "AIC",
+                 test_ratio = 0.2)
 res1
+
+## ----message = FALSE----------------------------------------------------------
+summary(res1$forward$AIC)
+
+## ----message = FALSE----------------------------------------------------------
+performance(res1)
 
 ## ----plot_res1, warning = FALSE-----------------------------------------------
 plot_list <- list()
-plot_list[["forward"]][["details"]] <- plot(res1, process = "details")
+plot_list[["forward"]][["detail"]] <- plot(res1, process = "detail")
 plot_list[["forward"]][["overview"]] <- plot(res1, process = "overview")
 cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1)
 
@@ -162,17 +190,18 @@ res2 <- stepwise(formula = formula,
                  strategy = c("forward", "backward"),
                  metric = c("AIC", "BIC", "SL"),
                  sle = 0.05,
-                 sls = 0.05)
+                 sls = 0.05,
+                 test_ratio = 0.3)
 res2
 
 ## ----message = FALSE, warning = FALSE, fig.width=9, fig.height=12-------------
 plot_list <- setNames(
   lapply(c("forward", "backward"),function(i){
     setNames(
-      lapply(c("details","overview"),function(j){
+      lapply(c("detail","overview"),function(j){
         plot(res2,strategy=i,process=j)
     }),
-    c("details","overview")
+    c("detail","overview")
     )
   }),
   c("forward", "backward")
@@ -181,22 +210,30 @@ plot_list <- setNames(
 cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1, rel_heights = c(2, 1))
 cowplot::plot_grid(plotlist = plot_list$backward, ncol = 1, rel_heights = c(2, 1))
 
+## ----message = FALSE----------------------------------------------------------
+summary(res2$forward$SL)
+
+## ----message = FALSE----------------------------------------------------------
+performance(res2)
+
 ## -----------------------------------------------------------------------------
 formula <- cbind(mpg, drat) ~ . + 0
 res3 <- stepwise(formula = formula,
                  data = mtcars,
                  type = "linear",
                  strategy = "bidirection",
-                 metric = c("AIC", "HQ"))
+                 metric = c("AIC", "HQ"),
+                 test_ratio=0.2,
+                 feature_ratio = 0.9)
 res3
 
 plot_list <- setNames(
   lapply(c("bidirection"),function(i){
     setNames(
-      lapply(c("details","overview"),function(j){
+      lapply(c("detail","overview"),function(j){
         plot(res3,strategy=i,process=j)
     }),
-    c("details","overview")
+    c("detail","overview")
     )
   }),
   c("bidirection")
@@ -205,7 +242,14 @@ plot_list <- setNames(
 cowplot::plot_grid(plotlist = plot_list$bidirection, ncol = 1, rel_heights = c(2, 1))
 
 ## ----message = FALSE----------------------------------------------------------
+summary(res3$bidirection$AIC)
+
+## ----message = FALSE----------------------------------------------------------
+performance(res3)
+
+## ----message = FALSE----------------------------------------------------------
 data(remission)
+str(remission)
 
 formula <- remiss ~ .
 res4 <- stepwise(formula = formula,
@@ -213,16 +257,17 @@ res4 <- stepwise(formula = formula,
                  type = "logit",
                  include= "cell",
                  strategy = "forward",
-                 metric = "AIC")
+                 metric = "AIC",
+                 test_ratio = 0.2)
 res4
 
 plot_list <- setNames(
   lapply(c("forward"),function(i){
     setNames(
-      lapply(c("details","overview"),function(j){
+      lapply(c("detail","overview"),function(j){
         plot(res4,strategy=i,process=j)
     }),
-    c("details","overview")
+    c("detail","overview")
     )
   }),
   c("forward")
@@ -230,24 +275,29 @@ plot_list <- setNames(
 cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1, rel_heights = c(2, 1))
 
 ## ----message = FALSE----------------------------------------------------------
-data(remission)
+summary(res4$forward$AIC)
 
+## ----message = FALSE----------------------------------------------------------
+performance(res4)
+
+## ----message = FALSE----------------------------------------------------------
 formula <- remiss ~ . + 0
 res5 <- stepwise(formula = formula,
                   data = remission,
                   type = "logit",
                   strategy = "subset",
                   metric = "SBC",
-                  best_n = 3)
+                  best_n = 3,
+                  test_ratio = 0.2)
 res5
 
 plot_list <- setNames(
   lapply(c("subset"),function(i){
     setNames(
-      lapply(c("details","overview"),function(j){
+      lapply(c("detail","overview"),function(j){
         plot(res5,strategy=i,process=j)
     }),
-    c("details","overview")
+    c("detail","overview")
     )
   }),
   c("subset")
@@ -255,28 +305,35 @@ plot_list <- setNames(
 cowplot::plot_grid(plotlist = plot_list$subset, ncol = 1, rel_heights = c(2, 1))
 
 ## ----message = FALSE----------------------------------------------------------
-library(dplyr)
-library(survival)
-# Preprocess:
-lung <- survival::lung %>%
-  mutate(sex = factor(sex, levels = c(1, 2))) %>% # make sex as factor
-  na.omit() # get rid of incomplete records
+summary(res5$subset$SBC)
 
-formula  =  Surv(time, status) ~ .
+## ----message = FALSE----------------------------------------------------------
+performance(res5)
+
+## ----message = FALSE----------------------------------------------------------
+data(lung)
+library(survival)
+lung <- na.omit(lung)
+lung$sex <- factor(lung$sex, levels = c(1, 2))
+str(lung)
+
+formula  =  Surv(time, status) ~ . + strata(sex)
 res6 <- stepwise(formula = formula,
                  data = lung,
                  type = "cox",
                  strategy = "forward",
-                 metric = "AICc")
+                 metric = c("AICc", "SL"),
+                 sle = 0.1,
+                 test_ratio = 0.2)
 res6
 
 plot_list <- setNames(
   lapply(c("forward"),function(i){
     setNames(
-      lapply(c("details","overview"),function(j){
+      lapply(c("detail","overview"),function(j){
         plot(res6,strategy=i,process=j)
     }),
-    c("details","overview")
+    c("detail","overview")
     )
   }),
   c("forward")
@@ -284,7 +341,15 @@ plot_list <- setNames(
 cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1, rel_heights = c(2, 1))
 
 ## ----message = FALSE----------------------------------------------------------
+summary(res6$forward$AICc)
+summary(res6$forward$SL)
+
+## ----message = FALSE----------------------------------------------------------
+performance(res6)
+
+## ----message = FALSE----------------------------------------------------------
 data(creditCard)
+str(creditCard)
 
 formula  = reports ~ .
 res7 <- stepwise(formula = formula,
@@ -292,22 +357,29 @@ res7 <- stepwise(formula = formula,
                  type = "poisson",
                  strategy = "forward",
                  metric = "SL",
-                 sle = 0.05)
-summary(res7$forward$SL)
+                 sle = 0.05,
+                 test_ratio = 0.2)
+res7
 
 ## ----message = FALSE----------------------------------------------------------
 plot_list <- setNames(
   lapply(c("forward"),function(i){
     setNames(
-      lapply(c("details","overview"),function(j){
+      lapply(c("detail","overview"),function(j){
         plot(res7,strategy=i,process=j)
       }),
-      c("details","overview")
+      c("detail","overview")
     )
   }),
   c("forward")
 )
 cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1, rel_heights = c(2, 1))
+
+## ----message = FALSE----------------------------------------------------------
+summary(res7$forward$SL)
+
+## ----message = FALSE----------------------------------------------------------
+performance(res7)
 
 ## ----eval = FALSE-------------------------------------------------------------
 # library(StepReg)

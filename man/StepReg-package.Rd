@@ -8,7 +8,7 @@
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Stepwise regression is a statistical technique used for model selection. This package streamlines stepwise regression analysis by supporting multiple regression types, incorporating popular selection strategies, and offering essential metrics. It enables users to apply multiple selection strategies and metrics in a single function call, visualize variable selection processes, and export results in various formats. However, StepReg should not be used for statistical inference unless the variable selection process is explicitly accounted for, as it can compromise the validity of the results. This limitation does not apply when StepReg is used for prediction purposes. We validated StepReg's accuracy using public datasets within the SAS software environment. Additionally, StepReg features an interactive Shiny application to enhance usability and accessibility.
+Stepwise regression is a statistical technique used for model selection. This package streamlines stepwise regression analysis by supporting multiple regression types(linear, Cox, logistic, Poisson, Gamma, and negative binomial), incorporating popular selection strategies(forward, backward, bidirectional, and subset), and offering essential metrics. It enables users to apply multiple selection strategies and metrics in a single function call, visualize variable selection processes, and export results in various formats. StepReg offers a data-splitting option to address potential issues with invalid statistical inference and a randomized forward selection option to avoid overfitting. We validated StepReg's accuracy using public datasets within the SAS software environment. Additionally, StepReg features an interactive Shiny application to enhance usability and accessibility.
 }
 \seealso{
 Useful links:
@@ -31,7 +31,6 @@ Authors:
 
 Other contributors:
 \itemize{
-  \item Kun Cheng [contributor]
   \item Sushmita N Nayak [contributor]
   \item Cesar Bautista Sotelo [contributor]
   \item Michael A Lodato [contributor]

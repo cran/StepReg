@@ -25,7 +25,7 @@ output:
     toc_float: true
   BiocStyle::pdf_document: default
 abstract: |
-  The StepReg package, developed for exploratory model building tasks, offers support across diverse scenarios. It facilitates model construction for various response variable types, including continuous (linear regression), binary (logistic regression), and time-to-event (Cox regression), among others. StepReg encompasses all commonly used model selection strategies, including forward selection, backward elimination, bidirectional elimination, and best subsets. Notably, it offers flexibility in selection metrics, accommodating both information criteria (AIC, BIC, etc.) and significance level cutoffs. While StepReg is a powerful tool for model development, it is important to emphasize that the final models should not be used for statistical inference. The models generated should only be employed for exploratory or predictive purposes.  This vignette provides numerous examples showcasing the effective utilization of StepReg for model development in diverse contexts. Furthermore, it delves into considerations for selecting appropriate strategies and metrics, empowering users to make informed decisions throughout the modeling process.
+  Stepwise regression is commonly used for model selection, but the absence of a unified tool supporting diverse regression types, selection strategies, and metrics has complicated its effective application. Notably, most existing tools lack built-in robust methods to address issues like invalid statistical inference and overfitting. We present StepReg, an R package designed to streamline stepwise regression analysis while promoting best practices. StepReg is a comprehensive tool that accommodates multiple regression types and incorporates commonly used selection strategies and metrics. It allows users to combine selection strategies and metrics for efficient model selection. The package offers a randomized forward selection option to avoid overfitting and a data-splitting option to adress potential issues with invalid statistical inference. Additionally, it includes functions for visualizing the selection process and exporting results in multiple formats. To ensure accuracy, StepReg was validated against public datasets using SAS, and an interactive Shiny application is included to enhance usability. This vignette provides numerous examples for model development in diverse contexts.
 ---
 ```{r include=FALSE}
 knitr::opts_chunk$set(comment = NA)
@@ -37,7 +37,7 @@ Model selection is the process of identifying the most relevant features from a 
 
 However, it is important to note that stepwise regression should never be used for statistical inference unless the variable selection process is explicitly accounted for. Without proper adjustments, the selection process invalidates statistical inference, such as p-values and confidence intervals, due to issues like multiple testing and data dredging. This limitation does not apply when stepwise regression is used for prediction, as the primary goal in predictive modeling is to maximize accuracy rather than draw causal conclusions.
 
-StepReg simplifies model selection tasks by providing a unified programming interface. It currently supports model buildings for five distinct response variable types (section \@ref(regressioncategories)), four model selection strategies (section \@ref(modelselectionstrategies)) including the best subsets algorithm, and a variety of selection metrics (section \@ref(selectionmetrics)). Moreover, StepReg detects and addresses the multicollinearity issues if they exist (section \@ref(multicollinearity)). The output of StepReg includes multiple tables summarizing the final model and the variable selection procedures. Additionally, StepReg offers a plot function to visualize the selection steps (section \@ref(stepregoutput)). For demonstration, the vignettes include four use cases covering distinct regression scenarios (section \@ref(usecases)). Non-programmers can access the tool through the iterative Shiny app detailed in section \@ref(shinyapp).
+StepReg simplifies model selection tasks by providing a unified programming interface. It currently supports model buildings for five distinct response variable types (section \@ref(regressioncategories)), four model selection strategies (section \@ref(modelselectionstrategies)) including the best subsets algorithm, and a variety of selection metrics (section \@ref(selectionmetrics)). StepReg also supports advanced features including strata variables for Cox regression and continuous-nested-within-class effects for complex modeling scenarios (section \@ref(advancedfeatures)). Moreover, StepReg detects and addresses the multicollinearity issues if they exist (section \@ref(multicollinearity)). The output of StepReg includes multiple tables summarizing the final model and the variable selection procedures. Additionally, StepReg offers a plot function to visualize the selection steps and support a various formats of output (section \@ref(stepregoutput)). For demonstration, the vignettes include four use cases covering distinct regression scenarios (section \@ref(usecases)). Non-programmers can access the tool through an interactive Shiny application (section \@ref(shinyapp)).
 
 By combining flexibility, robustness, and ease of use, StepReg is a powerful tool for predictive modeling tasks, particularly when the goal is to identify an optimal set of features for accurate predictions. However, users should exercise caution and avoid using StepReg for statistical inference unless the variable selection process is properly accounted for.
 
@@ -68,7 +68,7 @@ The output consists of final model, which can be viewed using:
 res
 ```
 
-You can further explore the results with generic functions such as `summary()`, `coeff()`, and others. For example:
+You can further explore the results with S3 generic functions such as `summary()`, `coeff()`, and others. For example:
 ```{r, message = FALSE}
 summary(res$bidirection$AIC)
 ```
@@ -76,7 +76,7 @@ summary(res$bidirection$AIC)
 You can also visualize the variable selection procedures with:
 ```{r, message = FALSE}
 plot(res, strategy = "bidirection", process = "overview")
-plot(res, strategy = "bidirection", process = "details")
+plot(res, strategy = "bidirection", process = "detail")
 ```
 
 The `(+)1` refers to original model with intercept being added, `(+)` indicates variables being added to the model while `(-)` means variables being removed from the model.
@@ -225,31 +225,105 @@ The precise definitions of these criteria can vary across literature and in the 
 
 + SL: SL stands for Significance Level (P-value), embodying a distinct approach to model selection in contrast to information criteria. The SL method operates by calculating a P-value through specific hypothesis testing. Should this P-value fall below a predefined threshold, such as 0.05, one should favor the alternative hypothesis, indicating that the full model significantly outperforms the reduced model. The effectiveness of this method hinges upon the selection of the P-value threshold, wherein smaller thresholds tend to yield simpler models.
 
+## Advanced Features {#advancedfeatures}
+
+StepReg supports several advanced features that enhance its flexibility for complex modeling scenarios.
+
+### Strata Variables in Cox Regression {#strata}
+
+For Cox proportional hazards regression, StepReg supports the use of `strata()` function to include stratification variables. This is particularly useful when you want to control for confounding variables that may violate the proportional hazards assumption.
+
+The `strata()` function allows you to fit separate baseline hazard functions for different groups while sharing the same regression coefficients across strata. This is equivalent to fitting separate Cox models for each stratum but with the advantage of more efficient parameter estimation.
+
+Here is an example of how to use the `strata()` function in a formula for StepReg:
+
+```{r, eval = FALSE}
+formula  =  Surv(time, status) ~ . + strata(inst)
+```
+
+In this example, `strata(inst)` creates separate baseline hazard functions for each institution (`inst`), while the effects of other selected variables are assumed to be the same across all institutions.
+
+### Continuous-Nested-Within-Class Effects {#nested}
+
+StepReg supports continuous-nested-within-class effects, which are useful when you want to model how a continuous variable's effect varies across different levels of a categorical variable. This is implemented using the `:` operator in the formula.
+
+**Key points about continuous-nested-within-class effects:**
+
+- The class variable (categorical) must be a factor
+- The continuous variable can be nested within the class variable using `:` notation
+- The order of variables in the nested term doesn't matter (e.g., `X:A` is equivalent to `A:X`)
+
+here is an example of how to use the `:` operator in a formula for StepReg:
+
+```{r, eval = FALSE}
+mtcars$am <- as.factor(mtcars$am)
+formula <- mpg ~ am + cyl:am + wt:am + disp:am + hp:am + qsec:am + vs:am + gear:am + carb:am
+```
+
+### Multivariate multiple regression for linear regression {#multivariate}
+
+StepReg supports multivariate multiple regression, which is a type of regression analysis that allows for multiple response variables to be modeled simultaneously. This is implemented using the `cbind()` operator in the formula.
+
+here is an example of how to use the `cbind()` operator in a formula for StepReg:
+```{r, eval = FALSE}
+formula <- cbind(mpg, drat) ~ .
+```
+
+## Formula Syntax Summary {#formulasyntax}
+
+The following table summarizes the formula syntax supported by StepReg:
+
+```{r, echo = FALSE}
+Syntax <- c("`y ~ x1 + x2`", "`y ~ .`", "`y ~ . - x1`", "`y ~ x1 * x2`", "`y ~ x1:x2`", "`cbind(y1, y2) ~ .`", "`y ~ . + 0` or `y ~ . - 1`", "`Surv(time, status) ~ . + strata(strata_var)`")
+Description <- c("Multiple predictors", "All variables in dataset", "All variables except x1", "Main effects and interaction", "Continuous-nested-within-class effects", "Multiple response variables", "No intercept", "Cox regression with strata")
+Example <- c("`mpg ~ cyl + wt`", "`mpg ~ .`", "`mpg ~ . - disp`", "`mpg ~ cyl * am`", "`mpg ~ cyl:am`", "`cbind(mpg, drat) ~ .`", "`mpg ~ . + 0`", "`Surv(time, status) ~ age + sex + strata(inst)`")
+
+df <- data.frame(Syntax, Description, Example)
+kable(df, format = "html", caption = 'Formula syntax supported by StepReg') %>% kable_styling()
+```
+
 ## Multicollinearity {#multicollinearity}
 
-This [blog](https://statisticsbyjim.com/regression/multicollinearity-in-regression-analysis/) by Jim Frost gives an excellent overview of multicollinearity and when it is necessary to remove it.
+Multicollinearity arises when independent variables in a regression model are correlated with each other. Ideally, predictors should be independent to allow a clear understanding of how each variable relates to the outcome. When the correlations between predictors are strong, it can create significant issues for model fitting and interpretation. In such cases, changes in one input variable can be associated with changes in others, which makes it difficult to assess each variable's individual contribution to the dependent variable.
 
-Simply put, a dataset contains multicollinearity when input predictors are correlated. When multicollinearity occurs, the interpretability of predictors will be badly affected because changes in one input variable lead to changes in other input variables. Therefore, it is hard to individually estimate the relationship between each input variable and the dependent variable.
+Severe multicollinearity reduces the precision of estimated regression coefficients, thereby complicating model selection and interpretation. It can lead to unreliable estimates and inflated standard errors. However, it is important to note that multicollinearity primarily affects the interpretation of coefficients and their statistical significance. If the main objective is to predict outcomes accurately, and interpretation of individual predictors is not required, addressing multicollinearity may not be necessary because it does not impact prediction accuracy or the goodness-of-fit of the model.
 
-Multicollinearity can dramatically reduce the precision of the estimated regression coefficients of correlated input variables, making it hard to find the correct model. However, as Jim pointed out, “Multicollinearity affects the coefficients and p-values, but it does not influence the predictions, precision of the predictions, and the goodness-of-fit statistics. If your primary goal is to make predictions, and you don’t need to understand the role of each independent variable, you don’t need to reduce severe multicollinearity.”
-
-In StepReg, [QC Matrix Decomposition](https://towardsdatascience.com/qr-matrix-factorization-15bae43a6b2#:~:text=The%20QR%20matrix%20decomposition%20allows%20one%20to%20express%20a%20matrix,zero%2C%20it%20is%20also%20invertible.) is performed ahead of time to detect and remove input variables causing multicollinearity.
+In StepReg, QC Matrix Decomposition is performed ahead of time to detect and remove input variables causing multicollinearity.
 
 # StepReg output {#stepregoutput}
 
-StepReg offers a suite of functions to summarize and visualize model-building results. The core function, `stepwise()`, generates a list of data frames detailing the feature selection process and the final model. These results can be exported into various formats—such as "xlsx", "html", or "docx"—using the `report()` function, making it easy to share and collaborate. Additionally, the `plot()` function allows you to visualize and compare variable selection procedures across multiple strategies and metrics, providing further insights into the model-building process.
+This function creates a StepReg class object, which is a structured list containing both the input specifications and the outcomes of the stepwise regression analysis. The key components of this object are detailed below, providing a comprehensive framework for model exploration and validation.
 
-The `stepwise()` function produces optimal models based on the chosen regression strategies and metrics. You can further analyze these models using standard functions like `summary()`, `coeff()`, `residuals()`, and `fitted()`, which are applicable to each element of the output.
+- **`argument`**: A data.frame containing the user-specified settings and parameters used in the analysis, including the initial formula, regression type, selection strategy, chosen metrics, significance levels (sle/sls), tolerance threshold, test method, and other control parameters.
 
-StepReg enables to explore the arguments used in `stepwise()`, variable calsses, overviews and detailed process of model selection, and voted models. The `report()` function can export these results into multiple formats including "xlsx", "docx", "html", and "pptx" for enhanced usability. For example, running `report()` with the name "results" will generate both "results.xlsx" and "results.docx" files.
+- **`variable`**: A data.frame containing information about all variables in the model, including variable names, data types (numeric, factor, etc.), and their roles (Dependent/Independent) in the model.
+
+- **`performance`**: A data.frame providing detailed performance metrics for the selected models across different strategies and metrics. For both training and test data sets when `test_ratio` < 1, the output includes model-specific performance indicators:
+  - `For linear, poisson, gamma, and negative binomial regression`
+    - `"r2_train/r2_test"`: R-squared measures the proportion of variance explained by the model. Values range from 0 to 1, with higher values indicating better fit. A well-performing model should exhibit high R-squared on both training and test data, with minimal difference between them. A large discrepancy suggests overfitting.
+    - `"mse_train/mse_test"`: Mean Squared Error (MSE) calculates the average squared difference between predicted and actual values. Lower values signify better model performance. The test MSE should be close to the training MSE; a significantly higher test MSE indicates potential overfitting.
+    - `"mae_train/mae_test"`: Mean Absolute Error (MAE) measures the average absolute difference between predicted and actual values. Lower values reflect better performance. Similar to MSE, the test MAE should be close to the training MAE to avoid overfitting.
+  - `For logistic regression`
+    - `"accuracy_train/accuracy_test"`: Accuracy represents the proportion of correct predictions (true positives + true negatives) divided by total predictions. Values range from 0 to 1, with higher values indicating better classification. Test accuracy should be close to training accuracy; a large gap suggests overfitting.
+    - `"auc_train/auc_test"`: Area Under the Curve (AUC) assesses the model's ability to distinguish between classes. Values range from 0.5 (random) to 1.0 (perfect discrimination). An AUC > 0.7 is acceptable, > 0.8 is good, and > 0.9 is excellent. Test AUC should be close to training AUC to avoid overfitting.
+    - `"log_loss_train/log_loss_test"`: Log Loss (logarithmic loss) penalizes confident incorrect predictions more heavily. Lower values indicate better performance, with values near 0 being ideal. Test log loss should be close to training log loss; a higher test log loss suggests overfitting.
+  - `For Cox regression`
+    - `"c-index_train/c-index_test"`: Concordance Index (C-index) evaluates the model's ability to correctly rank survival times. Values range from 0.5 (random) to 1.0 (perfect ranking). A C-index > 0.7 is acceptable, > 0.8 is good, and > 0.9 is excellent. Test C-index should be close to training C-index to avoid overfitting.
+    - `"auc_hc"`: Harrell's C-index for time-dependent AUC, measuring discrimination at specific time points. Higher values indicate better performance.
+
+- **`overview`**: A nested list organized by strategy and metric, containing step-by-step summaries of the model-building process. Each element shows which variables were entered or removed at each step along with the corresponding metric values (e.g., AIC, BIC, SBC).
+
+- **`detail`**: A nested list organized by strategy and metric, providing granular information about each candidate step. This includes which variables were tested, their evaluation statistics, p-values, and whether they were ultimately selected or rejected.
+
+- **`fitted model object within the strategy-specific list`**: A nested list object organized with a first layer representing the selection strategy (e.g., forward, backward, bidirection, subset) and a second layer representing the metric (e.g., AIC, BIC, SBC). For each strategy-metric combination, the function returns fitted model objects that can be further analyzed using S3 generic functions such as `summary`, `anova`, `plot`, or `coefficients`. These functions adapt to the model type (e.g., `coxph`, `lm`, `glm` through call-specific methods. Specific statistics can be directly retrieved using the `$` operator, such as `result$forward$AIC$coefficients`. The level of detail in these analyses depends on the model type: the \CRANpkg{survival} package enriches `coxph` objects with detailed statistics including hazard ratios, standard errors, z-statistics, p-values, and likelihood ratio tests, while base R functions like `lm` and `glm` offer basic output with coefficients by default, requiring `summary` or `anova` to reveal standard errors, t-values, p-values, and R-squared values.
 
 ```{r, eval = FALSE}
-report(res, report_name = "results", format = c("xlsx", "docx"))
+report(res, report_name = "results", format = c("html", "docx"))
 ```
 
 # Use cases {#usecases}
 
-Below, we present various examples illustrating the application of different models tailored to specific datasets. Please note that stepwise regression should never be used for statistical inference unless the variable selection process is properly accounted for, as it can invalidate the results. However, this issue does not arise when stepwise regression is used for prediction. It is essential to select the regression model that best suits the type of response variable. For detailed guidance, refer to section @ref(regressioncategories).
+Below, we present various examples illustrating the application of different models tailored to specific datasets. Please note that stepwise regression should never be used for statistical inference unless the variable selection process is properly accounted for, as it can invalidate the results. However, this issue does not arise when stepwise regression is used for prediction. It is essential to select the regression model that best suits the type of response variable. For detailed guidance, refer to section \@ref(regressioncategories).
 
 ## Linear regression with the _mtcars_ dataset
 
@@ -275,26 +349,40 @@ The `mtcars` is a classic dataset in statistics and is included in the base R in
 
 Linear regression is an ideal choice for analyzing the `mtcars` dataset due to its inclusion of continuous variables like "mpg", "hp", or "weight", which can serve as response variables. Furthermore, the dataset exhibits potential linear relationships between the response variable and other variables.
 
-### Example1: single dependent variable ("mpg")
+### Example1: single dependent variable ("mpg"), and apply continuous-nested-within-class variables
 
 In this example, we employ "forward" strategy with "AIC" as the selection criteria. Additionally, we specify using the `include` argument that "disp", "cyl" always be included in the model.
 ```{r, message = FALSE}
 data(mtcars)
+## make sure the categorical variable is a factor variable
+mtcars$am <- as.factor(mtcars$am)
+str(mtcars)
 
-formula <- mpg ~ .
+formula <- mpg ~ am + cyl:am + disp:am + am:hp + drat:am + wt:am + qsec:am + vs:am + gear:am + carb:am
 res1 <- stepwise(formula = formula,
                  data = mtcars,
                  type = "linear",
-                 include = c("disp", "cyl"),
+                 include = c("cyl:am", "am"),
                  strategy = "forward",
-                 metric = "AIC")
+                 metric = "AIC",
+                 test_ratio = 0.2)
 res1
+```
+
+To get the summary of the model:
+```{r, message = FALSE}
+summary(res1$forward$AIC)
+```
+
+The performance of the model:
+```{r, message = FALSE}
+performance(res1)
 ```
 
 To visualize the selection process:
 ```{r plot_res1, warning = FALSE}
 plot_list <- list()
-plot_list[["forward"]][["details"]] <- plot(res1, process = "details")
+plot_list[["forward"]][["detail"]] <- plot(res1, process = "detail")
 plot_list[["forward"]][["overview"]] <- plot(res1, process = "overview")
 cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1)
 ```
@@ -328,7 +416,8 @@ res2 <- stepwise(formula = formula,
                  strategy = c("forward", "backward"),
                  metric = c("AIC", "BIC", "SL"),
                  sle = 0.05,
-                 sls = 0.05)
+                 sls = 0.05,
+                 test_ratio = 0.3)
 res2
 ```
 
@@ -336,10 +425,10 @@ res2
 plot_list <- setNames(
   lapply(c("forward", "backward"),function(i){
     setNames(
-      lapply(c("details","overview"),function(j){
+      lapply(c("detail","overview"),function(j){
         plot(res2,strategy=i,process=j)
     }),
-    c("details","overview")
+    c("detail","overview")
     )
   }),
   c("forward", "backward")
@@ -347,6 +436,16 @@ plot_list <- setNames(
 
 cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1, rel_heights = c(2, 1))
 cowplot::plot_grid(plotlist = plot_list$backward, ncol = 1, rel_heights = c(2, 1))
+```
+
+To get the summary of the model:
+```{r, message = FALSE}
+summary(res2$forward$SL)
+```
+
+The performance of the model:
+```{r, message = FALSE}
+performance(res2)
 ```
 
 ### Example2: multivariate regression ("mpg" and "drat")
@@ -358,22 +457,34 @@ res3 <- stepwise(formula = formula,
                  data = mtcars,
                  type = "linear",
                  strategy = "bidirection",
-                 metric = c("AIC", "HQ"))
+                 metric = c("AIC", "HQ"),
+                 test_ratio=0.2,
+                 feature_ratio = 0.9)
 res3
 
 plot_list <- setNames(
   lapply(c("bidirection"),function(i){
     setNames(
-      lapply(c("details","overview"),function(j){
+      lapply(c("detail","overview"),function(j){
         plot(res3,strategy=i,process=j)
     }),
-    c("details","overview")
+    c("detail","overview")
     )
   }),
   c("bidirection")
 )
 
 cowplot::plot_grid(plotlist = plot_list$bidirection, ncol = 1, rel_heights = c(2, 1))
+```
+
+To get the summary of the model:
+```{r, message = FALSE}
+summary(res3$bidirection$AIC)
+```
+
+The performance of the model:
+```{r, message = FALSE}
+performance(res3)
 ```
 
 ## Logistic regression with the _remission_ dataset
@@ -401,6 +512,7 @@ Logistic regression effectively captures the relationship between predictors and
 In this example, we employ a "forward" strategy with "AIC" as the selection criteria, while force ensuring that the "cell" variable is included in the model.
 ```{r, message = FALSE}
 data(remission)
+str(remission)
 
 formula <- remiss ~ .
 res4 <- stepwise(formula = formula,
@@ -408,16 +520,17 @@ res4 <- stepwise(formula = formula,
                  type = "logit",
                  include= "cell",
                  strategy = "forward",
-                 metric = "AIC")
+                 metric = "AIC",
+                 test_ratio = 0.2)
 res4
 
 plot_list <- setNames(
   lapply(c("forward"),function(i){
     setNames(
-      lapply(c("details","overview"),function(j){
+      lapply(c("detail","overview"),function(j){
         plot(res4,strategy=i,process=j)
     }),
-    c("details","overview")
+    c("detail","overview")
     )
   }),
   c("forward")
@@ -425,28 +538,37 @@ plot_list <- setNames(
 cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1, rel_heights = c(2, 1))
 ```
 
+To get the summary of the model:
+```{r, message = FALSE}
+summary(res4$forward$AIC)
+```
+
+The performance of the model:
+```{r, message = FALSE}
+performance(res4)
+```
+
 ### Example2: using "subset" strategy
 
 In this example, we employ a "subset" strategy, utilizing "SBC" as the selection criteria while excluding the intercept. Meanwhile, we set `best_n = 3` to restrict the output to the top 3 models for each number of variables.
 ```{r, message = FALSE}
-data(remission)
-
 formula <- remiss ~ . + 0
 res5 <- stepwise(formula = formula,
                   data = remission,
                   type = "logit",
                   strategy = "subset",
                   metric = "SBC",
-                  best_n = 3)
+                  best_n = 3,
+                  test_ratio = 0.2)
 res5
 
 plot_list <- setNames(
   lapply(c("subset"),function(i){
     setNames(
-      lapply(c("details","overview"),function(j){
+      lapply(c("detail","overview"),function(j){
         plot(res5,strategy=i,process=j)
     }),
-    c("details","overview")
+    c("detail","overview")
     )
   }),
   c("subset")
@@ -456,44 +578,66 @@ cowplot::plot_grid(plotlist = plot_list$subset, ncol = 1, rel_heights = c(2, 1))
 
 Here, the `0` in the above plot means that there is no intercept in the model.
 
+To get the summary of the model:
+```{r, message = FALSE}
+summary(res5$subset$SBC)
+```
+
+The performance of the model:
+```{r, message = FALSE}
+performance(res5)
+```
+
 ## Cox regression with the `lung` dataset
 
-In this example, we'll demonstrate how to perform Cox regression analysis using the [`lung`](https://stat.ethz.ch/R-manual/R-devel/library/survival/html/lung.html) dataset. By setting `type = "cox"`, we instruct the function to conduct Cox regression.
+In this example, we'll demonstrate how to perform Cox regression analysis using the [`lung`] dataset. By setting `type = "cox"`, we instruct the function to conduct Cox regression.
 
 **Description of the `lung` dataset**
 
-The `lung` dataset, available in the `"survival"` R package, includes information on survival times for 228 patients with advanced lung cancer. It comprises ten variables, among which the "status" variable codes for censoring status (1 = censored, 2 = dead), and the "time" variable denotes the patient survival time in days. To learn more about the dataset, use `?survival::lung`.
+The `lung` dataset, available in the `"survival"` R package, includes information on survival times for 228 patients with advanced lung cancer. It comprises ten variables, among which the "status" variable codes for censoring status (1 = censored, 2 = dead), and the "time" variable denotes the patient survival time in days.
+
+1. inst: Institution code
+2. time: Survival time in days
+3. status: censoring status 1=censored, 2=dead
+4. age: Age in years
+5. sex: Male=1 Female=2
+6. ph.ecog: ECOG performance score as rated by the physician. 0=asymptomatic, 1= symptomatic but completely ambulatory, 2= in bed < 50\% of the day, 3= in bed > 50\% of the day but not bedbound, 4 = bedbound
+7. ph.karno: Karnofsky performance score (bad=0-good=100) rated by physician
+8. pat.karno: Karnofsky performance score as rated by patient
+9. meal.cal: Calories consumed at meals
+10. wt.loss: Weight loss in last six months (pounds)
 
 **Why choose Cox regression**
 
 Cox regression, also termed the Cox proportional hazards model, is specifically designed for analyzing survival data, making it well-suited for datasets like `lung` that include information on the time until an event (e.g., death) occurs. This method accommodates censoring and assumes proportional hazards, enhancing its applicability to medical studies involving time-to-event outcomes.
 
-### Example1: using "forward" strategy
+### Example1: using "forward" strategy with strata function in the formula
 
-In this example, we employ a "forward" strategy with "AICc" as the selection criteria.
+In this example, we employ a "forward" strategy with c("AICc", "SL") as the selection criteria. We set the significance level for entry to 0.1 (`sle = 0.1`). We also use the `strata` function in the formula to account for the stratified analysis.
 ```{r, message = FALSE}
-library(dplyr)
+data(lung)
 library(survival)
-# Preprocess:
-lung <- survival::lung %>%
-  mutate(sex = factor(sex, levels = c(1, 2))) %>% # make sex as factor
-  na.omit() # get rid of incomplete records
+lung <- na.omit(lung)
+lung$sex <- factor(lung$sex, levels = c(1, 2))
+str(lung)
 
-formula  =  Surv(time, status) ~ .
+formula  =  Surv(time, status) ~ . + strata(sex)
 res6 <- stepwise(formula = formula,
                  data = lung,
                  type = "cox",
                  strategy = "forward",
-                 metric = "AICc")
+                 metric = c("AICc", "SL"),
+                 sle = 0.1,
+                 test_ratio = 0.2)
 res6
 
 plot_list <- setNames(
   lapply(c("forward"),function(i){
     setNames(
-      lapply(c("details","overview"),function(j){
+      lapply(c("detail","overview"),function(j){
         plot(res6,strategy=i,process=j)
     }),
-    c("details","overview")
+    c("detail","overview")
     )
   }),
   c("forward")
@@ -501,13 +645,39 @@ plot_list <- setNames(
 cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1, rel_heights = c(2, 1))
 ```
 
+To get the summary of the model:
+```{r, message = FALSE}
+summary(res6$forward$AICc)
+summary(res6$forward$SL)
+```
+
+The performance of the model:
+```{r, message = FALSE}
+performance(res6)
+```
+
+To be specified, the variable sex is coded as a factor, so sex2 appears in the results to represent the second level of the dummy-coded variable.
+
 ## Poisson regression with the `creditCard` dataset
 
 In this example, we'll demonstrate how to perform Poisson regression analysis using the [`creditCard`](https://search.r-project.org/CRAN/refmans/AER/html/CreditCard.html) dataset. We set `type = "poisson"` to direct the function to perform Poisson regression.
 
 **Descprition of the `creditCard` dataset**
 
-The `creditCard` dataset contains credit history information for a sample of applicants for a specific type of credit card, included in the `"AER"` package. It encompasses 1319 observations across 12 variables, including "reports", "age", "income", among others. The "reports" variable represents the number of major derogatory reports. For detailed information, refer to `?AER::CreditCard`.
+The `creditCard` dataset contains credit history information for a sample of applicants for a specific type of credit card, included in the `"AER"` package. It encompasses 1319 observations across 12 variables, including "reports", "age", "income", among others. The "reports" variable represents the number of major derogatory reports.
+
+1. card: Whether the credit card application was accepted (Yes/No)
+2. reports: Number of major derogatory reports on the applicant's credit history
+3. age: Age in years plus twelfths of a year (e.g., 30.5 represents 30 years and 6 months)
+4. income: Annual income in USD (divided by 10,000)
+5. share: Ratio of monthly credit card expenditure to yearly income
+6. expenditure: Average monthly credit card expenditure in USD
+7. owner: Home ownership status (Yes/No)
+8. selfemp: Self-employment status (Yes/No)
+9. dependents: Number of dependents
+10. months: Number of months living at current address
+11. majorcards: Number of major credit cards held
+12. active: Number of active credit accounts
 
 **Why choose Poisson regression**
 
@@ -518,6 +688,7 @@ Poisson regression is frequently employed method for analyzing count data, where
 In this example, we employ a "forward" strategy with "SL" as the selection criteria. We set the significance level for entry to 0.05 (`sle = 0.05`).
 ```{r, message = FALSE}
 data(creditCard)
+str(creditCard)
 
 formula  = reports ~ .
 res7 <- stepwise(formula = formula,
@@ -525,24 +696,36 @@ res7 <- stepwise(formula = formula,
                  type = "poisson",
                  strategy = "forward",
                  metric = "SL",
-                 sle = 0.05)
-summary(res7$forward$SL)
+                 sle = 0.05,
+                 test_ratio = 0.2)
+res7
 ```
 
 ```{r, message = FALSE}
 plot_list <- setNames(
   lapply(c("forward"),function(i){
     setNames(
-      lapply(c("details","overview"),function(j){
+      lapply(c("detail","overview"),function(j){
         plot(res7,strategy=i,process=j)
       }),
-      c("details","overview")
+      c("detail","overview")
     )
   }),
   c("forward")
 )
 cowplot::plot_grid(plotlist = plot_list$forward, ncol = 1, rel_heights = c(2, 1))
 ```
+
+To get the summary of the model:
+```{r, message = FALSE}
+summary(res7$forward$SL)
+```
+
+The performance of the model:
+```{r, message = FALSE}
+performance(res7)
+```
+
 # Interactive app {#shinyapp}
 
 We have developed an interactive Shiny application to simplify model selection tasks for non-programmers. You can access the app through the following URL:
@@ -558,9 +741,9 @@ StepRegShinyApp()
 
 Here is the user interface.
 
-![](src/StepReg_shiny_UI_description_File.png)
+![](src/StepReg_shiny_UI_description_Data.png){width=100%}
 
-![](src/StepReg_shiny_UI_description_Analyze.png)
+![](src/StepReg_shiny_UI_description_Stepwise.png){width=100%}
 
 # Session info
 

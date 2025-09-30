@@ -112,73 +112,51 @@ server <- function(input, output, session) {
     mutate_variable(input$character_var, "character")
   })
 
-  # Update select inputs based on regression type:
-  observe({
-    req(df$data)
-    # Update select input for distribution plot
-    updateSelectInput(session, "distribution_plot", choices = names(df$data))
-    updateSelectInput(session, "dependent_linear", choices = names(df$data))
-    updateSelectInput(session, "status", choices = names(df$data))
-    updateSelectInput(session, "time", choices = names(df$data))
-    updateSelectInput(session, "dependent_glm", choices = names(df$data))
-    
-    observeEvent(input$dependent_linear, {
-      updateSelectInput(session, "independent", choices = setdiff(names(df$data), input$dependent_linear))
-    })
-    
-    observeEvent(input$status, {
-      updateSelectInput(session, "time", choices = setdiff(names(df$data), input$status))
-    })
-    
-    observeEvent(c(input$status, input$time), {
-      updateSelectInput(session, "independent", choices = setdiff(names(df$data), c(input$status, input$time)))
-    })
-    
-    observeEvent(input$dependent_glm, {
-      updateSelectInput(session, "independent", choices = setdiff(names(df$data), input$dependent_glm))
-    })
-    
-    observeEvent(input$independent, {
-      updateSelectInput(session, "include", choices = input$independent)
-    })
-  })
-
   # Enable run button if all required fields are specified by user:
   run_analysis_enabled <- reactive({
-    ## input$type, status, time: no need to check as selectInput default to use the first one
-
-    ## input$independent:
-    if (length(input$independent) == 0) return(FALSE)
-    ## input$strategy:
-    if (length(input$strategy) == 0) return(FALSE)
-    ## input$metric_xxx:
-    if (input$type == "linear") {
-      if ((length(input$metric_multivariate_linear) == 0) && 
-          (length(input$metric_univariate_linear) == 0)) return(FALSE) 
-    } else if (input$type %in% c("logit", "cox", "poisson", "gamma")) {
-      if (length(input$metric_glm_cox) == 0) return(FALSE)
-    } else {
-      stop("input$metric_xxx: not a valid input$type!")
+    # Check if formula is provided
+    if (is.null(input$formula_input) || input$formula_input == "") {
+      return(FALSE)
     }
-    ## input$dependent:
+    # Check if strategy is selected
+    if (is.null(input$strategy) || length(input$strategy) == 0) {
+      return(FALSE)
+    }
+    # Check if metric is selected based on detected type
+    if (is.null(input$type)) {
+      return(FALSE)
+    } 
     if (input$type == "linear") {
-      if (length(input$dependent_linear) == 0) return(FALSE)
-    } else if (input$type %in% c("logit", "poisson", "gamma")) {
-      if (length(input$dependent_glm) == 0) return(FALSE)
-    } else if (input$type == "cox") {
-      # no need to check input$status and input$time as they have default
+      # Check if it's multivariate by looking for cbind in the formula
+      if (grepl("cbind\\(", input$formula_input)) {
+        if (is.null(input$metric_multivariate_linear) || length(input$metric_multivariate_linear) == 0) {
+          return(FALSE)
+        }
+      } else {
+        if (is.null(input$metric_univariate_linear) || length(input$metric_univariate_linear) == 0) {
+          return(FALSE)
+        }
+      }
+    } else if (input$type %in% c("logit", "cox", "poisson", "gamma", "negbin")) {
+      if (is.null(input$metric_glm_cox) || length(input$metric_glm_cox) == 0) {
+        return(FALSE)
+      }
     } else {
-      stop("input$dependent: not a valid input$type!")
+      return(FALSE)
     }
     return(TRUE)
   })
   
   exploratory_plot_enabled <- reactive({
-    if (length(input$var_plot) == 0){
+    tryCatch({
+      if (is.null(input$var_plot) || length(input$var_plot) == 0){
+        return(FALSE)
+      } else {
+        return(TRUE)
+      }
+    }, error = function(e) {
       return(FALSE)
-    } else {
-      return(TRUE)
-    }
+    })
   })
   
   observe({
@@ -198,36 +176,158 @@ server <- function(input, output, session) {
   rv <- reactiveValues()
   rv$nmetric <- 1
   rv$nvar <- 1
+  
+  # Output for formula examples
+  output$formula_placeholder_help <- renderUI({
+    req(df$data)
+    
+    # Get examples based on selected regression type
+    examples_list <- switch(
+      input$type,
+      "linear" = {
+        list(
+          "specified variables: y ~ x1 + x2",
+          "all variables: y ~ .",
+          "all variables except x1: y ~ . - x1",
+          "main effects and interaction: y ~ x1*x2",
+          "continuous-nested-within-class effects: y ~ x1 + x1:x2",
+          "multiple response: cbind(y1, y2) ~ .",
+          "no intercept: y ~ . + 0 or y ~ . - 1"
+        )
+      },
+      "logit" = {
+        list(
+          "specified variables: y ~ x1 + x2",
+          "all variables: y ~ .",
+          "all variables except x1: y ~ . - x1",
+          "main effects and interaction: y ~ x1*x2",
+          "continuous-nested-within-class effects: y ~ x1 + x1:x2",
+          "no intercept: y ~ . + 0 or y ~ . - 1"
+        )
+      },
+      "poisson" = {
+        list(
+          "specified variables: y ~ x1 + x2",
+          "all variables: y ~ .",
+          "all variables except x1: y ~ . - x1",
+          "main effects and interaction: y ~ x1*x2",
+          "continuous-nested-within-class effects: y ~ x1 + x1:x2",
+          "no intercept: y ~ . + 0 or y ~ . - 1"
+        )
+      },
+      "gamma" = {
+        list(
+          "specified variables: y ~ x1 + x2",
+          "all variables: y ~ .",
+          "all variables except x1: y ~ . - x1",
+          "main effects and interaction: y ~ x1*x2",
+          "continuous-nested-within-class effects: y ~ x1 + x1:x2",
+          "no intercept: y ~ . + 0 or y ~ . - 1"
+        )
+      },
+      "negbin" = {
+        list(
+          "specified variables: y ~ x1 + x2",
+          "all variables: y ~ .",
+          "all variables except x1: y ~ . - x1",
+          "main effects and interaction: y ~ x1*x2",
+          "continuous-nested-within-class effects: y ~ x1 + x1:x2",
+          "no intercept: y ~ . + 0 or y ~ . - 1"
+        )
+      },
+      "cox" = {
+        list(
+          "specified variables: Surv(time, status) ~ x1 + x2",
+          "all variables: Surv(time, status) ~ .",
+          "all variables except x1: Surv(time, status) ~ . - x1",
+          "main effects and interaction: Surv(time, status) ~ x1*x2",
+          "continuous-nested-within-class effects: Surv(time, status) ~ x1 + x1:x2",
+          "stratified Cox regression: Surv(time, status) ~ x1 + strata(x2)"
+        )
+      },
+      list("Enter your formula here...")
+    )
+    
+    tags$div(
+      style = "margin-top: 10px; padding: 10px; background-color: #f8f9fa; border-radius: 5px; border-left: 4px solid #3498db;",
+      tags$h6(style = "margin: 0 0 8px 0; color: #2c3e50;", paste0("📝 Formula Examples for ", input$type, " regression:")),
+      tags$ul(
+        style = "margin: 0; padding-left: 20px;",
+        lapply(examples_list, function(example) {
+          tags$li(
+            style = "font-family: monospace; font-size: 11px; color: #495057; margin-bottom: 2px;",
+            example
+          )
+        })
+      )
+    )
+  })
+  
+  # Generate dynamic placeholder for include input based on formula and data
+  output$include_input_ui <- renderUI({
+    req(df$data)
+    
+    # Default choices when no formula is entered
+    default_choices <- c("None" = NULL)
+    
+    if (is.null(input$formula_input) || input$formula_input == "" || trimws(input$formula_input) == "") {
+      return(
+        selectInput(
+          "include_input",
+          "Include:",
+          choices = default_choices,
+          selected = NULL
+        )
+      )
+    }
+    
+    tryCatch({
+      formula <- as.formula(input$formula_input)
+      term_form <- terms(formula, data = df$data)
+      x_name <- attr(term_form, "term.labels")
+      var_choices <- setNames(x_name, x_name)
+      
+      selectInput(
+        "include_input",
+        "Include:",
+        choices = var_choices,
+        selected = NULL,
+        multiple = TRUE
+      )
+    }, error = function(e) {
+      selectInput(
+        "include_input",
+        "Include:",
+        choices = default_choices,
+        selected = NULL,
+        multiple = TRUE
+      )
+    })
+  })
+  
   # Perform stepwise regression based on uploaded dataset
   stepwiseModel <- eventReactive(input$run_analysis, {
     disable("download")
     disable("download_process_plot")
     req(df$data)
-    if (input$intercept == TRUE) {
-      intercept <- 1
-    } else {
-      intercept <- 0
+    
+    # Validate formula input
+    if (is.null(input$formula_input) || input$formula_input == "" || trimws(input$formula_input) == "") {
+      stop("Please enter a valid formula")
     }
     
-    formula <- switch(
-      input$type,
-      "linear" = {
-        if (length(input$dependent_linear) > 1) {
-          formula <- as.formula(paste(paste0("cbind(", paste(input$dependent_linear, collapse = ","), ")", collapse = ""), "~", paste(c(intercept, input$independent), collapse = "+")))
-        } else {
-          formula <- as.formula(paste(input$dependent_linear, "~", paste(c(intercept, input$independent), collapse = "+")))
-        }
-      },
-      "cox" = as.formula(paste("Surv(", input$time, ",", input$status, ") ~", paste(input$independent, collapse = "+"))),
-      "logit" = as.formula(paste(input$dependent_glm, "~", paste(c(intercept, input$independent), collapse = "+"))),
-      "poisson" = as.formula(paste(input$dependent_glm, "~", paste(c(intercept, input$independent), collapse = "+"))),
-      "gamma" = as.formula(paste(input$dependent_glm, "~", paste(c(intercept, input$independent), collapse = "+")))
-    )
+    # Try to parse the formula with error handling
+    tryCatch({
+      formula <- as.formula(input$formula_input)
+    }, error = function(e) {
+      stop(paste("Invalid formula format:", e$message, "\nPlease check your formula syntax."))
+    })
     
     metric <- switch(
       input$type,
       "linear" = {
-        if (length(input$dependent_linear) > 1) {
+        # Check if it's multivariate by looking for cbind in the formula
+        if (grepl("cbind\\(", as.character(formula)[3])) {
           input$metric_multivariate_linear
         } else {
           input$metric_univariate_linear
@@ -236,7 +336,8 @@ server <- function(input, output, session) {
       "cox" = input$metric_glm_cox,
       "logit" = input$metric_glm_cox,
       "poisson" = input$metric_glm_cox,
-      "gamma" = input$metric_glm_cox
+      "gamma" = input$metric_glm_cox,
+      "negbin" = input$metric_glm_cox
     )
     rv$nmetric <- length(metric)
     rv$nvar <- ncol(df$data)/10
@@ -244,18 +345,21 @@ server <- function(input, output, session) {
     #updateSelectInput(session, "relative_height", selected = round(rv$nmetric*rv$nvar))
     
     res <- stepwise(
-      formula = formula,
-      data = df$data,
-      type = input$type,
-      strategy = input$strategy,
-      metric = metric,
-      sle = input$sle,
-      sls = input$sls,
-      include = input$include,
-      test_method_linear = input$Approx_F,
-      test_method_glm = input$glm_test,
-      test_method_cox = input$cox_test
+        formula = formula,
+        data = df$data,
+        type = input$type,
+        strategy = input$strategy,
+        metric = metric,
+        sle = input$sle,
+        sls = input$sls,
+        include = input$include_input,
+        test_method_linear = input$Approx_F,
+        test_method_glm = input$glm_test,
+        test_method_cox = input$cox_test,
+        test_ratio = input$test_ratio,
+        feature_ratio = ifelse(any(input$strategy %in% c('forward','bidirection')) && !is.null(input$feature_ratio), input$feature_ratio, 1)
     )
+    
     summary_list <- setNames(
       lapply(attr(res, "nonhidden"), function(i) {
         lapply(res[[i]], summary)
@@ -267,10 +371,10 @@ server <- function(input, output, session) {
     process_plot <- setNames(
       lapply(attr(res,"nonhidden"),function(i){
         setNames(
-          lapply(c("details","overview"),function(j){
+          lapply(c("detail","overview"),function(j){
             plot(res,strategy=i,process=j)
           }),
-          c("details","overview")
+          c("detail","overview")
         )
       }),
       attr(res,"nonhidden")
@@ -279,9 +383,9 @@ server <- function(input, output, session) {
     if(all(input$strategy %in% 'subset') & all(metric %in% 'SL')) {
       model_vote <- NULL
     } else {
-      model_vote <- vote(res)
+      model_vote <- performance(res)
     }
-    results <- list(summary_list, process_plot, model_vote,res$arguments,res$variables)
+    results <- list(summary_list, process_plot, model_vote,res$argument,res$variable)
     
     enable("download")
     enable("download_process_plot")
@@ -297,15 +401,28 @@ server <- function(input, output, session) {
   })
   
   # Generate output and enable download button:
-  output$modelSelection <- renderPrint(stepwiseModel()[[1]])
+  output$modelSelection <- renderPrint({
+    tryCatch({
+      stepwiseModel()[[1]]
+    }, error = function(e) {
+      plot(1, 1, type = "n", axes = FALSE, xlab = "", ylab = "")
+      text(1, 1, "Please run the analysis first", col = "blue", cex = 1.2)
+    })
+  })
   
   output$detail_plot <- renderPlot({
-    selected_plot <- plot_grid(plotlist = rev(stepwiseModel()[[2]][[input$strategy_plot]]), 
-                               ncol = 1, 
-                               labels = "AUTO", 
-                               rel_heights = c(1, as.numeric(input$relative_height)))
-    rv$all_plot <- selected_plot
-    selected_plot
+    tryCatch({
+      req(stepwiseModel(), input$strategy_plot)
+      selected_plot <- plot_grid(plotlist = rev(stepwiseModel()[[2]][[input$strategy_plot]]), 
+                                 ncol = 1, 
+                                 labels = "AUTO", 
+                                 rel_heights = c(1, as.numeric(input$relative_height)))
+      rv$all_plot <- selected_plot
+      selected_plot
+    }, error = function(e) {
+      plot(1, 1, type = "n", axes = FALSE, xlab = "", ylab = "")
+      text(1, 1, "Please run the analysis first", col = "blue", cex = 1.2)
+    })
   }, res =96, 
   width = function() { (320 * 2) }, 
   height = function() { (320 * 4 * (rv$nmetric/(rv$nmetric + 1)) * rv$nvar) })
@@ -317,18 +434,31 @@ server <- function(input, output, session) {
     HTML("<b>Statistics of Variable Selection:\n</b>")
   })
   output$modelVoteText <- renderText({
-    if(all(input$strategy %in% 'subset') & all(metric %in% 'SL')) {
-      HTML("<b>Vote isn't available for selection strategy 'subset':\n</b>")
-    } else {
+    tryCatch({
+      req(stepwiseModel())
+      # Get the metric from the stepwiseModel results
+      metric <- stepwiseModel()[[4]]$metric
+      if(all(input$strategy %in% 'subset') & all(metric %in% 'SL')) {
+        HTML("<b>Vote isn't available for selection strategy 'subset':\n</b>")
+      } else {
+        HTML("<b>Model Selection by Vote Across All Combinations of Strategy and Metric:\n</b>")
+      }
+    }, error = function(e) {
       HTML("<b>Model Selection by Vote Across All Combinations of Strategy and Metric:\n</b>")
-    }
-    
+    })
   })
   
   output$modelVote <- renderDataTable({ 
-    if(!(all(input$strategy %in% 'subset') & all(metric %in% 'SL'))) {
-      DT::datatable(stepwiseModel()[[3]], options = list(scrollX = TRUE))
-    }
+    tryCatch({
+      req(stepwiseModel())
+      # Get the metric from the stepwiseModel results
+      metric <- stepwiseModel()[[4]]$metric
+      if(!(all(input$strategy %in% 'subset') & all(metric %in% 'SL'))) {
+        DT::datatable(stepwiseModel()[[3]], options = list(scrollX = TRUE))
+      }
+    }, error = function(e) {
+      DT::datatable(data.frame(Message = "No voting results available"), options = list(scrollX = TRUE))
+    })
   })
   # Output Data
   output$tbl <- renderDataTable({

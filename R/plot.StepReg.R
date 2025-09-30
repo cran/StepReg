@@ -1,53 +1,96 @@
-#' Plots from a StepReg object
+#' Visualize Stepwise Regression Results
 #'
-#' plot.StepReg visualizes the variable selection procedure using a StepReg object
+#' Creates informative visualizations of the variable selection process from a StepReg object.
+#' This function generates two types of plots: detailed step-by-step selection process and
+#' an overview of the final selected variables.
 #'
-#' @param x StepReg object
+#' @param x A StepReg object containing the results of stepwise regression analysis.
 #' 
-#' @param strategy Select which strategy to be displayed, default is the first name of StepReg object.
+#' @param strategy Character. Specifies which selection strategy to visualize:
+#'   \itemize{
+#'     \item "forward" - Forward selection
+#'     \item "backward" - Backward elimination
+#'     \item "bidirection" - Bidirectional selection
+#'     \item "subset" - Best subset selection
+#'   }
+#'   Default is the first strategy name in the StepReg object.
 #' 
-#' @param process Select which process of stepwise regression to be displayed from 'details' and 'overview', default is 'overview'.
+#' @param process Character. Specifies the type of visualization to display:
+#'   \itemize{
+#'     \item "detail" - Shows detailed step-by-step selection process with variable entry/removal
+#'     \item "overview" - Shows summary of the selection process with metric values
+#'   }
+#'   Default is "overview".
 #' 
-#' @param num_digits The number of digits to keep when rounding the results. 
-#' Default is 6.
+#' @param num_digits Integer. Number of decimal places to display in the plots.
+#'   Default is 6.
 #' 
-#' @param ... Not used
+#' @param ... Additional argument passed to plotting functions (currently not used).
 #'
-#' @return A list of plots comprising the selection detail plot and selection 
-#' summary plot for each strategy.
+#' @return A ggplot object showing either:
+#'   \itemize{
+#'     \item For "detail" process: A heatmap showing variable selection status at each step
+#'     \item For "overview" process: A line plot showing metric values across steps
+#'   }
+#' 
+#' @details The function creates different types of visualizations based on the selection strategy:
+#'   \itemize{
+#'     \item For forward/backward/bidirectional selection:
+#'       \itemize{
+#'         \item detail view shows a heatmap with green tiles for added variables,
+#'               tan tiles for removed variables, and gray tiles for non-selected variables
+#'         \item Overview shows metric values across steps with variable labels
+#'       }
+#'     \item For subset selection:
+#'       \itemize{
+#'         \item detail view shows a heatmap of selected variables at each step
+#'         \item Overview shows metric values for different subset sizes
+#'       }
+#'   }
 #' 
 #' @import ggplot2
-#' 
 #' @importFrom stringr str_split
-#' 
 #' @importFrom dplyr group_by filter
-#' 
 #' @importFrom ggrepel geom_label_repel
 #' 
 #' @export
 #'
 #' @examples
 #' \dontrun{
+#' # Load example data
 #' data(mtcars)
+#' 
+#' # Run stepwise regression with multiple strategies
 #' formula <- mpg ~ .
-#' x <- stepwise(formula = formula,
-#'               data = mtcars,
-#'               type = "linear",
-#'               strategy = c("forward","bidirection","subset"),
-#'               metric = c("AIC","BIC","SL"))
-#' plot(x)
-#' plot(x, strategy = "forward", process = "overview")
+#' result <- stepwise(
+#'   formula = formula,
+#'   data = mtcars,
+#'   type = "linear",
+#'   strategy = c("forward", "bidirection", "subset"),
+#'   metric = c("AIC", "BIC", "SL")
+#' )
+#' 
+#' # Generate default overview plot
+#' plot(result)
+#' 
+#' # Generate detailed plot for forward selection
+#' plot(result, strategy = "forward", process = "detail")
+#' 
+#' # Generate overview plot with 3 decimal places
+#' plot(result, strategy = "bidirection", process = "overview", num_digits = 3)
 #' }
+#'
+#' @seealso \code{\link{stepwise}} for creating StepReg objects
 
-plot.StepReg <- function(x, strategy = attr(x,"nonhidden"), process = c("overview", "details"), num_digits = 6, ...) {
+plot.StepReg <- function(x, strategy = attr(x,"nonhidden"), process = c("overview", "detail"), num_digits = 6, ...) {
   process <- match.arg(process)
   strategy <- match.arg(strategy)
   
-  details_list <- x$details
-  arguments <- x$arguments
-  test_method <- arguments[arguments$Parameter %in% "test method",2]
+  detail_list <- x$detail
+  argument <- x$argument
+  test_method <- argument[argument$Parameter %in% "test method",2]
   overview_list <- x$overview
-  strategy_vec <- unlist(str_split(arguments[arguments$Parameter %in% "selection strategy",2]," & "))
+  strategy_vec <- unlist(str_split(argument[argument$Parameter %in% "selection strategy",2]," & "))
   
   if(!strategy %in% strategy_vec){
     stop(paste0(strategy," is not found in StepReg object"))
@@ -80,14 +123,14 @@ plot.StepReg <- function(x, strategy = attr(x,"nonhidden"), process = c("overvie
   plot_overview$Step <- as.numeric(plot_overview$Step)
   plot_overview$MetricValue <- as.numeric(plot_overview$MetricValue)
   
-  if(strategy %in% names(details_list)) {
-    details_process_table <- details_list[[strategy]]
-    plot_details <- do.call(rbind, details_process_table)
+  if(strategy %in% names(detail_list)) {
+    detail_process_table <- detail_list[[strategy]]
+    plot_detail <- do.call(rbind, detail_process_table)
   }
   
-  if(process == "details"){
+  if(process == "detail"){
     if(strategy != "subset") {
-      p1 <- plotStepwiseDetail(plot_details, num_digits)
+      p1 <- plotStepwiseDetail(plot_detail, num_digits)
     } else {
       #From SAS description: For two models A and B, each having the same number of explanatory variables, model A is considered to be better than model B if the global score chi-square statistic for A exceeds that for B.
       plot_overview <- plot_overview %>%
@@ -100,7 +143,7 @@ plot.StepReg <- function(x, strategy = attr(x,"nonhidden"), process = c("overvie
     ## make a dual y-axis with log10 transformed for 'SL' if 'SL' is selected
     if(strategy != 'subset') {
       if("SL" %in% plot_overview$Metric) {
-        plot_overview[plot_overview$Metric == "SL",]$MetricValue <- plot_details[plot_details$metric == "SL" & plot_details$Selection %in% c("Entry","Remove"),"value"]
+        plot_overview[plot_overview$Metric == "SL",]$MetricValue <- plot_detail[plot_detail$metric == "SL" & plot_detail$Selection %in% c("Entry","Remove"),"value"]
         plot_overview$MetricValue[plot_overview$MetricValue %in% Inf] <- max(plot_overview$MetricValue[!plot_overview$MetricValue %in% Inf]) * 1.1
         a <- range(log10(plot_overview[plot_overview$Metric == "SL", ]$MetricValue))
         b <- range(plot_overview[plot_overview$Metric != "SL", ]$MetricValue)
@@ -219,7 +262,7 @@ plotStepwiseDetail <- function(df, num_digits) {
           strip.text = element_text(color = "black")) +  # Adjust text color in facet labels
     facet_wrap(~ .data$metric, ncol=1) + 
     theme(strip.background = element_rect(colour = "black", fill = "gray80")) +
-    ggtitle(paste0("Selection details: ", df$strategy[1])) + 
+    ggtitle(paste0("Selection detail: ", df$strategy[1])) + 
     ylab("Predictors") + 
     xlab("Step")
   return(p1)
@@ -241,7 +284,7 @@ plotSubsetDetail <- function(plot_overview) {
   p1 <- ggplot(tile_df, aes(x = .data$Step, y = .data$Variable, fill = .data$Selection)) +
     geom_tile(width = 0.99, height = 0.95, color = "black") +
     scale_fill_manual(values = c("Entry" = "palegreen2", "No" = "gray80")) +
-    labs(x = "Step", y = "Predictors", title = "Selection details: subset") +
+    labs(x = "Step", y = "Predictors", title = "Selection detail: subset") +
     scale_x_continuous(breaks = plot_overview$Step) + 
     xlab("Variable number") +
     facet_wrap(~ .data$Metric, ncol=1) + 

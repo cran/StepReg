@@ -2,30 +2,69 @@
 % Please edit documentation in R/report.R
 \name{report}
 \alias{report}
-\title{report from a StepReg object}
+\title{Generate Stepwise Regression Report}
 \usage{
 report(x, report_name, format = c("html", "docx", "rtf", "pptx"))
 }
 \arguments{
-\item{x}{StepReg object}
+\item{x}{A StepReg object containing the results of stepwise regression analysis.}
 
-\item{report_name}{report name}
+\item{report_name}{Character. The name of the output report file(s) without extension.}
 
-\item{format}{the format of report, choose one or more from 'html', 'docx', 'rtf', 'pptx'. default is 'html'}
+\item{format}{Character vector. The output format(s) for the report. Choose from:
+\itemize{
+  \item "html" - Web page format (default)
+  \item "docx" - Microsoft Word document
+  \item "pptx" - Microsoft PowerPoint presentation
+  \item "rtf" - Rich Text Format
+}
+Multiple formats can be specified simultaneously.}
+}
+\value{
+Creates report file(s) in the specified format(s) in the current working directory.
+The file name will be \code{report_name.format} (e.g., "myreport.html", "myreport.docx").
 }
 \description{
-report output all tables in StepReg object to a report with format of html, docx, pptx, rtf, and xlsx.
+Creates formatted reports from StepReg objects in various document formats. This function
+generates comprehensive reports containing all tables and results from the stepwise regression
+analysis.
+}
+\details{
+The generated report includes:
+  \itemize{
+    \item Summary of model parameters and selection criteria
+    \item Variable types and classifications
+    \item Step-by-step selection process
+    \item Final selected model and fit statistics
+    \item Model coefficients and significance levels
+  }
 }
 \examples{
 \dontrun{
-data(mtcars)
-mtcars$yes <- mtcars$wt
-formula <- mpg ~ . + 0
-x <- stepwise(formula = formula,
-              data = mtcars,
-              type = "linear",
-              strategy = c("bidirection","subset"),
-              metric = c("AIC", "BIC"))
-report(x,report_name = "report", format = c("html","docx"))
+# Load leukemia remission data
+data(remission)
+
+# Run stepwise logistic regression
+formula <- remiss ~ .
+result <- stepwise(
+  formula = formula,
+  data = remission,
+  type = "logit",
+  strategy = c("forward", "bidirection"),
+  metric = c("AIC", "BIC")
+)
+
+# Generate reports in multiple formats
+report(
+  x = result,
+  report_name = "leukemia_analysis",
+  format = c("html", "docx")
+)
 }
+
+}
+\seealso{
+\code{\link{stepwise}} for creating StepReg objects
+
+\code{\link{plot.StepReg}} for visualization of results
 }

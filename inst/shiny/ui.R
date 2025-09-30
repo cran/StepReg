@@ -3,14 +3,14 @@ source("utils.R")
 js <- "
 $(document).ready(function() {
     $('.navbar .container-fluid .navbar-nav .dropdown .dropdown-menu').prepend(
-        '<li><a href=\"https://cran.r-project.org/web/packages/StepReg/vignettes/StepReg.html\" target=\"_blank\">Tutorial</a></li>',
+        '<li><a href=\"https://cran.r-project.org/web/packages/StepReg/vignettes/StepReg.html\" target=\"_blank\">Vignette</a></li>',
         '<li><a href=\"https://github.com/JunhuiLi1017/StepReg/issues/new\" target=\"_blank\">Report Bug</a></li>');
 });
 "
 
 ui <- tagList(
   useShinyjs(),
-  tags$script(HTML(js)),
+  #tags$script(HTML(js)),
   tags$head(
     tags$style(HTML("
       /* this will affect all the pre elements */
@@ -22,16 +22,178 @@ ui <- tagList(
       .textOutput pre {
         color: black;
         background-color: white;
-      }"))
+      }
+      
+      /* Stepwise regression themed styling */
+      .navbar-default {
+        background-color: #2c3e50;
+        border-color: #2c3e50;
+      }
+      
+      .navbar-default .navbar-brand,
+      .navbar-default .navbar-nav > li > a {
+        color: #ecf0f1;
+        font-size: 14px;
+      }
+      
+      .navbar-default .navbar-brand:hover,
+      .navbar-default .navbar-nav > li > a:hover {
+        color: #3498db;
+      }
+      
+      .navbar-default .navbar-nav > .open > a,
+      .navbar-default .navbar-nav > .open > a:hover {
+        background-color: #34495e;
+        color: #ecf0f1;
+      }
+      
+      /* Sidebar styling */
+      .well {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+      }
+      
+      /* Button styling */
+      .btn-primary {
+        background-color: #3498db;
+        border-color: #3498db;
+        font-size: 12px;
+      }
+      
+      .btn-primary:hover {
+        background-color: #2980b9;
+        border-color: #2980b9;
+      }
+      
+      /* Formula input styling */
+      .form-control:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+      }
+      
+      /* Table styling */
+      .table {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        font-size: 12px;
+      }
+      
+      .table th {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        font-size: 12px;
+      }
+      
+      /* Info box styling */
+      .info-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+      }
+      
+      /* Step indicator styling */
+      .step-indicator {
+        background-color: #e8f4fd;
+        border-left: 4px solid #3498db;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 4px;
+      }
+      
+      .step-indicator h5 {
+        font-size: 13px;
+        margin: 0 0 5px 0;
+        font-weight: bold;
+      }
+      
+      /* Metric selection styling */
+      .metric-selection {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 10px;
+        margin: 5px 0;
+      }
+      
+      /* General font size adjustments */
+      body {
+        font-size: 12px;
+      }
+      
+      h1, h2, h3, h4, h5, h6 {
+        font-size: 14px;
+      }
+      
+      h1 { font-size: 18px; }
+      h2 { font-size: 16px; }
+      h3 { font-size: 15px; }
+      h4 { font-size: 14px; }
+      h5 { font-size: 13px; }
+      h6 { font-size: 12px; }
+      
+      /* Label styling */
+      label {
+        font-size: 12px;
+        font-weight: normal;
+      }
+      
+      /* Select input styling */
+      .selectize-input {
+        font-size: 12px;
+      }
+      
+      .selectize-dropdown {
+        font-size: 12px;
+      }
+      
+      /* Text area styling */
+      textarea {
+        font-size: 12px;
+      }
+      
+      /* Input styling */
+      input {
+        font-size: 12px;
+      }
+      
+      /* Paragraph styling */
+      p {
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      
+      /* List styling */
+      ul, ol {
+        font-size: 12px;
+      }
+      
+      /* About section styling */
+      .about-section h3 {
+        font-size: 16px;
+      }
+      
+      .about-section h4 {
+        font-size: 14px;
+      }
+      
+      .about-section p, .about-section li {
+        font-size: 12px;
+      }
+    "))
   ),
   navbarPage(
     title = tags$a(href = "https://cran.r-project.org/web/packages/StepReg/index.html", "StepReg"),
-    theme = shinythemes::shinytheme("flatly"),
+    theme = shinythemes::shinytheme("cosmo"),
     
     # Define tabs within the navbar
     tabPanel(
       
-      title = "File", 
+      title = "Data", 
   
       # Sidebar layout with input and output definitions ----
       sidebarLayout(
@@ -96,7 +258,7 @@ ui <- tagList(
           uiOutput("colname_in_factor"),
           uiOutput("colname_in_integer"),
           uiOutput("colname_in_character"),
-          actionButton("change_class", "Change class")
+          actionButton("change_class", "Change variable types")
         ),
         
         # Main panel for displaying outputs ----
@@ -162,7 +324,7 @@ ui <- tagList(
       )
     ),
     tabPanel(
-      "Analyze",
+      "Stepwise",
       # p("To perform stepwise regression, you need to first specify the type of 
       #   stepwise procedure, which involves determining the dependent variables by 
       #   defining the scope of both dependent and independent variables. Next, 
@@ -170,10 +332,15 @@ ui <- tagList(
       #   regression process."),
       sidebarLayout(
         sidebarPanel(
+          tags$div(
+            class = "step-indicator",
+            tags$h5("Step 1: Select Regression Type"),
+          ),
+          
           # Select type (linear, logit, cox, poisson, gamma, or negbin)
           selectInput(
             "type",
-            "Regression type:",
+            label = "",
             choices = c("linear",
                         "logit",
                         "cox",
@@ -181,48 +348,29 @@ ui <- tagList(
                         "gamma",
                         "negbin")
           ),
-          # Select dependent variable
-          conditionalPanel(
-            condition = "input.type === 'cox'",
-            selectInput("status", "Status variable:", choices = NULL),
-            selectInput("time", "Time Variable:", choices = NULL)
-          ),
           
-          conditionalPanel(
-            condition = "input.type === 'linear'",
-            selectInput("dependent_linear", "Dependent variable:", choices = NULL, multiple = TRUE)
+          tags$div(
+            class = "step-indicator",
+            tags$h5("Step 2: Enter Formula"),
           ),
+          uiOutput("formula_placeholder_help"),
+          textAreaInput(
+            "formula_input",
+            label = "",
+            placeholder = "Enter your formula here...",
+            rows = 3
+          ),
+          uiOutput("include_input_ui"),
           
-          conditionalPanel(
-            condition = "input.type === 'logit' || input.type === 'poisson' || input.type === 'gamma' || input.type === 'negbin'",
-            selectInput("dependent_glm", "Dependent variable:", choices = NULL)
-          ),
-          
-          selectInput(
-            "independent",
-            "Independent Variables:",
-            choices = NULL,
-            multiple = TRUE
-          ),
-          selectInput(
-            "include", 
-            "Include Variables:",
-            choices = NULL,
-            multiple = TRUE
-          ),
-          conditionalPanel(
-            condition = "input.type !== 'cox'",
-            checkboxInput(
-              "intercept", 
-              "Include Intercept",
-              TRUE
-            )
+          tags$div(
+            class = "step-indicator",
+            tags$h5("Step 3: Choose Strategy")
           ),
           
           # Select method (forward, backward, or both)
           selectInput(
             "strategy", 
-            "Stepwise Strategy:",
+            label = "",
             choices = c("forward", 
                         "backward",
                         "bidirection", 
@@ -230,12 +378,16 @@ ui <- tagList(
             multiple = TRUE
           ),
           
-          # Select metric
+          tags$div(
+            class = "step-indicator",
+            tags$h5("Step 4: Select Metric")
+          ),
+          
           conditionalPanel(
-            condition = "input.type === 'linear' && input.dependent_linear.length == 1",
+            condition = "input.type === 'linear' && !input.formula_input.includes('cbind(')",
             selectInput(
               "metric_univariate_linear", 
-              "Selection Metric:",
+              label = "",
               choices = c("AIC", 
                           "AICc",
                           "BIC", 
@@ -251,10 +403,10 @@ ui <- tagList(
           ),
           
           conditionalPanel(
-            condition = "input.type === 'linear' && input.dependent_linear.length > 1",
+            condition = "input.type === 'linear' && input.formula_input.includes('cbind(')",
             selectInput(
               "metric_multivariate_linear", 
-              "Selection Metric:",
+              label = "",
               choices = c("AIC", 
                           "AICc",
                           "HQ",
@@ -267,7 +419,7 @@ ui <- tagList(
             condition = "input.type !== 'linear'",
             selectInput(
               "metric_glm_cox", 
-              "Selection Metric:",
+              label = "",
               choices = c("AIC", 
                           "AICc",
                           "HQ",
@@ -281,7 +433,7 @@ ui <- tagList(
           
           # Display sliderInput for significance level only when SL is selected
           conditionalPanel(
-            condition = "input.type === 'linear' && input.metric_multivariate_linear.indexOf('SL') != -1",
+            condition = "input.type === 'linear' && input.formula_input.includes('cbind(') && input.metric_multivariate_linear.indexOf('SL') != -1",
             selectInput(
               "Approx_F", 
               label = "Approx F test statistic:",
@@ -318,7 +470,7 @@ ui <- tagList(
           
           # Display sliderInput for significance level only when SL is selected
           conditionalPanel(
-            condition = "input.metric_univariate_linear.indexOf('SL') != -1 && (input.strategy.indexOf('forward') != -1 || input.strategy.indexOf('bidirection') != -1) && input.type === 'linear'",
+            condition = "input.type === 'linear' && !input.formula_input.includes('cbind(') && input.metric_univariate_linear.indexOf('SL') != -1 && (input.strategy.indexOf('forward') != -1 || input.strategy.indexOf('bidirection') != -1)",
             sliderInput(
               "sle", 
               label = tags$span(
@@ -344,7 +496,7 @@ ui <- tagList(
           ),
           
           conditionalPanel(
-            condition = "input.metric_univariate_linear.indexOf('SL') != -1 && (input.strategy.indexOf('backward') != -1 || input.strategy.indexOf('bidirection') != -1) && input.type === 'linear'",
+            condition = "input.type === 'linear' && !input.formula_input.includes('cbind(') && input.metric_univariate_linear.indexOf('SL') != -1 && (input.strategy.indexOf('backward') != -1 || input.strategy.indexOf('bidirection') != -1)",
             sliderInput(
               "sls", 
               label = tags$span(
@@ -370,7 +522,7 @@ ui <- tagList(
           ),
           
           conditionalPanel(
-            condition = "input.metric_multivariate_linear.indexOf('SL') != -1 && (input.strategy.indexOf('forward') != -1 || input.strategy.indexOf('bidirection') != -1) && input.type === 'linear'",
+            condition = "input.type === 'linear' && input.formula_input.includes('cbind(') && input.metric_multivariate_linear.indexOf('SL') != -1 && (input.strategy.indexOf('forward') != -1 || input.strategy.indexOf('bidirection') != -1)",
             sliderInput(
               "sle", 
               label = tags$span(
@@ -396,7 +548,7 @@ ui <- tagList(
           ),
           
           conditionalPanel(
-            condition = "input.metric_multivariate_linear.indexOf('SL') != -1 && (input.strategy.indexOf('backward') != -1 || input.strategy.indexOf('bidirection') != -1) && input.type === 'linear'",
+            condition = "input.type === 'linear' && input.formula_input.includes('cbind(') && input.metric_multivariate_linear.indexOf('SL') != -1 && (input.strategy.indexOf('backward') != -1 || input.strategy.indexOf('bidirection') != -1)",
             sliderInput(
               "sls", 
               label = tags$span(
@@ -469,6 +621,54 @@ ui <- tagList(
               max = 1, 
               value = 0.05)
           ),
+          
+          tags$div(
+            class = "step-indicator",
+            tags$h5("Step 5: Data Splitting and Randomized Forward Selection")
+          ),
+          sliderInput(
+            "test_ratio",
+            label = tags$span(
+              "Test ratio (holdout)",
+              tags$i(
+                class = "glyphicon glyphicon-question-sign centered-icon",
+                style = "color:#0072B2;",
+                title = paste(c(
+                  "Proportion of data reserved for testing (0 ≤ r < 1).",
+                  "Rows are randomly split into train/test using a fixed seed for reproducibility.",
+                  "Set to 0 to disable holdout validation."), collapse = "\n")
+              )
+            ),
+            min = 0,
+            max = 0.99,
+            value = 0,
+            step = 0.05
+          ),
+          conditionalPanel(
+            condition = "input.strategy.indexOf('forward') != -1",
+            sliderInput(
+              "feature_ratio",
+              label = tags$span(
+                "Feature ratio (forward only)",
+                tags$i(
+                  class = "glyphicon glyphicon-question-sign centered-icon",
+                  style = "color:#0072B2;",
+                  title = paste(c(
+                    "Proportion of candidate features sampled uniformly at random",
+                    "during each forward add step (0 < r ≤ 1). r = 1 disables sampling."), collapse = "\n")
+                )
+              ),
+              min = 0.1,
+              max = 1,
+              value = 1,
+              step = 0.1
+            )
+          ),
+          
+          tags$div(
+            class = "step-indicator",
+            tags$h5("Step 6: Run Analysis")
+          ),
           tags$div(
             style = "display: flex; justify-content: space-between;",
             actionButton("run_analysis", 
@@ -540,7 +740,7 @@ ui <- tagList(
             ),
             
             tabPanel(
-              "Model Vote",
+              "Model Voting",
               conditionalPanel(
                 condition = "input.run_analysis",
                 htmlOutput("modelVoteText")
@@ -552,12 +752,77 @@ ui <- tagList(
       )
     ),
     navbarMenu(
-      title = "Help",
+      title = "About",
+      tabPanel(
+        "StepReg Package",
+        tags$div(
+          class = "about-section",
+          style = "padding: 20px;",
+          tags$h3("StepReg: Stepwise Regression Analysis"),
+          tags$p(
+            "Stepwise regression is a statistical technique used for model selection. This package streamlines stepwise regression analysis by supporting multiple regression types, incorporating popular selection strategies, and offering essential metrics. It enables users to apply multiple selection strategies and metrics in a single function call, visualize variable selection processes, and export results in various formats. StepReg supports advanced features including strata variables for Cox regression and continuous-nested-within-class effects for complex modeling scenarios. However, StepReg should not be used for statistical inference unless the variable selection process is explicitly accounted for, as it can compromise the validity of the results. This limitation does not apply when StepReg is used for prediction purposes. We validated StepReg's accuracy using public datasets within the SAS software environment."
+          ),
+          tags$h4("Key Features:"),
+          tags$ul(
+            tags$li("Multiple stepwise regression types: linear, logistic, Cox proportional hazards, Poisson, and Gamma regression"),
+            tags$li("Multiple stepwise strategies: forward, backward, bidirectional, and subset selection"),
+            tags$li("Various selection criteria: AIC, AICc, BIC, CP, HQ, SL, SBC, IC(1), IC(3/2), adjRsq"),
+            tags$li("Multivariate multiple regression for linear regression"),
+            tags$li("Cox regression with strata() function"),
+            tags$li("Continuous-nested-within-class effects"),
+            tags$li("Comprehensive visualization of selection process"),
+            tags$li("Multiple report output formats: html, docx, pptx, and rtf"),
+            tags$li("Model voting across different strategies and metrics")
+          )
+        )
+      ),
       tabPanel(
         "Citation",
-        tags$p("If you think 'StepReg' R package is helpful to your research, please cite:"),
-        tags$ul(
-          tags$li("Junhui Li (2024). StepReg: Stepwise Regression Analysis. R package version 1.5.6, https://CRAN.R-project.org/package=StepReg")
+        tags$div(
+          class = "about-section",
+          style = "padding: 20px;",
+          tags$h3("Citation"),
+          tags$p("If you find StepReg useful in your research, please cite:"),
+          tags$div(
+            style = "background-color: #f8f9fa; padding: 15px; border-left: 4px solid #007bff; margin: 10px 0;",
+            tags$p(
+              paste0("Junhui Li et al. (2025). StepReg: Stepwise Regression Analysis. R package version ", packageVersion("StepReg"), ", "),
+              tags$a(href = "https://CRAN.R-project.org/package=StepReg", "https://CRAN.R-project.org/package=StepReg")
+            )
+          ),
+          tags$h4("BibTeX Entry:"),
+          tags$pre(
+            style = "background-color: #f8f9fa; padding: 15px; border-radius: 5px; font-size: 11px;",
+            paste0("@Manual{StepReg2025,
+  title = {StepReg: Stepwise Regression Analysis},
+  author = {Junhui Li, Kai Hu, Xiaohuan Lu, Sushmita N Nayak, Cesar Bautista Sotelo, Michael A Lodato, Wenxin Liu, Lihua Julie Zhu},
+  year = {2025},
+  note = {R package version ", packageVersion("StepReg"), "},
+  url = {https://CRAN.R-project.org/package=StepReg},
+}")
+          )
+        )
+      ),
+      tabPanel(
+        "Contact & Support",
+        tags$div(
+          class = "about-section",
+          style = "padding: 20px;",
+          tags$h3("Get Help and Support"),
+          tags$p("Need help with StepReg? Here are some resources:"),
+          tags$ul(
+            tags$li(tags$a(href = "https://cran.r-project.org/web/packages/StepReg/vignettes/StepReg.html", "Package Vignette"), " - Comprehensive tutorial and examples"),
+            tags$li(tags$a(href = "https://github.com/JunhuiLi1017/StepReg/issues/new", "Report Issues"), " - Report bugs or request features"),
+            tags$li(tags$a(href = "https://cran.r-project.org/web/packages/StepReg/index.html", "CRAN Page"), " - Official package page"),
+            tags$li(tags$a(href = "https://github.com/JunhuiLi1017/StepReg", "GitHub Repository"), " - Source code and development")
+          ),
+          tags$h4("Package Information:"),
+          tags$ul(
+            tags$li(paste("Version:", packageVersion("StepReg"))),
+            tags$li("License: MIT"),
+            tags$li("Maintainer: Junhui Li (junhui.li11@umassmed.edu)"),
+            tags$li("Dependencies: R (≥ 4.0.0)")
+          )
         )
       )
     )

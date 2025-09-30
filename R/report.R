@@ -1,44 +1,74 @@
-#' report from a StepReg object
+#' Generate Stepwise Regression Report
 #'
-#' report output all tables in StepReg object to a report with format of html, docx, pptx, rtf, and xlsx.
+#' Creates formatted reports from StepReg objects in various document formats. This function
+#' generates comprehensive reports containing all tables and results from the stepwise regression
+#' analysis.
 #'
-#' @param x StepReg object
+#' @param x A StepReg object containing the results of stepwise regression analysis.
 #' 
-#' @param report_name report name
+#' @param report_name Character. The name of the output report file(s) without extension.
 #' 
-#' @param format the format of report, choose one or more from 'html', 'docx', 'rtf', 'pptx'. default is 'html'
-#' 
-# importFrom xlsx createWorkbook createSheet CellStyle Font Border addDataFrame saveWorkbook
-#
+#' @param format Character vector. The output format(s) for the report. Choose from:
+#'   \itemize{
+#'     \item "html" - Web page format (default)
+#'     \item "docx" - Microsoft Word document
+#'     \item "pptx" - Microsoft PowerPoint presentation
+#'     \item "rtf" - Rich Text Format
+#'   }
+#'   Multiple formats can be specified simultaneously.
+#'
+#' @details The generated report includes:
+#'   \itemize{
+#'     \item Summary of model parameters and selection criteria
+#'     \item Variable types and classifications
+#'     \item Step-by-step selection process
+#'     \item Final selected model and fit statistics
+#'     \item Model coefficients and significance levels
+#'   }
+#'
+#' @return Creates report file(s) in the specified format(s) in the current working directory.
+#' The file name will be \code{report_name.format} (e.g., "myreport.html", "myreport.docx").
+#'
 #' @importFrom flextable save_as_html save_as_pptx save_as_rtf save_as_docx autofit flextable align
-#' 
 #' @importFrom dplyr %>% mutate_if
-#' 
 #' @importFrom stringr str_split
 #' 
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' data(mtcars)
-#' mtcars$yes <- mtcars$wt
-#' formula <- mpg ~ . + 0
-#' x <- stepwise(formula = formula,
-#'               data = mtcars,
-#'               type = "linear",
-#'               strategy = c("bidirection","subset"),
-#'               metric = c("AIC", "BIC"))
-#' report(x,report_name = "report", format = c("html","docx"))
+#' # Load leukemia remission data
+#' data(remission)
+#' 
+#' # Run stepwise logistic regression
+#' formula <- remiss ~ .
+#' result <- stepwise(
+#'   formula = formula,
+#'   data = remission,
+#'   type = "logit",
+#'   strategy = c("forward", "bidirection"),
+#'   metric = c("AIC", "BIC")
+#' )
+#' 
+#' # Generate reports in multiple formats
+#' report(
+#'   x = result,
+#'   report_name = "leukemia_analysis",
+#'   format = c("html", "docx")
+#' )
 #' }
+#'
+#' @seealso \code{\link{stepwise}} for creating StepReg objects
+#' @seealso \code{\link{plot.StepReg}} for visualization of results
 
 report <- function(x, report_name, format = c('html', 'docx', 'rtf', 'pptx')) {
   format <- match.arg(format, several.ok = TRUE)
   results <- list()
-  for (j in c("arguments","variables")) {
-    if(j == "arguments") {
+  for (j in c("argument","variable")) {
+    if(j == "argument") {
       j_name <- "Parameters and Values"
-    } else if(j == "variables"){
-      j_name <- "Variables and Class"
+    } else if(j == "variable"){
+      j_name <- "variable and Class"
     }
     results[j_name] <- list(process_table(x[[j]]))
   }
@@ -50,7 +80,7 @@ report <- function(x, report_name, format = c('html', 'docx', 'rtf', 'pptx')) {
       results[paste("Selection Overview: ",paste(i,j,sep="-"))] <- list(process_table(overview_sub_list[[j]]))
     }
   }
-  results["Model Vote"] <- list(process_table(vote(x)))
+  results["Model Performance"] <- list(process_table(performance(x)))
   names(results) <- paste("Table", paste(1:length(results),names(results)),sep="")
   
   if(!is.null(report_name)) {
