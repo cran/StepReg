@@ -9,9 +9,9 @@ test_that("test_stepwise.R failed", {
   ## When you run devtools::check(), the package is installed in a temporary directory, and the working directory may not be set to the package directory itself. The system.file() function in R looks for files relative to the package installation directory, and if the working directory is not set correctly during the check process, it may lead to issues.
   res_v1_5_0 <- readRDS(system.file("extdata","res_v1_5_0.rds", package = "StepReg"))
   for (mod in names(res_v1_5_0)){
-    type <- unlist(stringr::str_split(mod,"_"))[1]
+    type <- unlist(strsplit(mod,"_"))[1]
     if(mod=="cox_model1"){
-      lung <- survival::lung %>% na.omit()
+      lung <- na.omit(survival::lung)
       mydata <- lung
     }else if(mod %in% c("linear_model1","linear_model2")){
       data(mtcars)

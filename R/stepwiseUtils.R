@@ -940,8 +940,13 @@ getTable3ProcessSummary <- function(data_train, data_test, type, strategy, metri
 				x_final_model <- c(intercept, include, out_final_stepwise$x_in_model)
 			}
 			#overview_table[,met] <- overview_table[,met] %>% as.numeric() %>% round(num_digits) %>% as.character()
-			overview_table[,met] <- overview_table[,met] %>% as.numeric()
-			overview[[stra]][[met]] <- overview_table %>% mutate_if(is.numeric, round, num_digits) %>% mutate_if(is.numeric,as.character) # to keep digits as we expected, convert numeric to character for html output.
+			overview_table[,met] <- as.numeric(overview_table[,met])
+			# Apply round to numeric columns, then convert to character
+			temp_table <- overview_table
+			numeric_cols <- sapply(temp_table, is.numeric)
+			temp_table[numeric_cols] <- lapply(temp_table[numeric_cols], round, num_digits)
+			temp_table[numeric_cols] <- lapply(temp_table[numeric_cols], as.character)
+			overview[[stra]][[met]] <- temp_table # to keep digits as we expected, convert numeric to character for html output.
 			
 			if(!(stra == "subset" & met == "SL")) {
 				model_train <- getModel(data_train, type, intercept, c(x_final_model[!x_final_model %in% intercept]), y_name, weight, method = test_method)
@@ -981,17 +986,17 @@ cox_performance <- function(data_train, data_test, strategy, metric, model_train
 		y_vars <- sub("Surv\\((.*)\\)", "\\1", y_name)
 		time_var <- trimws(strsplit(y_vars, ",")[[1]][1])
 		status_var <- trimws(strsplit(y_vars, ",")[[1]][2])
-		surv_obj <- Surv(data_test[[time_var]], data_test[[status_var]])
-		lp_test <- predict(model_train, newdata = data_test, type = "lp", weights=weight)
+		surv_obj <- Surv(data_test[,time_var], data_test[,status_var])
+		lp_test <- predict(model_train, newdata = data_test, weights=weight)
 		cindex_test <- concordance(surv_obj ~ lp_test, data = data_test)$concordance
 		
 		# 3. Time-Dependent AUC
 		data <- rbind(data_train, data_test)
-		times <- seq(min(data[[time_var]]), max(data[[time_var]]), by = 100)
+		times <- seq(min(data[,time_var]), max(data[,time_var]), by = round((max(data[,time_var]) - min(data[,time_var]))/100))
 		lp_train <- predict(model_train, weights=weight)
 		lp_test <- predict(model_train, newdata=data_test, weights=weight)
-		Surv_rsp_train <- Surv(data_train[[time_var]], data_train[[status_var]])
-		Surv_rsp_test <- Surv(data_test[[time_var]], data_test[[status_var]])
+		Surv_rsp_train <- Surv(data_train[,time_var], data_train[,status_var])
+		Surv_rsp_test <- Surv(data_test[,time_var], data_test[,status_var])
 		
 		auc_uno <- AUC.uno(Surv_rsp_train, Surv_rsp_test, lp_test, times)
 		auc_sh <- AUC.sh(Surv_rsp_train, Surv_rsp_test, lp_train, lp_test, times)
@@ -1016,7 +1021,7 @@ cox_performance <- function(data_train, data_test, strategy, metric, model_train
 								   cindex_train, test_results$cindex_test, 
 								   test_results$auc_hc, test_results$auc_uno, test_results$auc_sh)
 	colnames(model_performance) <- c("model", "strategy:metric", "c-index_train", "c-index_test", "auc_hc", "auc_uno", "auc_sh")
-	model_performance <- model_performance[,c(1:5)]
+	model_performance <- model_performance[,c(1:4,7)]
 	return(model_performance)
 }
 
@@ -1103,9 +1108,9 @@ lm_performance <- function(data_train, data_test, type, strategy, metric, model_
 	} else {
 	  colnames(model_performance) <- c("model", "strategy:metric", "r2_train", "r2_test", "mse_train", "mse_test", "mae_train", "mae_test")
 	}
-	if(type != "linear") {
+	#if(type != "linear") {
 	  model_performance <- model_performance[,-c(3:4)]
-	}
+	#}
 	return(model_performance)
 }
 

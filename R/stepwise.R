@@ -212,11 +212,9 @@
 #'
 #' @importFrom survival coxph concordance Surv
 #' @importFrom survAUC AUC.uno AUC.sh AUC.hc
-#' @importFrom stringr str_replace
 #' @importFrom utils combn
 #' @importFrom pROC auc roc
-#' @importFrom dplyr %>% mutate_if mutate
-#' @importFrom stats anova coef glm lm logLik pf reformulate sigma terms deviance df.residual formula model.frame predict
+#' @importFrom stats anova coef glm lm logLik pf reformulate sigma terms deviance df.residual formula model.frame predict cor
 #' @importFrom MASS glm.nb
 #'
 #' @export

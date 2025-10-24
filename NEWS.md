@@ -1,5 +1,29 @@
 # StepReg NEWS
 
+## Version 1.6.1 (2025-01-27)
+
+### Major Changes
+
+- **BREAKING CHANGE**: Shiny application components moved to separate StepRegShiny package
+- **REMOVED**: `StepRegShinyApp()` function and all Shiny-related dependencies
+- **REMOVED**: `inst/shiny/` directory and all Shiny application files
+- **UPDATED**: Package description to reference companion StepRegShiny package
+- **CLEANED**: Removed Shiny-related imports from NAMESPACE and DESCRIPTION
+
+### Migration Guide
+
+Users who were using the Shiny application should now install the separate StepRegShiny package:
+
+```r
+# Install the new Shiny package
+install.packages("StepRegShiny")
+
+# Use the Shiny application
+StepRegShiny::StepRegShinyApp()
+```
+
+The core StepReg functionality remains unchanged. Only the Shiny interface has been moved to a separate package for better modularity and independent development.
+
 ## Version 1.6.0 (2025-09-29)
 
 ### New Features

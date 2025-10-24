@@ -730,13 +730,13 @@ performance(res7)
 
 We have developed an interactive Shiny application to simplify model selection tasks for non-programmers. You can access the app through the following URL:
 
-https://junhuili1017.shinyapps.io/StepReg/
+https://junhuili1017.shinyapps.io/StepRegShiny/
 
 You can also access the Shiny app directly from your local machine with the following code:
 
 ```{r, eval = FALSE}
-library(StepReg)
-StepRegShinyApp()
+library(StepRegShiny)
+StepRegGUI()
 ```
 
 Here is the user interface.

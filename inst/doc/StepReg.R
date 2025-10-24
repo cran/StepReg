@@ -382,8 +382,8 @@ summary(res7$forward$SL)
 performance(res7)
 
 ## ----eval = FALSE-------------------------------------------------------------
-# library(StepReg)
-# StepRegShinyApp()
+# library(StepRegShiny)
+# StepRegGUI()
 
 ## ----sessionInfo, echo = FALSE------------------------------------------------
 sessionInfo()

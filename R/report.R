@@ -30,8 +30,6 @@
 #' The file name will be \code{report_name.format} (e.g., "myreport.html", "myreport.docx").
 #'
 #' @importFrom flextable save_as_html save_as_pptx save_as_rtf save_as_docx autofit flextable align
-#' @importFrom dplyr %>% mutate_if
-#' @importFrom stringr str_split
 #' 
 #' @export
 #'
@@ -123,9 +121,5 @@ report <- function(x, report_name, format = c('html', 'docx', 'rtf', 'pptx')) {
 }
 
 process_table <- function(data) {
-  data %>% 
-    as.data.frame() %>%
-    flextable() %>%
-    autofit() %>%
-    align(align = "center", part = "all")
+  align(autofit(flextable(as.data.frame(data))), align = "center", part = "all")
 }
