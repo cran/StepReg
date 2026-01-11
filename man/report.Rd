@@ -38,6 +38,10 @@ The generated report includes:
     \item Final selected model and fit statistics
     \item Model coefficients and significance levels
   }
+  
+  \strong{Note:} Exporting reports requires pandoc to be installed on your system. 
+  Pandoc is typically included with RStudio. If not available, install it from 
+  https://pandoc.org/installing.html or via your system package manager.
 }
 \examples{
 \dontrun{

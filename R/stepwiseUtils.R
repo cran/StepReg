@@ -38,6 +38,20 @@ getYname <- function(formula, data) {
 	return(y_name)
 }
 
+dummyNameList <- function(x_name, data){
+  factor_vars <- names(which(sapply(data, is.factor)))
+  overlap_var_list <- sapply(factor_vars, function(i) {
+    paste0(i, levels(data[[i]]))
+  })
+  overlap_check <- sapply(overlap_var_list, function(i){
+    if(any(i %in% x_name)){
+      org_x_name <- x_name[x_name %in% i]
+      stop(paste0("there is a conflict for variable name: ",org_x_name," and dummy name: ", i, "\n"))
+    }
+  })
+  return(overlap_var_list)
+}
+
 getIntercept <- function(formula, data, type) {
 	term_form <- terms(formula, data = data)
 	x_name <- attr(term_form, "term.labels")
@@ -315,7 +329,7 @@ getFinalSubSet <- function(data, type, metric, x_notin_model, initial_process_ta
 	return(process_table)
 }
 
-getXNameSelected <- function(process_table, metric) {
+getSelectedXName <- function(process_table, metric) {
 	if (metric %in% c("SL", "adjRsq")) {
 		# "Rsq" and "adjRsq" are for type "linear"; "SL" is for type "logit" and "cox"
 		x_name_selected <- unlist(strsplit(process_table[which.max(as.numeric(process_table[, metric])), 3], " "))
@@ -347,25 +361,23 @@ formatTable <- function(tbl, tbl_name = "Test") {
 	return(tbl_list)
 }
 
-getTable1SummaryOfParameters <- function(formula, data, type, x_name, y_name, merged_multico_x, 
-																				 merged_include, strategy, metric, sle, sls, 
-																				 test_method, tolerance, intercept, test_ratio, feature_ratio, seed) {
+getTable1SummaryOfParameters <- function(formula, data, type, x_name, y_name, merged_multico_x,merged_include, strategy, metric, sle, sls, test_method, tolerance, intercept, test_ratio, feature_ratio, seed) {
 	# generate: table1: Summary of Parameters
 	table_1_summary_of_parameters <- data.frame(
-		Parameter = c("initial formula",
-									"regression type",
-									"selection strategy", 
-									"stepwise metric", 
-									"significance level for entry (sle)", 
-									"significance level for stay (sls)",
-									"included variable",
-									"test method", 
-									"tolerance of multicollinearity", 
-									"multicollinearity variable", 
-									"intercept",
-									"test ratio",
-									"feature ratio",
-									"seed"),
+		Parameter = c(  "initial formula",
+						"regression type",
+						"selection strategy", 
+						"stepwise metric", 
+						"significance level for entry (sle)", 
+						"significance level for stay (sls)",
+						"included variable",
+						"test method", 
+						"tolerance of multicollinearity", 
+						"multicollinearity variable", 
+						"intercept",
+						"test ratio",
+						"feature ratio",
+						"seed"),
 		Value = c(paste0(deparse(formula), collapse = ""),
 							type,
 							paste0(strategy, collapse=" & "), 
@@ -626,7 +638,7 @@ getInitialStepwise <- function(data, type, strategy, metric, intercept, include,
 	return(list("add_or_remove" = add_or_remove, "x_in_model" = x_in_model, "x_notin_model" = x_notin_model, "process_table" = process_table))
 }
 
-getCandStepModel <- function(add_or_remove, data, type, metric, weight, y_name, x_in_model, x_notin_model, intercept, include, test_method, sigma_value, feature_ratio) {
+getCandStepModel <- function(add_or_remove, data, type, metric, weight, y_name, x_in_model, x_notin_model, intercept, include, test_method, sigma_value, feature_ratio, dummy_name_list) {
 	fit_x_in_model <- getModel(data = data, type = type, intercept = intercept, x_name = c(include, x_in_model), y_name = y_name, weight = weight, method = test_method)
 	BREAK <- FALSE
 	if(add_or_remove == "add") {
@@ -678,6 +690,15 @@ getCandStepModel <- function(add_or_remove, data, type, metric, weight, y_name, 
 		if(metric == "adjRsq" | (metric == "SL" & add_or_remove == "remove")) {
 			pic <- max(pic_set)
 			minmax_var <- names(which.max(pic_set))
+
+			if(length(dummy_name_list) > 0) {
+				for(i in 1:length(dummy_name_list)) {
+					if(minmax_var %in% dummy_name_list[[i]]) {
+						minmax_var <- names(dummy_name_list)[i]
+					}
+				}
+			}
+
 			best_candidate_model <- x_fit_list[[minmax_var]]
 		} else {
 			pic <- min(pic_set)
@@ -774,10 +795,10 @@ updateXinModel <- function(add_or_remove, indicator, best_candidate_model, type,
 	return(list("BREAK" = BREAK, "process_table" = process_table, "x_in_model" = x_in_model, "x_notin_model" = x_notin_model, "pic_set" = pic_set))
 }
 
-getFinalStepModel <- function(add_or_remove, data, type, strategy, metric, sle, sls, weight, y_name, x_in_model, x_notin_model, intercept, include, process_table, test_method, sigma_value, feature_ratio) {
+getFinalStepModel <- function(add_or_remove, data, type, strategy, metric, sle, sls, weight, y_name, x_in_model, x_notin_model, intercept, include, process_table, test_method, sigma_value, feature_ratio, dummy_name_list) {
 	pic_df <- NULL
 	while(TRUE) {
-		out_cand_stepwise <- getCandStepModel(add_or_remove, data, type, metric, weight = weight, y_name, x_in_model, x_notin_model, intercept, include, test_method, sigma_value, feature_ratio)
+		out_cand_stepwise <- getCandStepModel(add_or_remove, data, type, metric, weight = weight, y_name, x_in_model, x_notin_model, intercept, include, test_method, sigma_value, feature_ratio, dummy_name_list)
 		BREAK <- out_cand_stepwise$BREAK
 		minmax_var <- out_cand_stepwise$minmax_var
 		if(BREAK == TRUE) {
@@ -850,7 +871,7 @@ getFinalStepModel <- function(add_or_remove, data, type, strategy, metric, sle, 
 	return(list("process_table" = process_table, "x_in_model" = x_in_model, "x_notin_model" = x_notin_model, "pic_df" = pic_df))
 }
 
-getStepwiseWrapper <- function(data, type, strategy, metric, sle, sls, weight, x_name, y_name, intercept, include, test_method, sigma_value, feature_ratio) {
+getStepwiseWrapper <- function(data, type, strategy, metric, sle, sls, weight, x_name, y_name, intercept, include, test_method, sigma_value, feature_ratio, dummy_name_list) {
 	#fit_full <- getModel(data = data, type = type, intercept = intercept, x_name = c(include, x_name), y_name = y_name, weight = weight, method = test_method)
 	out_init_stepwise <- getInitialStepwise(data, type = type, strategy, metric, intercept, include, x_name, y_name, weight = weight, test_method = test_method, sigma_value)
 	add_or_remove <- out_init_stepwise$add_or_remove
@@ -861,7 +882,7 @@ getStepwiseWrapper <- function(data, type, strategy, metric, sle, sls, weight, x
 	pic_df_init <- data.frame(strategy, metric, process_table[,c(1:2,6)])
 	colnames(pic_df_init)[c(3:5)] <- c("step","variable","value")
 	## get final stepwise model
-	out_final_stepwise <- getFinalStepModel(add_or_remove, data, type = type, strategy, metric, sle, sls, weight = weight, y_name, x_in_model, x_notin_model, intercept, include, process_table, test_method, sigma_value, feature_ratio)
+	out_final_stepwise <- getFinalStepModel(add_or_remove, data, type = type, strategy, metric, sle, sls, weight = weight, y_name, x_in_model, x_notin_model, intercept, include, process_table, test_method, sigma_value, feature_ratio, dummy_name_list)
 	
 	if(type == "cox") {
 		if(strategy == "backward"){
@@ -905,11 +926,36 @@ getStepwiseWrapper <- function(data, type, strategy, metric, sle, sls, weight, x
 	pic_df$step <- as.numeric(pic_df$step)
 	pic_df$Selection <- Selection
 
-	out_final_stepwise$pic_df <- pic_df
+	df_filtered <- do.call(rbind, lapply(split(pic_df, pic_df$step), function(g) {
+	rbind(	
+		# Keep max value for each unique variable in "Remove" if there are any "Remove" rows
+		if (any(g$Selection == "Remove")) {
+			# For each unique variable, keep the row with max value
+			do.call(rbind, lapply(split(g, g$variable), function(sub_g) {
+				sub_g[sub_g$value == max(sub_g$value), ]
+			}))
+		} else {
+			g[0, ]  # empty data frame if no "Remove"
+		},
+		
+		# Keep min value for each unique variable in "Entry" if there are any "Entry" rows
+		if (any(g$Selection == "Entry")) {
+			# For each unique variable, keep the row with min value
+			do.call(rbind, lapply(split(g, g$variable), function(sub_g) {
+				sub_g[sub_g$value == min(sub_g$value), ]
+			}))
+		} else {
+			g[0, ]  # empty data frame if no "Entry"
+		}
+	)
+	}))
+	rownames(df_filtered) <- NULL
+
+	out_final_stepwise$pic_df <- df_filtered
 	return(out_final_stepwise)
 }
 
-getTable3ProcessSummary <- function(data_train, data_test, type, strategy, metric, sle, sls, weight, x_name, y_name, intercept, include, best_n, test_method, sigma_value, num_digits, feature_ratio) {
+getTable3ProcessSummary <- function(data_train, data_test, type, strategy, metric, sle, sls, weight, x_name, y_name, intercept, include, best_n, test_method, sigma_value, num_digits, feature_ratio, dummy_name_list) {
 	overview_table_metric <- list()
 	x_final_model_metric <- list()
 	detail <- list()
@@ -921,10 +967,10 @@ getTable3ProcessSummary <- function(data_train, data_test, type, strategy, metri
 			if(stra == "subset") {
 				overview_table <- getSubsetWrapper(data_train, type = type, met, x_name, y_name, intercept, include, weight = weight, best_n, test_method, sigma_value)
 				if(met != "SL"){
-					x_final_model <- getXNameSelected(overview_table,met)
+					x_final_model <- getSelectedXName(overview_table,met)
 				}
 			} else {
-				out_final_stepwise <- getStepwiseWrapper(data_train, type = type, stra, met, sle, sls, weight = weight, x_name, y_name, intercept, include, test_method, sigma_value, feature_ratio)
+				out_final_stepwise <- getStepwiseWrapper(data_train, type = type, stra, met, sle, sls, weight = weight, x_name, y_name, intercept, include, test_method, sigma_value, feature_ratio, dummy_name_list)
 				detail[[stra]][[met]] <- out_final_stepwise$pic_df
 				overview_table <- out_final_stepwise$process_table
 				remove_col <- NULL
@@ -949,8 +995,11 @@ getTable3ProcessSummary <- function(data_train, data_test, type, strategy, metri
 			overview[[stra]][[met]] <- temp_table # to keep digits as we expected, convert numeric to character for html output.
 			
 			if(!(stra == "subset" & met == "SL")) {
-				model_train <- getModel(data_train, type, intercept, c(x_final_model[!x_final_model %in% intercept]), y_name, weight, method = test_method)
-				x_final_model_metric[[stra]][[met]] <- x_final_model
+				if(type == 'cox') {
+					x_final_model <- x_final_model[!x_final_model %in% c("1", "0", "-1")]
+				}
+				model_train <- getModel(data_train, type, intercept = NULL, x_name = x_final_model, y_name = y_name, weight = weight, method = test_method)
+				x_final_model_metric[[stra]][[met]] <- x_final_model	
 				if(type == "cox") {
 				  model_performance <- cox_performance(data_train, data_test, stra, met, model_train, y_name, weight)
 				} else if(type == "linear" | type == "gamma" |type == "negbin" | type == "poisson"){
@@ -971,6 +1020,9 @@ getTable4ModelCall <- function(type, intercept, include, x_final_model_metric, y
 		x_final_model_strategy <- x_final_model_metric[[stra]]
 		for(met in names(x_final_model_strategy)) {
 			x_in_model <- x_final_model_strategy[[met]]
+			if(type == 'cox') {
+				x_in_model <- x_in_model[!x_in_model %in% c("1", "0", "-1")]
+			}
 			table4_model_call[[stra]][[met]] <- getModel(data, type, intercept = NULL, x_name = c(x_in_model), y_name, weight = weight,	method = test_method)
 		}
 	}
@@ -1051,30 +1103,31 @@ lm_performance <- function(data_train, data_test, type, strategy, metric, model_
 		  rmse_test <- sqrt(mse_test)
 		  mae_test <- colMeans(abs(actual_test - pred_test))
 		  r2_test <- diag(cor(actual_test, pred_test)^2)
-		  # n_test <- nrow(data_test)
-		  # coef_df <- coef(model_train)
-		  # p_test <- sum(!rownames(coef_df) %in% "(Intercept)")
-		  # adj_r2_test <- 1 - ((1 - r2_test) * (n_test - 1) / (n_test - p_test - 1))
+		  n_test <- nrow(data_test)
+		  coef_df <- coef(model_train)
+		  p_test <- sum(!rownames(coef_df) %in% "(Intercept)")
+		  adj_r2_test <- 1 - ((1 - r2_test) * (n_test - 1) / (n_test - p_test - 1))
 		} else {
 		  mse_test <- mean((actual_test - pred_test)^2)
 		  rmse_test <- sqrt(mse_test)
 		  mae_test <- mean(abs(actual_test - pred_test))
 		  if(type == "linear") {
 		    r2_test <- cor(actual_test, pred_test)^2
-		    # n_test <- nrow(data_test)
-		    # coef_df <- coef(summary(model_train))
-		    # p_test <- sum(!rownames(coef_df) %in% "(Intercept)")
-		    # adj_r2_test <- 1 - ((1 - r2_test) * (n_test - 1) / (n_test - p_test - 1))
+		    n_test <- nrow(data_test)
+		    coef_df <- coef(summary(model_train))
+		    p_test <- sum(!rownames(coef_df) %in% "(Intercept)")
+		    adj_r2_test <- 1 - ((1 - r2_test) * (n_test - 1) / (n_test - p_test - 1))
 		  } else {
 		    r2_test <- NA
+			adj_r2_test <- NA
 		  }
 		}
 		list(pred_test = pred_test, actual_test = actual_test, mse_test = mse_test, 
-			 rmse_test = rmse_test, mae_test = mae_test, r2_test = r2_test)
+			 rmse_test = rmse_test, mae_test = mae_test, r2_test = r2_test, adj_r2_test = adj_r2_test)
 	}, error = function(e) {
 		# Return NA values if test data operations fail
 		list(pred_test = NA, actual_test = NA, mse_test = NA, 
-			 rmse_test = NA, mae_test = NA, r2_test = NA)
+			 rmse_test = NA, mae_test = NA, r2_test = NA, adj_r2_test = NA)
 	})
   
 	if(is.matrix(pred_train)) {
@@ -1082,35 +1135,36 @@ lm_performance <- function(data_train, data_test, type, strategy, metric, model_
 	  rmse_train <- sqrt(mse_train)
 	  mae_train <- colMeans(abs(model_train$residuals))
 	  #r2_train <- model_train_summary$adj.r.squared # cannot access adj.r.squared of two response
-	  r2_train <- NULL
+	  adj_r2_train <- NULL
 	  for(i in 1:dim(pred_train)[2]) {
-	    r2_train <- append(r2_train, model_train_summary[[i]]$r.squared)
+	    adj_r2_train <- append(adj_r2_train, model_train_summary[[i]]$adj.r.squared)
 	  }
-	  names(r2_train) <- y_name
+	  names(adj_r2_train) <- y_name
 	} else {
 	  mse_train <- mean((model_train_summary$residuals)^2)
 	  rmse_train <- sqrt(mse_train)
 	  mae_train <- mean(abs(model_train_summary$residuals))
 	  if(type == "linear") {
-	    r2_train <- model_train_summary$r.squared
+	    adj_r2_train <- model_train_summary$adj.r.squared
 	  } else {
-	    r2_train <- NA
+	    adj_r2_train <- NA
 	  }
 	}
 
 	model_performance <- data.frame(deparse1(model_train$call$formula), paste0(strategy,":",metric), 
-								   r2_train, test_results$r2_test, 
+								   adj_r2_train, test_results$adj_r2_test, 
 								   mse_train, test_results$mse_test, 
-								   mae_train, test_results$mae_test)
+								   mae_train, test_results$mae_test
+								   )
 	if(is.matrix(pred_train)) {
 	  model_performance$response <- y_name
-	  colnames(model_performance) <- c("model", "strategy:metric", "r2_train", "r2_test", "mse_train", "mse_test", "mae_train", "mae_test", "response")
+	  colnames(model_performance) <- c("model", "strategy:metric", "adjR-squared_train", "adjR-squared_test", "mse_train", "mse_test", "mae_train", "mae_test", "response")
 	} else {
-	  colnames(model_performance) <- c("model", "strategy:metric", "r2_train", "r2_test", "mse_train", "mse_test", "mae_train", "mae_test")
+	  colnames(model_performance) <- c("model", "strategy:metric", "adjR-squared_train", "adjR-squared_test", "mse_train", "mse_test", "mae_train", "mae_test")
 	}
-	#if(type != "linear") {
+	if(type != "linear") {
 	  model_performance <- model_performance[,-c(3:4)]
-	#}
+	}
 	return(model_performance)
 }
 

@@ -25,6 +25,10 @@
 #'     \item Final selected model and fit statistics
 #'     \item Model coefficients and significance levels
 #'   }
+#'   
+#'   \strong{Note:} Exporting reports requires pandoc to be installed on your system. 
+#'   Pandoc is typically included with RStudio. If not available, install it from 
+#'   https://pandoc.org/installing.html or via your system package manager.
 #'
 #' @return Creates report file(s) in the specified format(s) in the current working directory.
 #' The file name will be \code{report_name.format} (e.g., "myreport.html", "myreport.docx").
@@ -61,6 +65,22 @@
 
 report <- function(x, report_name, format = c('html', 'docx', 'rtf', 'pptx')) {
   format <- match.arg(format, several.ok = TRUE)
+  
+  # Check if pandoc is available (required for flextable export functions)
+  if (any(c('html', 'docx', 'rtf', 'pptx') %in% format)) {
+    if (!requireNamespace("rmarkdown", quietly = TRUE)) {
+      stop("The 'rmarkdown' package is required to check pandoc availability. Please install it with: install.packages('rmarkdown')")
+    }
+    if (!rmarkdown::pandoc_available()) {
+      stop("Pandoc is not available. The flextable export functions require pandoc to be installed.\n",
+           "Please install pandoc using one of the following methods:\n",
+           "  1. Install RStudio (which includes pandoc): https://www.rstudio.com/products/rstudio/download/\n",
+           "  2. Install pandoc directly from: https://pandoc.org/installing.html\n",
+           "  3. On macOS with Homebrew: brew install pandoc\n",
+           "  4. On Linux: Use your system package manager (e.g., sudo apt-get install pandoc)")
+    }
+  }
+  
   results <- list()
   for (j in c("argument","variable")) {
     if(j == "argument") {

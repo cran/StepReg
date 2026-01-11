@@ -298,28 +298,20 @@ This function creates a StepReg class object, which is a structured list contain
 
 - **`variable`**: A data.frame containing information about all variables in the model, including variable names, data types (numeric, factor, etc.), and their roles (Dependent/Independent) in the model.
 
-- **`performance`**: A data.frame providing detailed performance metrics for the selected models across different strategies and metrics. For both training and test data sets when `test_ratio` < 1, the output includes model-specific performance indicators:
-  - `For linear, poisson, gamma, and negative binomial regression`
-    - `"r2_train/r2_test"`: R-squared measures the proportion of variance explained by the model. Values range from 0 to 1, with higher values indicating better fit. A well-performing model should exhibit high R-squared on both training and test data, with minimal difference between them. A large discrepancy suggests overfitting.
-    - `"mse_train/mse_test"`: Mean Squared Error (MSE) calculates the average squared difference between predicted and actual values. Lower values signify better model performance. The test MSE should be close to the training MSE; a significantly higher test MSE indicates potential overfitting.
-    - `"mae_train/mae_test"`: Mean Absolute Error (MAE) measures the average absolute difference between predicted and actual values. Lower values reflect better performance. Similar to MSE, the test MAE should be close to the training MAE to avoid overfitting.
-  - `For logistic regression`
-    - `"accuracy_train/accuracy_test"`: Accuracy represents the proportion of correct predictions (true positives + true negatives) divided by total predictions. Values range from 0 to 1, with higher values indicating better classification. Test accuracy should be close to training accuracy; a large gap suggests overfitting.
-    - `"auc_train/auc_test"`: Area Under the Curve (AUC) assesses the model's ability to distinguish between classes. Values range from 0.5 (random) to 1.0 (perfect discrimination). An AUC > 0.7 is acceptable, > 0.8 is good, and > 0.9 is excellent. Test AUC should be close to training AUC to avoid overfitting.
-    - `"log_loss_train/log_loss_test"`: Log Loss (logarithmic loss) penalizes confident incorrect predictions more heavily. Lower values indicate better performance, with values near 0 being ideal. Test log loss should be close to training log loss; a higher test log loss suggests overfitting.
-  - `For Cox regression`
-    - `"c-index_train/c-index_test"`: Concordance Index (C-index) evaluates the model's ability to correctly rank survival times. Values range from 0.5 (random) to 1.0 (perfect ranking). A C-index > 0.7 is acceptable, > 0.8 is good, and > 0.9 is excellent. Test C-index should be close to training C-index to avoid overfitting.
-    - `"auc_hc"`: Harrell's C-index for time-dependent AUC, measuring discrimination at specific time points. Higher values indicate better performance.
+- **`performance`**: A data.frame containing model-level performance metrics for each strategy-by-criterion. The model evaluation metrics vary by regression type:
+
+  - For linear, Poisson, Gamma, and negative binomial regression models, the key performance indicators for both training and test data sets include adjusted R-squared (adjR-squared_train / adjR-squared_test applicable only to linear regression), mean squared error (mse_train / mse_test) and mean absolute error (mae_train / mae_test). A higher adjusted R-squared and lower MSE or MAE generally indicate a better model fit, while a large discrepancy between training and test metrics often signals overfitting, suggesting the model may not generalize well to unseen data. Note: If the adjusted R-squared for the test set exceeds 1, this is typically due to the small size of the test sample, which can produce unstable or non-interpretable values for this statistic.
+
+  - For logistic regression models, the key performance indicators for both training and test data sets include accuracy (accuracy_train / accuracy_test), area under the receiver operating characteristic (ROC) curve (AUC) (auc_train / auc_test), and log loss (log_loss_train / log_loss_test). Higher accuracy and AUC values, combined with lower log loss, generally indicate stronger predictive performance. As with other models, substantial gaps between training and testing results suggest potential overfitting and warrant further investigation.
+
+  - For Cox proportional hazards regression models, the primary performance indicators are concordance index (c_index_train / c_index_test) and time-dependent area under the curve (auc_sh). Higher values indicate stronger discrimination between risk groups. The c-index ranges from 0.5 (random prediction) to 1.0 (perfect prediction). Values below 0.5 typically suggest reversed risk direction or miscoding of events. In such cases, verify event coding and ensure that the scoring system aligns with the interpretation that higher scores correspond to higher risk.
 
 - **`overview`**: A nested list organized by strategy and metric, containing step-by-step summaries of the model-building process. Each element shows which variables were entered or removed at each step along with the corresponding metric values (e.g., AIC, BIC, SBC).
 
 - **`detail`**: A nested list organized by strategy and metric, providing granular information about each candidate step. This includes which variables were tested, their evaluation statistics, p-values, and whether they were ultimately selected or rejected.
 
-- **`fitted model object within the strategy-specific list`**: A nested list object organized with a first layer representing the selection strategy (e.g., forward, backward, bidirection, subset) and a second layer representing the metric (e.g., AIC, BIC, SBC). For each strategy-metric combination, the function returns fitted model objects that can be further analyzed using S3 generic functions such as `summary`, `anova`, `plot`, or `coefficients`. These functions adapt to the model type (e.g., `coxph`, `lm`, `glm` through call-specific methods. Specific statistics can be directly retrieved using the `$` operator, such as `result$forward$AIC$coefficients`. The level of detail in these analyses depends on the model type: the \CRANpkg{survival} package enriches `coxph` objects with detailed statistics including hazard ratios, standard errors, z-statistics, p-values, and likelihood ratio tests, while base R functions like `lm` and `glm` offer basic output with coefficients by default, requiring `summary` or `anova` to reveal standard errors, t-values, p-values, and R-squared values.
+- **`fitted models (within the strategy-metric hierarchy)`**: For each combination of selection strategy (e.g., “forward”, “backward”, “bidirection”, “subset”) and metric (e.g., “AIC”, “BIC”, “SBC”), the object stores the corresponding fitted model. These can be analyzed with standard S3 generics, `summary()`, `anova()`, `plot()`, or `coef()`, which dispatch to the underlying model class (e.g., `coxph()`, `lm()`, `glm()`). Users can also access components directly, e.g., result$forward$AIC$coefficients. Note: "coxph" objects in the `survival` package include detailed summaries (hazard ratios, standard errors, test statistics), whereas `lm()` / `glm()` display only basic coefficients by default. Use `summary()` to obtain standard errors, t/z statistics, p values, and R-squared.
 
-```{r, eval = FALSE}
-report(res, report_name = "results", format = c("html", "docx"))
-```
 
 # Use cases {#usecases}
 
@@ -446,6 +438,11 @@ summary(res2$forward$SL)
 The performance of the model:
 ```{r, message = FALSE}
 performance(res2)
+```
+
+Saving the results:
+```{r, eval = FALSE}
+report(res2, report_name = "results", format = c("html", "docx"))
 ```
 
 ### Example2: multivariate regression ("mpg" and "drat")

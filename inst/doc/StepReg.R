@@ -139,9 +139,6 @@ Example <- c("`mpg ~ cyl + wt`", "`mpg ~ .`", "`mpg ~ . - disp`", "`mpg ~ cyl * 
 df <- data.frame(Syntax, Description, Example)
 kable(df, format = "html", caption = 'Formula syntax supported by StepReg') %>% kable_styling()
 
-## ----eval = FALSE-------------------------------------------------------------
-# report(res, report_name = "results", format = c("html", "docx"))
-
 ## ----message = FALSE----------------------------------------------------------
 data(mtcars)
 ## make sure the categorical variable is a factor variable
@@ -215,6 +212,9 @@ summary(res2$forward$SL)
 
 ## ----message = FALSE----------------------------------------------------------
 performance(res2)
+
+## ----eval = FALSE-------------------------------------------------------------
+# report(res2, report_name = "results", format = c("html", "docx"))
 
 ## -----------------------------------------------------------------------------
 formula <- cbind(mpg, drat) ~ . + 0

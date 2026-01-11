@@ -144,9 +144,34 @@ plot.StepReg <- function(x, strategy = attr(x,"nonhidden"), process = c("overvie
     if(strategy != 'subset') {
       if("SL" %in% plot_overview$Metric) {
         plot_overview[plot_overview$Metric == "SL",]$MetricValue <- plot_detail[plot_detail$metric == "SL" & plot_detail$Selection %in% c("Entry","Remove"),"value"]
-        plot_overview$MetricValue[plot_overview$MetricValue %in% Inf] <- max(plot_overview$MetricValue[!plot_overview$MetricValue %in% Inf]) * 1.1
-        a <- range(log10(plot_overview[plot_overview$Metric == "SL", ]$MetricValue))
-        b <- range(plot_overview[plot_overview$Metric != "SL", ]$MetricValue)
+        # Handle Inf values only if there are non-Inf values
+        inf_indices <- which(is.infinite(plot_overview$MetricValue))
+        if(length(inf_indices) > 0) {
+          non_inf_values <- plot_overview$MetricValue[!is.infinite(plot_overview$MetricValue) & !is.na(plot_overview$MetricValue)]
+          if(length(non_inf_values) > 0) {
+            plot_overview$MetricValue[inf_indices] <- max(non_inf_values) * 1.1
+          } else {
+            plot_overview$MetricValue[inf_indices] <- 1.0  # Default value if all are Inf
+          }
+        }
+        
+        # Calculate range for SL metric, filtering out NA and Inf values
+        sl_values <- plot_overview[plot_overview$Metric == "SL", ]$MetricValue
+        sl_values <- sl_values[!is.na(sl_values) & !is.infinite(sl_values) & sl_values > 0]
+        if(length(sl_values) > 0) {
+          a <- range(log10(sl_values))
+        } else {
+          a <- c(0, 1)  # Default range if no valid SL values
+        }
+        
+        # Calculate range for non-SL metrics, filtering out NA and Inf values
+        non_sl_values <- plot_overview[plot_overview$Metric != "SL", ]$MetricValue
+        non_sl_values <- non_sl_values[!is.na(non_sl_values) & !is.infinite(non_sl_values)]
+        if(length(non_sl_values) > 0) {
+          b <- range(non_sl_values)
+        } else {
+          b <- c(0, 1)  # Default range if no valid non-SL values
+        }
         
         p2 <- plotStepwiseSummaryDualY(x, plot_overview, a, b, strategy)
       } else {
@@ -157,33 +182,53 @@ plot.StepReg <- function(x, strategy = attr(x,"nonhidden"), process = c("overvie
     }
     p2 <- p2 +
       scale_x_continuous(breaks = plot_overview$Step) + 
-      labs(title =paste0("Selection Overview: ",strategy)) + 
+      labs(title =paste0("Selection overview: ",strategy)) + 
       theme_light()
     return(p2)
   }
 }
 
 plotStepwiseSummaryDualY <- function(x, df, a, b, n){
+  # Filter out rows with empty or NA Variable values for label repelling
+  df_labels <- df[!is.na(df$Variable) & df$Variable != "", ]
+  
+  # Ensure diff(a) and diff(b) are not zero to avoid division by zero
+  if(diff(a) == 0) {
+    a[2] <- a[1] + 1
+  }
+  if(diff(b) == 0) {
+    b[2] <- b[1] + 1
+  }
+  
   if(all(df$Metric %in% "SL")) {
+    # Filter valid SL values for breaks calculation
+    valid_sl_values <- df$MetricValue[!is.na(df$MetricValue) & !is.infinite(df$MetricValue) & df$MetricValue > 0]
+    
     p2 <- ggplot(df, aes(x = .data$Step, group = .data$Metric)) +
       geom_point(aes(y = (log10(.data$MetricValue) - a[1])/diff(a), color = .data$Metric)) + 
-      geom_label_repel(aes(y = (log10(.data$MetricValue) - a[1])/diff(a), color = .data$Metric, label = .data$Variable),
+      geom_label_repel(data = df_labels,
+                       aes(y = (log10(.data$MetricValue) - a[1])/diff(a), color = .data$Metric, label = .data$Variable),
                        label.size = 0.05,
                        show.legend = FALSE) + 
       scale_y_continuous(
         labels = function(x) sprintf("%.1e", 10^(x * diff(a) + a[1])),
-        breaks = (pretty(log10(df$MetricValue)) - a[1])/diff(a), 
+        breaks = if(length(valid_sl_values) > 0) (pretty(log10(valid_sl_values)) - a[1])/diff(a) else NULL, 
         name = "SL (p value)") + 
       geom_line(aes(y = (log10(.data$MetricValue) - a[1])/diff(a), color = .data$Metric))
   } else {
+    # Filter valid values for breaks calculation
+    valid_sl_values <- df[df$Metric == "SL", ]$MetricValue
+    valid_sl_values <- valid_sl_values[!is.na(valid_sl_values) & !is.infinite(valid_sl_values) & valid_sl_values > 0]
+    
     p2 <- ggplot(df, aes(x = .data$Step, group = .data$Metric)) +
       geom_point(aes(y = ifelse(.data$Metric == "SL", (log10(.data$MetricValue) - a[1])/diff(a), (.data$MetricValue - b[1])/diff(b)), color = .data$Metric)) + 
-      geom_label_repel(aes(y = ifelse(.data$Metric == "SL", (log10(.data$MetricValue) - a[1])/diff(a), (.data$MetricValue - b[1])/diff(b)), color = .data$Metric, label = .data$Variable),
+      geom_label_repel(data = df_labels,
+                       aes(y = ifelse(.data$Metric == "SL", (log10(.data$MetricValue) - a[1])/diff(a), (.data$MetricValue - b[1])/diff(b)), color = .data$Metric, label = .data$Variable),
                        label.size = 0.05,
                        show.legend = FALSE) + 
       scale_y_continuous(
         labels = function(x) sprintf("%.1e", 10^(x * diff(a) + a[1])),
-        breaks = (pretty(log10(df$MetricValue)) - a[1])/diff(a), 
+        breaks = if(length(valid_sl_values) > 0) (pretty(log10(valid_sl_values)) - a[1])/diff(a) else NULL, 
         name = "SL (p value)",
         sec.axis = sec_axis(~(diff(b) * . + b[1]), name = paste0(unique(df$Metric)[!unique(df$Metric) == "SL"],collapse=" / "))) + 
       geom_line(aes(y = ifelse(.data$Metric == "SL", (log10(.data$MetricValue) - a[1])/diff(a), (.data$MetricValue - b[1])/diff(b)), color = .data$Metric))
@@ -212,6 +257,9 @@ plotStepwiseSummaryDualY <- function(x, df, a, b, n){
 }
 
 plotStepwiseSummarySingleY <- function(df){
+  # Filter out rows with empty or NA Variable values for label repelling
+  df_labels <- df[!is.na(df$Variable) & df$Variable != "", ]
+  
   metricValue <- unique(df$Metric)
   if("SL" %in% metricValue){
     metricValue[which(metricValue %in% "SL")] <- "SL (p value)"
@@ -223,7 +271,8 @@ plotStepwiseSummarySingleY <- function(df){
         group = .data$Metric) + 
     geom_point(aes(color = .data$Metric)) + 
     geom_line(aes(linetype = .data$Metric, color = .data$Metric)) +
-    geom_label_repel(label.size = 0.05,
+    geom_label_repel(data = df_labels,
+                     label.size = 0.05,
                      aes(color = .data$Metric),
                      show.legend = FALSE) + 
     xlab("Step") +
@@ -262,7 +311,7 @@ plotStepwiseDetail <- function(df, num_digits) {
           strip.text = element_text(color = "black")) +  # Adjust text color in facet labels
     facet_wrap(~ .data$metric, ncol=1) + 
     theme(strip.background = element_rect(colour = "black", fill = "gray80")) +
-    ggtitle(paste0("Selection Details: ", df$strategy[1])) + 
+    ggtitle(paste0("Selection details: ", df$strategy[1])) + 
     ylab("Predictors") + 
     xlab("Step")
   return(p1)
@@ -284,7 +333,7 @@ plotSubsetDetail <- function(plot_overview) {
   p1 <- ggplot(tile_df, aes(x = .data$Step, y = .data$Variable, fill = .data$Selection)) +
     geom_tile(width = 0.99, height = 0.95, color = "black") +
     scale_fill_manual(values = c("Entry" = "palegreen2", "No" = "gray80")) +
-    labs(x = "Step", y = "Predictors", title = "Selection Details: subset") +
+    labs(x = "Step", y = "Predictors", title = "Selection details: subset") +
     scale_x_continuous(breaks = plot_overview$Step) + 
     xlab("Variable number") +
     facet_wrap(~ .data$Metric, ncol=1) + 

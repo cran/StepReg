@@ -1,6 +1,10 @@
 # StepReg NEWS
 
-## Version 1.6.1 (2025-01-27)
+## Version 1.6.2 (2025-10-30)
+- **UPDATE**: Removed "+ 0" , "-1", and "+1" in final cox regression model
+
+
+## Version 1.6.1 (2025-10-22)
 
 ### Major Changes
 
@@ -19,7 +23,7 @@ Users who were using the Shiny application should now install the separate StepR
 install.packages("StepRegShiny")
 
 # Use the Shiny application
-StepRegShiny::StepRegShinyApp()
+StepRegShiny::StepRegGUI()
 ```
 
 The core StepReg functionality remains unchanged. Only the Shiny interface has been moved to a separate package for better modularity and independent development.
