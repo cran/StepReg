@@ -1,4 +1,4 @@
-cdf7e708affec24c905f2a213340756f *DESCRIPTION
+879e8b3f06b0d1465c38b3a9f91dde3b *DESCRIPTION
 a55b3cdd200ffcaf68422f8b3ddc0dc3 *LICENSE
 35a4de9f31ba485db67878b98a7361b3 *NAMESPACE
 69963957c74b37b7c5b3d997a6535c89 *NEWS.md
@@ -13,7 +13,7 @@ df6cc46bc7fae1a55b713f3d5065b35a *R/StepReg-package.R
 775e19f9689208c3b0a440d483190265 *R/remission.R
 bb38b6a7811bd57192757ae2ea045747 *R/report.R
 224afcffa740db02027044c78fc3d9ce *R/stepwise.R
-e71134d741460708dbb5cca3153c0fb3 *R/stepwiseUtils.R
+db927ca6ff06dac2449e7e7ac7310865 *R/stepwiseUtils.R
 0cf7d3652f76c1ac88817afd7bfc66a5 *R/tobacco.R
 fb9ed79c8db72ef3518a18b054558a29 *R/validateUtils.R
 113720fdb4aecc8857f1145f742e0626 *README.md
@@ -25,9 +25,9 @@ f2015a5ec8deebe9e06f1fd06afe362d *data/lung.RData
 996d8ec14f925d63c3ad8457c2cb39ce *data/tobacco.RData
 25abaa58db7131e7e4a9e185601494d2 *inst/doc/StepReg.R
 af048c8f1d2f39f92d564659f796a3eb *inst/doc/StepReg.Rmd
-5f2d104cdaf1bcc002e2da355e8ff4f5 *inst/doc/StepReg.html
+0f5ad5e6104667665017f7b8ff5feef6 *inst/doc/StepReg.html
 4402a1d6a224c75423b8e5859540b723 *inst/extdata/res_v1_5_0.rds
-f6d6dbfd36ef5a8b269574664fdd5710 *man/StepReg-package.Rd
+9ad57cb930523c182a6dd8dad063fdc2 *man/StepReg-package.Rd
 d37cad41de7cbf74947a5fcfc149c398 *man/affairs.Rd
 bed078d36b257b5e0e7a57aa156f3fbc *man/creditCard.Rd
 491627bc359db7881d3a597d1484773d *man/figures/logo.png

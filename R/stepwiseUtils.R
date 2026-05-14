@@ -809,7 +809,7 @@ getFinalStepModel <- function(add_or_remove, data, type, strategy, metric, sle, 
 		pic_list <- list(sort(out_cand_stepwise$pic_list))
 		
 		out_check <- checkEnterOrRemove(add_or_remove, best_candidate_model, type, metric, sle, sls, y_name, pic, process_table)
-		indicator <- out_check["indicator"]
+		indicator <- out_check[1]
 		BREAK <- out_check["BREAK"]
 		if(BREAK == TRUE) {
 			break

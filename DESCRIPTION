@@ -1,5 +1,5 @@
 Package: StepReg
-Version: 1.6.2
+Version: 1.6.4
 Title: Stepwise Regression Analysis
 Authors@R: c(
     person("Junhui", "Li", , "junhui.li11@umassmed.edu", role = c("cre"),
@@ -7,13 +7,10 @@ Authors@R: c(
     person("Junhui", "Li", , "junhui.li11@umassmed.edu", role = c("aut")),
     person("Kai", "Hu", , "kai.hu@umassmed.edu", role = c("aut")),
     person("Xiaohuan", "Lu", , role = c("aut")),
-    person("Sushmita", "N Nayak", , role = c("ctb")),
-    person("Cesar", "Bautista Sotelo", , role = c("ctb")),
-    person("Michael", "A Lodato", , role = c("ctb")),
     person("Wenxin", "Liu", , role = c("aut")),
     person("Lihua", "Julie Zhu", , role = c("aut"))
   )
-Date: 2026-01-11
+Date: 2026-05-13
 Description: Stepwise regression is a statistical technique used for model selection. This package streamlines stepwise regression analysis by supporting multiple regression types(linear, Cox, logistic, Poisson, Gamma, and negative binomial), incorporating popular selection strategies(forward, backward, bidirectional, and subset), and offering essential metrics. It enables users to apply multiple selection strategies and metrics in a single function call, visualize variable selection processes, and export results in various formats. StepReg offers a data-splitting option to address potential issues with invalid statistical inference and a randomized forward selection option to avoid overfitting. We validated StepReg's accuracy using public datasets within the SAS software environment. For an interactive web interface, users can install the companion 'StepRegShiny' package.
 License: MIT + file LICENSE
 BugReports: https://github.com/JunhuiLi1017/StepReg/issues
@@ -24,15 +21,12 @@ Encoding: UTF-8
 RoxygenNote: 7.3.2
 NeedsCompilation: no
 Repository: CRAN
-Packaged: 2026-01-11 17:23:42 UTC; lij11
+Packaged: 2026-05-13 21:10:16 UTC; lij11
 Author: Junhui Li [cre] (ORCID: <https://orcid.org/0000-0003-3973-1700>),
   Junhui Li [aut],
   Kai Hu [aut],
   Xiaohuan Lu [aut],
-  Sushmita N Nayak [ctb],
-  Cesar Bautista Sotelo [ctb],
-  Michael A Lodato [ctb],
   Wenxin Liu [aut],
   Lihua Julie Zhu [aut]
 Maintainer: Junhui Li <junhui.li11@umassmed.edu>
-Date/Publication: 2026-01-11 18:10:02 UTC
+Date/Publication: 2026-05-14 05:10:45 UTC
