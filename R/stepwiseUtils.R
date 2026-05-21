@@ -995,20 +995,25 @@ getTable3ProcessSummary <- function(data_train, data_test, type, strategy, metri
 			overview[[stra]][[met]] <- temp_table # to keep digits as we expected, convert numeric to character for html output.
 			
 			if(!(stra == "subset" & met == "SL")) {
-				if(type == 'cox') {
-					x_final_model <- x_final_model[!x_final_model %in% c("1", "0", "-1")]
-				}
-				model_train <- getModel(data_train, type, intercept = NULL, x_name = x_final_model, y_name = y_name, weight = weight, method = test_method)
-				x_final_model_metric[[stra]][[met]] <- x_final_model	
-				if(type == "cox") {
-				  model_performance <- cox_performance(data_train, data_test, stra, met, model_train, y_name, weight)
-				} else if(type == "linear" | type == "gamma" |type == "negbin" | type == "poisson"){
-				  model_performance <- lm_performance(data_train, data_test, type, stra, met, model_train, y_name, weight)
-				} else if(type == "logit"){
-				  model_performance <- logit_performance(data_train, data_test, stra, met, model_train, y_name, weight)
-				}
+			  if(type == 'cox') {
+			    x_final_model <- x_final_model[!x_final_model %in% c("1", "0", "-1")]
+			  }
+			  model_train <- getModel(data_train, type, intercept = NULL, x_name = x_final_model, y_name = y_name, weight = weight, method = test_method)
+			  x_final_model_metric[[stra]][[met]] <- x_final_model	
 			}
-			model_performance_df <- rbind(model_performance_df ,model_performance)
+			
+			if(!is.null(data_test)){
+			  if(type == "cox") {
+			    model_performance <- cox_performance(data_train, data_test, stra, met, model_train, y_name, weight)
+			  } else if(type == "linear" | type == "gamma" |type == "negbin" | type == "poisson"){
+			    model_performance <- lm_performance(data_train, data_test, type, stra, met, model_train, y_name, weight)
+			  } else if(type == "logit"){
+			    model_performance <- logit_performance(data_train, data_test, stra, met, model_train, y_name, weight)
+			  }
+			  model_performance_df <- rbind(model_performance_df ,model_performance)
+			} else {
+			  model_performance_df <- NULL
+			}
 		}
 	}
 	return(list('final_variable' = x_final_model_metric, 'performance' = model_performance_df, 'overview' = overview, "detail" = detail))
@@ -1081,12 +1086,18 @@ cox_performance <- function(data_train, data_test, strategy, metric, model_train
 
 lm_performance <- function(data_train, data_test, type, strategy, metric, model_train, y_name, weight) {	
 	pred_train <- predict(model_train, newdata=data_train, weights=weight)
-
-	if(is.matrix(pred_train)) {
-		y_name <- colnames(pred_train)
-	} 
+	is_multi <- is.matrix(pred_train)
+	
+	if (startsWith(y_name, "cbind(")) {
+	  inner_content <- gsub("^cbind\\(|\\)$", "", y_name)
+	  y_var <- trimws(strsplit(inner_content, ",")[[1]])
+	} else {
+	  y_var <- y_name
+	}
+	n_resp <- length(y_var)
+	
 	# Actual values
-	actual_train <- data_train[,y_name]
+	actual_train <- data_train[,y_var, drop = FALSE]
 	if(type == "linear"){
 	  model_train_summary <- summary(model_train)
 	} else {
@@ -1096,9 +1107,9 @@ lm_performance <- function(data_train, data_test, type, strategy, metric, model_
 	# Test data operations with error handling
 	test_results <- tryCatch({
 		pred_test <- predict(model_train, newdata = data_test, weights=weight)
-		actual_test <- data_test[,y_name]
+		actual_test <- data_test[,y_var]
 		
-		if(is.matrix(pred_train)) {
+		if(is_multi) {
 		  mse_test <- colMeans((actual_test - pred_test)^2)
 		  rmse_test <- sqrt(mse_test)
 		  mae_test <- colMeans(abs(actual_test - pred_test))
@@ -1119,27 +1130,30 @@ lm_performance <- function(data_train, data_test, type, strategy, metric, model_
 		    adj_r2_test <- 1 - ((1 - r2_test) * (n_test - 1) / (n_test - p_test - 1))
 		  } else {
 		    r2_test <- NA
-			adj_r2_test <- NA
+			  adj_r2_test <- NA
 		  }
 		}
 		list(pred_test = pred_test, actual_test = actual_test, mse_test = mse_test, 
 			 rmse_test = rmse_test, mae_test = mae_test, r2_test = r2_test, adj_r2_test = adj_r2_test)
 	}, error = function(e) {
 		# Return NA values if test data operations fail
-		list(pred_test = NA, actual_test = NA, mse_test = NA, 
-			 rmse_test = NA, mae_test = NA, r2_test = NA, adj_r2_test = NA)
+		if(is_multi) {
+			list(pred_test = NA, actual_test = NA, mse_test = rep(NA_real_, n_resp),
+				 rmse_test = rep(NA_real_, n_resp), mae_test = rep(NA_real_, n_resp),
+				 r2_test = rep(NA_real_, n_resp), adj_r2_test = rep(NA_real_, n_resp))
+		} else {
+			list(pred_test = NA, actual_test = NA, mse_test = NA,
+				 rmse_test = NA, mae_test = NA, r2_test = NA, adj_r2_test = NA)
+		}
 	})
   
-	if(is.matrix(pred_train)) {
+	if(is_multi) {
 	  mse_train <- colMeans((model_train$residuals)^2)
 	  rmse_train <- sqrt(mse_train)
 	  mae_train <- colMeans(abs(model_train$residuals))
 	  #r2_train <- model_train_summary$adj.r.squared # cannot access adj.r.squared of two response
-	  adj_r2_train <- NULL
-	  for(i in 1:dim(pred_train)[2]) {
-	    adj_r2_train <- append(adj_r2_train, model_train_summary[[i]]$adj.r.squared)
-	  }
-	  names(adj_r2_train) <- y_name
+	  adj_r2_train <- vapply(seq_len(n_resp), function(i) model_train_summary[[i]]$adj.r.squared, numeric(1))
+	  names(adj_r2_train) <- y_var
 	} else {
 	  mse_train <- mean((model_train_summary$residuals)^2)
 	  rmse_train <- sqrt(mse_train)
@@ -1154,21 +1168,23 @@ lm_performance <- function(data_train, data_test, type, strategy, metric, model_
 	model_performance <- data.frame(deparse1(model_train$call$formula), paste0(strategy,":",metric), 
 								   adj_r2_train, test_results$adj_r2_test, 
 								   mse_train, test_results$mse_test, 
-								   mae_train, test_results$mae_test
+								   mae_train, test_results$mae_test,
+								   response = y_var,
+								   row.names = NULL,
+								   stringsAsFactors = FALSE
 								   )
-	if(is.matrix(pred_train)) {
-	  model_performance$response <- y_name
-	  colnames(model_performance) <- c("model", "strategy:metric", "adjR-squared_train", "adjR-squared_test", "mse_train", "mse_test", "mae_train", "mae_test", "response")
-	} else {
-	  colnames(model_performance) <- c("model", "strategy:metric", "adjR-squared_train", "adjR-squared_test", "mse_train", "mse_test", "mae_train", "mae_test")
-	}
+	#if(is_multi) {
+	colnames(model_performance) <- c("model", "strategy:metric", "adjR-squared_train", "adjR-squared_test", "mse_train", "mse_test", "mae_train", "mae_test", "response")
+	#} else {
+	#  colnames(model_performance) <- c("model", "strategy:metric", "adjR-squared_train", "adjR-squared_test", "mse_train", "mse_test", "mae_train", "mae_test")
+	#}
 	if(type != "linear") {
 	  model_performance <- model_performance[,-c(3:4)]
 	}
 	return(model_performance)
 }
 
-
+?data.frame
 
 logit_performance <- function(data_train, data_test, strategy, metric, model_train, y_name, weight) {	
 	# Predictions

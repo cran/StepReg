@@ -58,7 +58,8 @@ result <- stepwise(
   data = mtcars,
   type = "linear",
   strategy = c("forward", "backward", "bidirection"),
-  metric = c("AIC", "BIC")
+  metric = c("AIC", "BIC"),
+  test_ratio = 0.2
 )
 
 # Get performance summary

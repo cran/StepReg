@@ -293,7 +293,7 @@ stepwise <- function(formula,
   result$variable <- table2_class_table
   
   ## table3
-  table3_process <- getTable3ProcessSummary(data_train=data_train, data_test=data_test, type, strategy, metric, sle, sls, weight, x_name, y_name, intercept, include, best_n, test_method, sigma_value, num_digits, feature_ratio, dummy_name_list)
+  table3_process <- getTable3ProcessSummary(data_train=data_train, data_test=data_test, type, strategy, metric, sle, sls, weight=weight, x_name, y_name, intercept, include=include, best_n, test_method, sigma_value, num_digits, feature_ratio, dummy_name_list)
   x_final_model_metric <- table3_process$final_variable
   result <- append(result,table3_process[which(names(table3_process) != "final_variable")])
   
