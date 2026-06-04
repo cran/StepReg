@@ -1,4 +1,4 @@
-c62c79c46fc58b8a71c900cd7d638b88 *DESCRIPTION
+ac93747e72d5bfd926123e639875f5d5 *DESCRIPTION
 a55b3cdd200ffcaf68422f8b3ddc0dc3 *LICENSE
 35a4de9f31ba485db67878b98a7361b3 *NAMESPACE
 69963957c74b37b7c5b3d997a6535c89 *NEWS.md
@@ -10,7 +10,7 @@ df6cc46bc7fae1a55b713f3d5065b35a *R/StepReg-package.R
 5fe99c6c6680240de53f1b99efe20b8f *R/performance.R
 41c49cd972c2870106c0920b6f9519d9 *R/plot.StepReg.R
 466c5dd7d106dd4f1f3395f7563577d5 *R/print.StepReg.R
-775e19f9689208c3b0a440d483190265 *R/remission.R
+7405cef9c5a6b0b41766de59cf458788 *R/remission.R
 bb38b6a7811bd57192757ae2ea045747 *R/report.R
 6646a39aeebd61ebbd2b130eb497cde7 *R/stepwise.R
 704be7301e8b99caea803cb40620ff2e *R/stepwiseUtils.R
@@ -24,10 +24,10 @@ f2015a5ec8deebe9e06f1fd06afe362d *data/lung.RData
 24d863809b536297c512ce43ac52b05e *data/remission.RData
 996d8ec14f925d63c3ad8457c2cb39ce *data/tobacco.RData
 25abaa58db7131e7e4a9e185601494d2 *inst/doc/StepReg.R
-af048c8f1d2f39f92d564659f796a3eb *inst/doc/StepReg.Rmd
-62ee63803eb7e4e7a646f2d52d2d679c *inst/doc/StepReg.html
+277a7581670219affba77d0500694307 *inst/doc/StepReg.Rmd
+135370a1fecb00e8ab595adc3403e55f *inst/doc/StepReg.html
 4402a1d6a224c75423b8e5859540b723 *inst/extdata/res_v1_5_0.rds
-9ad57cb930523c182a6dd8dad063fdc2 *man/StepReg-package.Rd
+f6d6dbfd36ef5a8b269574664fdd5710 *man/StepReg-package.Rd
 d37cad41de7cbf74947a5fcfc149c398 *man/affairs.Rd
 bed078d36b257b5e0e7a57aa156f3fbc *man/creditCard.Rd
 491627bc359db7881d3a597d1484773d *man/figures/logo.png
@@ -35,14 +35,14 @@ bed078d36b257b5e0e7a57aa156f3fbc *man/creditCard.Rd
 45b53248514db915282531dcf6be9303 *man/performance.Rd
 9a0d5e34ddc2899ddfbcc03b40224ac2 *man/plot.StepReg.Rd
 aa3ec79a80a99c42bc2aa160ab046f60 *man/print.StepReg.Rd
-5fdb7b9f3c1413db401d30bd76700f82 *man/remission.Rd
+4911a37a0ad61a0b0e1e25eafcf026e0 *man/remission.Rd
 d69bcd4cd5ed494c6b612010f77d4b49 *man/report.Rd
 df0cf9f42a1e5162b5a04fc7bc6e2de7 *man/stepwise.Rd
 bd3362d8b16edd7a0fd4ae66e0bec82e *man/tobacco.Rd
 d1f286593a3b9e48af9bc6c1d8cd36ef *tests/sas_benchmark.xlsx
 209ea521617fa9960228a67b0dbcfa88 *tests/testthat.R
 c606d88d72b6f1d75271e49b21ea1bca *tests/testthat/test_stepwise.R
-af048c8f1d2f39f92d564659f796a3eb *vignettes/StepReg.Rmd
+277a7581670219affba77d0500694307 *vignettes/StepReg.Rmd
 3208ea1bba766ab6f54cb5f491d2c8dd *vignettes/bibliography.bib
 c6ac329ce9176614f06b21f0fed2c172 *vignettes/src/StepReg_shiny_UI_description_Data.png
 90e6464465169fe602808fff9a7f9aab *vignettes/src/StepReg_shiny_UI_description_Stepwise.png

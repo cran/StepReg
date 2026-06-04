@@ -29,5 +29,12 @@ Authors:
   \item Lihua Julie Zhu
 }
 
+Other contributors:
+\itemize{
+  \item Sushmita N Nayak [contributor]
+  \item Cesar Bautista Sotelo [contributor]
+  \item Michael A Lodato [contributor]
+}
+
 }
 \keyword{internal}

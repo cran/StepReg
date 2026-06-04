@@ -34,7 +34,6 @@
 #'   \item Lee, E. T. (1974). "A Computer Program for Linear Logistic Regression Analysis."
 #'   Computer Programs in Biomedicine 4:80–92.
 #'   \item Penn State University Statistics Online. "Logistic Regression Example."
-#'   \url{https://online.stat.psu.edu/stat501/book/export/html/1011}
 #' }
 #'
 #' @examples

@@ -490,7 +490,7 @@ In this example, we'll showcase logistic regression using the `remission` datase
 
 **Description of the `remission` dataset**
 
-The [remission](https://online.stat.psu.edu/stat501/book/export/html/1011) dataset, obtained from the online course STAT501 at Penn State University, has been integrated into StepReg. It consists of 27 observations across seven variables, including a binary variable named "remiss":
+The remission dataset, obtained from the online course STAT501 at Penn State University, has been integrated into StepReg. It consists of 27 observations across seven variables, including a binary variable named "remiss":
 
 1. remiss: whether leukemia remission occurred, a value of 1 indicates occurrence while 0 means non-occurrence
 2. cell: cellularity of the marrow clot section
