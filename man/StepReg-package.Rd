@@ -4,15 +4,17 @@
 \name{StepReg-package}
 \alias{StepReg}
 \alias{StepReg-package}
-\title{StepReg: Stepwise Regression Analysis}
+\title{StepReg: A Comprehensive and Intuitive R Package for Stepwise Regression Analysis}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Stepwise regression is a statistical technique used for model selection. This package streamlines stepwise regression analysis by supporting multiple regression types(linear, Cox, logistic, Poisson, Gamma, and negative binomial), incorporating popular selection strategies(forward, backward, bidirectional, and subset), and offering essential metrics. It enables users to apply multiple selection strategies and metrics in a single function call, visualize variable selection processes, and export results in various formats. StepReg offers a data-splitting option to address potential issues with invalid statistical inference and a randomized forward selection option to avoid overfitting. We validated StepReg's accuracy using public datasets within the SAS software environment. For an interactive web interface, users can install the companion 'StepRegShiny' package.
+Stepwise regression is a statistical technique used for model selection. This package streamlines stepwise regression analysis by supporting multiple regression types(linear, Cox, logistic, Poisson, Gamma, and negative binomial), incorporating popular selection strategies(forward, backward, bidirectional, and subset), and offering essential metrics. It enables users to apply multiple selection strategies and metrics in a single function call, visualize variable selection processes, and export results in various formats. StepReg offers a data-splitting option to address potential issues with invalid statistical inference and a randomized forward selection option to avoid overfitting. We validated StepReg's accuracy using public datasets within the SAS software environment. For an interactive web interface, users can install the companion 'StepRegShiny' package. The methodology is described in Li et al. (2026) \doi{10.32614/RJ-2026-005}.
 }
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://journal.r-project.org/articles/RJ-2026-005/}
+  \item \url{https://github.com/JunhuiLi1017/StepReg}
   \item Report bugs at \url{https://github.com/JunhuiLi1017/StepReg/issues}
 }
 
@@ -22,18 +24,13 @@ Useful links:
 
 Authors:
 \itemize{
-  \item Junhui Li \email{junhui.li11@umassmed.edu}
   \item Kai Hu \email{kai.hu@umassmed.edu}
   \item Xiaohuan Lu
-  \item Wenxin Liu
-  \item Lihua Julie Zhu
-}
-
-Other contributors:
-\itemize{
   \item Sushmita N Nayak [contributor]
   \item Cesar Bautista Sotelo [contributor]
   \item Michael A Lodato [contributor]
+  \item Wenxin Liu
+  \item Lihua Julie Zhu
 }
 
 }

@@ -1,21 +1,23 @@
 Package: StepReg
-Version: 1.6.6
-Title: Stepwise Regression Analysis
+Version: 1.6.7
+Title: A Comprehensive and Intuitive R Package for Stepwise Regression
+        Analysis
 Authors@R: c(
-    person("Junhui", "Li", , "junhui.li11@umassmed.edu", role = c("cre"),
+    person("Junhui", "Li", , "junhui.li11@umassmed.edu", role = c("cre", "aut"),
            comment = c(ORCID = "0000-0003-3973-1700")),
-    person("Junhui", "Li", , "junhui.li11@umassmed.edu", role = c("aut")),
     person("Kai", "Hu", , "kai.hu@umassmed.edu", role = c("aut")),
     person("Xiaohuan", "Lu", , role = c("aut")),
-    person("Sushmita", "N Nayak", , role = c("ctb")),
-    person("Cesar", "Bautista Sotelo", , role = c("ctb")),
-    person("Michael", "A Lodato", , role = c("ctb")),
+    person("Sushmita", "N Nayak", , role = c("ctb", "aut")),
+    person("Cesar", "Bautista Sotelo", , role = c("ctb", "aut")),
+    person("Michael", "A Lodato", , role = c("ctb", "aut")),
     person("Wenxin", "Liu", , role = c("aut")),
     person("Lihua", "Julie Zhu", , role = c("aut"))
   )
-Date: 2026-06-03
-Description: Stepwise regression is a statistical technique used for model selection. This package streamlines stepwise regression analysis by supporting multiple regression types(linear, Cox, logistic, Poisson, Gamma, and negative binomial), incorporating popular selection strategies(forward, backward, bidirectional, and subset), and offering essential metrics. It enables users to apply multiple selection strategies and metrics in a single function call, visualize variable selection processes, and export results in various formats. StepReg offers a data-splitting option to address potential issues with invalid statistical inference and a randomized forward selection option to avoid overfitting. We validated StepReg's accuracy using public datasets within the SAS software environment. For an interactive web interface, users can install the companion 'StepRegShiny' package.
+Date: 2026-08-31
+Description: Stepwise regression is a statistical technique used for model selection. This package streamlines stepwise regression analysis by supporting multiple regression types(linear, Cox, logistic, Poisson, Gamma, and negative binomial), incorporating popular selection strategies(forward, backward, bidirectional, and subset), and offering essential metrics. It enables users to apply multiple selection strategies and metrics in a single function call, visualize variable selection processes, and export results in various formats. StepReg offers a data-splitting option to address potential issues with invalid statistical inference and a randomized forward selection option to avoid overfitting. We validated StepReg's accuracy using public datasets within the SAS software environment. For an interactive web interface, users can install the companion 'StepRegShiny' package. The methodology is described in Li et al. (2026) <doi:10.32614/RJ-2026-005>.
 License: MIT + file LICENSE
+URL: https://journal.r-project.org/articles/RJ-2026-005/,
+        https://github.com/JunhuiLi1017/StepReg
 BugReports: https://github.com/JunhuiLi1017/StepReg/issues
 VignetteBuilder: knitr
 Suggests: knitr, testthat, BiocStyle, kableExtra, cowplot, rmarkdown
@@ -24,15 +26,14 @@ Encoding: UTF-8
 RoxygenNote: 7.3.2
 NeedsCompilation: no
 Repository: CRAN
-Packaged: 2026-06-04 15:15:59 UTC; lij11
-Author: Junhui Li [cre] (ORCID: <https://orcid.org/0000-0003-3973-1700>),
-  Junhui Li [aut],
+Packaged: 2026-08-31 13:26:53 UTC; lij11
+Author: Junhui Li [cre, aut] (ORCID: <https://orcid.org/0000-0003-3973-1700>),
   Kai Hu [aut],
   Xiaohuan Lu [aut],
-  Sushmita N Nayak [ctb],
-  Cesar Bautista Sotelo [ctb],
-  Michael A Lodato [ctb],
+  Sushmita N Nayak [ctb, aut],
+  Cesar Bautista Sotelo [ctb, aut],
+  Michael A Lodato [ctb, aut],
   Wenxin Liu [aut],
   Lihua Julie Zhu [aut]
 Maintainer: Junhui Li <junhui.li11@umassmed.edu>
-Date/Publication: 2026-06-04 16:00:03 UTC
+Date/Publication: 2026-08-31 19:31:03 UTC

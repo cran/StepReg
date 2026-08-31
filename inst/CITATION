@@ -1,0 +1,29 @@
+citHeader("To cite StepReg in publications, please use:")
+
+bibentry(
+  bibtype  = "Article",
+  author   = c(
+    person("Junhui", "Li"),
+    person("Kai", "Hu"),
+    person("Xiaohuan", "Lu"),
+    person("Cesar", "B. Sotelo"),
+    person("Sushmita", "Nayak"),
+    person("Michael", "A. Lodato"),
+    person("Wenxin", "Liu"),
+    person("Lihua Julie", "Zhu")
+  ),
+  title    = "{StepReg}: A Comprehensive and Intuitive {R} Package for Stepwise Regression Analysis",
+  journal  = "The R Journal",
+  year     = "2026",
+  volume   = "18",
+  number   = "1",
+  pages    = "188--205",
+  doi      = "10.32614/RJ-2026-005",
+  url      = "https://journal.r-project.org/articles/RJ-2026-005/",
+  textVersion = paste(
+    "Li J, Hu K, Lu X, Sotelo CB, Nayak S, Lodato MA, Liu W, Zhu LJ (2026).",
+    "StepReg: A Comprehensive and Intuitive R Package for Stepwise Regression Analysis.",
+    "The R Journal, 18(1), 188-205.",
+    "doi:10.32614/RJ-2026-005."
+  )
+)
